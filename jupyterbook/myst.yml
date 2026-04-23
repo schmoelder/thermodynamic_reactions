@@ -13,5 +13,12 @@ project:
       continue: true
   toc:
     - file: index.md
+    - file: 01_statistical_mechanics/00_index.md
+      children:
+        - file: 01_statistical_mechanics/01_particles.md
+        - file: 01_statistical_mechanics/02_collisions.md
+        - file: 01_statistical_mechanics/03_entropy.md
+        - file: 01_statistical_mechanics/04_maxwell_boltzmann.md
+        - file: 01_statistical_mechanics/05_pressure.md
 site:
   title: A Thermodynamic Introduction to Chemical Reactions
