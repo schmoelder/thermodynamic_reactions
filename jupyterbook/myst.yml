@@ -20,5 +20,12 @@ project:
         - file: 01_statistical_mechanics/03_entropy.md
         - file: 01_statistical_mechanics/04_maxwell_boltzmann.md
         - file: 01_statistical_mechanics/05_pressure.md
+    - file: 02_thermodynamics/00_index.md
+      children:
+        - file: 02_thermodynamics/01_ideal_gas_law.md
+        - file: 02_thermodynamics/02_laws_of_thermodynamics.md
+        - file: 02_thermodynamics/03_thermodynamic_potentials.md
+        - file: 02_thermodynamics/04_chemical_potential.md
+        - file: 02_thermodynamics/05_nonidealities.md
 site:
   title: A Thermodynamic Introduction to Chemical Reactions
