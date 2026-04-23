@@ -1,0 +1,17 @@
+version: 1
+project:
+  authors:
+    - name: Johannes Schmölder
+      email: j.schmoelder@fz-juelich.de
+      affiliation: "Forschungszentrum Jülich, IBG-1: Biotechnology, Germany"
+  license: CC-BY-4.0
+  title: A Thermodynamic Introduction to Chemical Reactions in CADET
+  open_access: true
+  numbering:
+    equations: true
+    figure:
+      continue: true
+  toc:
+    - file: index.md
+site:
+  title: A Thermodynamic Introduction to Chemical Reactions

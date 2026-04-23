@@ -1,0 +1,70 @@
+---
+kernelspec:
+  name: python3
+  display_name: Python 3 (ipykernel)
+---
+
+# Thermodynamic Reactions in CADET
+
+CADET simulates chromatographic separations by solving coupled mass balances in packed-bed columns.
+Reactions between components (protonation, complex formation, aggregation) are currently described using mass-action kinetics:
+
+$$
+r = k_f \prod_i c_i^{\nu_{f,i}} - k_r \prod_i c_i^{\nu_{b,i}},
+$$
+
+where $c_i$ are species concentrations and $\nu_{f,i}$, $\nu_{b,i}$ are the kinetic orders in the forward and reverse directions.
+In the standard mass action law these equal the stoichiometric coefficients; CADET also allows them to be set independently, which matters when the apparent kinetic order differs from stoichiometry.
+The ratio $k_f/k_r$ is an empirical parameter, and non-ideal effects are absorbed into the rate constants.
+This works well for dilute, isothermal systems. Real chromatographic conditions routinely violate both assumptions.
+
+**Ionic strength.**
+Buffer concentrations of 50 to 1000 mM cause strong electrostatic screening between solutes, stationary phase, and solvent.
+The effective driving force of a reaction is not the same as the measured bulk concentration.
+
+**pH.**
+As buffer fronts propagate through the column, local acid-base equilibria shift and change the protonation state of solutes.
+Reaction rates couple to transport and local composition.
+The effect can be represented with kinetic formulations based on conserved moieties, but these get stiff for high pKa values and obscure the underlying equilibrium structure.
+
+**Temperature.**
+Temperature influences both thermodynamic equilibrium (adsorption capacity, reaction extent) and kinetics (rate constants, activation energy barriers).
+Equilibrium constants shift with $T$ through the van't Hoff relation; rate constants follow Arrhenius exponentially.
+Constant parameters capture neither.
+
+The current CADET implementation cannot express any of this.
+This book builds the thermodynamic foundation needed to fix it.
+Not as a patch, but as a principled extension that makes the reaction framework self-consistent.
+
+In thermodynamics, equilibrium is defined through chemical potentials, not rate constants.
+At equilibrium, reactions satisfy
+
+$$
+\sum_i \nu_i \mu_i = 0,
+$$
+
+which links stoichiometry to the underlying driving forces.
+For ideal and non-ideal solutions, this defines an equilibrium constant that depends on temperature and composition through activities rather than concentrations.
+The ratio of forward and reverse rate coefficients is not arbitrary but must satisfy
+
+$$
+\frac{k_f(T)}{k_r(T)} = K(T),
+$$
+
+where $K(T)$ is determined by thermodynamics.
+This does not remove kinetic parameter estimation: it restricts kinetic models to a thermodynamically consistent class, while preserving flexibility in rate law form and prefactor estimation.
+The target rate law is
+
+$$
+r = k_f(T) \prod_i a_i^{\nu_i^f} - k_r(T) \prod_i a_i^{\nu_i^b}, \qquad \frac{k_f(T)}{k_r(T)} = K(T),
+$$
+
+where $a_i = \gamma_i c_i / c^\circ$ are activities, $\nu_i^f$ and $\nu_i^b$ are stoichiometric coefficients, $K(T)$ is the thermodynamic equilibrium constant, and the ratio $k_f / k_r$ is never a free parameter.
+pH enters not through this equation directly, but through speciation: acid-base reactions are modelled as fast-equilibrium constraints, and the activities that feed into the rate law already reflect the local protonation state.
+
+The book is structured in four parts.
+Part 1 arrives at thermodynamics from statistical mechanics, deriving entropy, temperature, and the Boltzmann factor from first principles, so the design decisions in the later parts are motivated rather than assumed.
+Part 2 builds the thermodynamic framework: Gibbs energy, chemical potential, and activity for non-ideal solutions.
+Part 3 develops the theory of chemical reactions, from equilibrium constants and acid-base speciation through kinetics and the mass action law.
+Part 4 implements the complete framework as a Python library and connects it to the CADET solver interface.
+
