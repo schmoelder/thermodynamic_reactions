@@ -40,5 +40,9 @@ project:
         - file: 03_reactions/09_mass_action_law.md
         - file: 03_reactions/10_kinetics_temperature.md
         - file: 03_reactions/11_enzyme_kinetics.md
+    - title: Appendix
+      children:
+        - file: notation.md
+        - file: glossary.md
 site:
   title: A Thermodynamic Introduction to Chemical Reactions
