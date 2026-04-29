@@ -40,6 +40,16 @@ project:
         - file: 03_reactions/09_mass_action_law.md
         - file: 03_reactions/10_kinetics_temperature.md
         - file: 03_reactions/11_enzyme_kinetics.md
+    - file: 04_implementation/00_index.md
+      children:
+        - file: 04_implementation/01_source_term.md
+        - file: 04_implementation/02_rate_laws.md
+        - file: 04_implementation/03_equilibrium_reactions.md
+        - file: 04_implementation/04_activity_corrections.md
+        - file: 04_implementation/05_kinetics.md
+        - file: 04_implementation/06_acid_base.md
+        - file: 04_implementation/07_buffer_capacity.md
+        - file: 04_implementation/08_interface.md
     - title: Appendix
       children:
         - file: notation.md
