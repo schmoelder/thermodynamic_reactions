@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thermodynamic-reactions"
+version = "0.1.0"
+description = "Thermodynamic and kinetic reaction models for CADET"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+]
+
+[tool.setuptools]
+packages = ["reactions"]
+
+[dependency-groups]
+test = ["pytest"]
+docs = ["jupyter-book>=2.0"]
