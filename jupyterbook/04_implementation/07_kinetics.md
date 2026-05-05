@@ -8,10 +8,9 @@ kernelspec:
 (implementation-kinetics)=
 # Kinetics, Arrhenius, and Thermodynamic Consistency
 
-The previous chapter introduced $K(T)$ as the primary thermodynamic input and derived $k_r = k_f / K(T)$ from it.
-That derivation was carried out at a fixed temperature.
-When temperature varies, $k_f$ must change with $T$ as well, and $k_r(T) = k_f(T) / K(T)$ then tracks the shift in equilibrium automatically.
-This chapter introduces the Arrhenius model for $k_f(T)$ and shows that the ratio $k_f(T) / k_r(T) = K(T)$ holds at every temperature by construction.
+`ThermodynamicReaction` enforces $k_r = k_f / K(T)$ (@implementation-equilibrium), but so far $k_f$ has been a fixed scalar.
+When temperature varies, $k_f$ must change with $T$ as well; $k_r(T) = k_f(T) / K(T)$ then tracks the shift in equilibrium automatically.
+This chapter introduces the Arrhenius model for $k_f(T)$ and shows that $k_f(T) / k_r(T) = K(T)$ holds at every temperature by construction.
 
 ## Arrhenius kinetics and thermodynamic consistency
 
@@ -49,7 +48,6 @@ T_range = np.linspace(270, 370, 300)
 kf_vals = np.array([kf_arr.kf(T) for T in T_range])
 K_true  = np.array([K_vH.K(T) for T in T_range])
 
-# Failure mode: kf / fixed_kr (calibrated at 298 K)
 kr_fixed = kf_arr.kf(298.15) / K_vH.K(298.15)
 ratio_fixed = kf_vals / kr_fixed
 
@@ -177,7 +175,7 @@ fig.tight_layout()
 ```{figure} #cell-two-temps
 :name: fig-two-temps
 
-Kinetic trajectories for A⇌B at $T = 298\ \text{K}$ (left) and $T = 320\ \text{K}$ (right),
+Kinetic trajectories for $\ce{A <=> B}$ at $T = 298\ \text{K}$ (left) and $T = 320\ \text{K}$ (right),
 with $E_a = 40\ \text{kJ/mol}$, $\Delta H^\circ = -20\ \text{kJ/mol}$.
 Dashed lines are the analytical equilibria $c_\text{B}^\text{eq} = c_\text{tot}\,K(T)/(1+K(T))$.
 The exothermic reaction has a smaller $K$ at higher temperature (Le Chatelier's principle),
@@ -269,10 +267,5 @@ The dotted line is the linear approximation valid at low substrate.
 
 ---
 
-The kinetic framework is now complete: rate constants can be temperature-independent
-(`RateConstantFixed`), Arrhenius (`RateConstantArrhenius`), or replaced entirely by
-saturation kinetics (`MichaelisMenten`, `HillRate`).
-With the kinetic framework complete, the next chapter applies the full model to
-acid-base equilibria, where proton-transfer reactions are fast enough to treat as
-instantaneous and activity corrections shift the apparent pKa measurably
-(@implementation-acid-base).
+The kinetic framework is now complete: rate constants can be temperature-independent (`RateConstantFixed`), Arrhenius (`RateConstantArrhenius`), or replaced by saturation kinetics (`MichaelisMenten`, `HillRate`).
+The next chapter defines the integration contract between this library and CADET-Core: the residual and Jacobian that the solver calls at every step (@implementation-interface).
