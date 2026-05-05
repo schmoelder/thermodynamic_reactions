@@ -91,7 +91,7 @@ At $K = 1$ both species are equally present; at the example value $K = 4$ (dotte
 80 % of material ends up as B.
 ```
 
-## Fixed kf/kr fails at different temperatures
+## Temperature dependence
 
 Setting $k_r = k_f / K(T_\text{ref})$ calibrates `MassActionReaction` to the correct equilibrium at one temperature.
 Away from $T_\text{ref}$, $K(T)$ follows the van't Hoff equation (@equilibrium-temperature) while $k_f/k_r$ stays fixed; the long-time limit diverges from the true equilibrium, with the error growing with distance from the calibration temperature (@fig-eq-drift).
