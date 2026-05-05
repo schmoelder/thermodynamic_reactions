@@ -15,10 +15,8 @@ kernelspec:
 (implementation-acid-base)=
 # pH and Acid-Base Speciation
 
-Proton-transfer reactions are always fast relative to chromatographic transport
-(@acid-base), so they are handled as equilibrium constraints throughout this library.
-This chapter implements the buffer machinery from Part 3: the `pKa()` factory,
-polyprotic speciation, and activity corrections via the Davies equation.
+Proton-transfer reactions are always fast relative to chromatographic transport (@acid-base) and are treated throughout as algebraic constraints.
+The `pKa` factory, water autoionisation, and Davies activity corrections each introduced in earlier chapters now combine: solving a realistic buffer system requires all three simultaneously.
 
 ```{code-cell} ipython3
 import numpy as np
@@ -34,16 +32,15 @@ from reactions.api import (
 )
 from reactions.solver import solve_equilibrium
 
-# Reusable components shared across examples
 proton    = Component("proton",    [Species("H+",   charge=+1)])
 hydroxide = Component("hydroxide", [Species("OH-",  charge=-1)])
 water     = Component("water",     [Species("H2O",  charge=0, is_solvent=True)])
 ```
 
+
 ## The pKa factory
 
-`pKa()` converts a p$K_a$ value measured at 25 °C into an equilibrium constant,
-so the caller never has to compute $K_a = 10^{-\text{p}K_a}$ by hand.
+`pKa()` converts a p$K_a$ value measured at 25 °C into an equilibrium constant.
 Without `dH` the constant is temperature-independent:
 
 ```{code-cell} ipython3
@@ -62,19 +59,60 @@ exactly.
 The temperature-dependent form and its effect on $K(T)$ are demonstrated in
 @implementation-equilibrium.
 
+
+## Monoprotic buffer: acetic acid
+
+A monoprotic weak acid establishes the pattern used throughout.
+Acetic acid dissociates as $\ce{HAc <=> Ac- + H+}$; water autoionisation is included as a second constraint so that pH is exact near neutrality:
+
+```{code-cell} ipython3
+acetic = Component("acetic", [Species("HAc", charge=0), Species("Ac-", charge=-1)])
+
+model_acetic = ReactionModel(
+    components=[acetic, proton, hydroxide, water],
+    reactions=[
+        ThermodynamicReaction(
+            "HAc <-> Ac- + H+",
+            mode="equil",
+            equilibrium_constant=k_acetic,
+        ),
+        ThermodynamicReaction(
+            "H2O <-> H+ + OH-",
+            mode="equil",
+            equilibrium_constant=EquilibriumConstant(1e-14),
+        ),
+    ],
+    T=298.15,
+)
+
+c_tot = 100.0   # mol/m³ = 100 mM total acetate
+c0    = {"HAc": c_tot, "Ac-": 1e-6, "H+": 1e-4, "OH-": 1e-10 * C_REF}
+c_eq  = solve_equilibrium(model_acetic, c0, T=298.15)
+
+pH    = -np.log10(c_eq["H+"] / C_REF)
+pKa_v = -np.log10(k_acetic.K(298.15))
+pH_HH = pKa_v + np.log10(c_eq["Ac-"] / c_eq["HAc"])
+
+print(f"pH (numerical)          = {pH:.4f}")
+print(f"pH (Henderson-Hasselbalch) = {pH_HH:.4f}")
+```
+
+The numerical result matches Henderson-Hasselbalch (@acid-base) because the ideal-dilute approximation holds at 100 mM.
+Activity corrections break this agreement at finite ionic strength, as shown below.
+
+
 ## Polyprotic buffers: phosphate
 
 Phosphoric acid dissociates in three steps spanning the full biochemical pH range:
 
 | Step | Reaction | p$K_a$ (25 °C) |
 |------|----------|----------------|
-| 1 | H₃PO₄ ⇌ H₂PO₄⁻ + H⁺ | 2.148 |
-| 2 | H₂PO₄⁻ ⇌ HPO₄²⁻ + H⁺ | 7.198 |
-| 3 | HPO₄²⁻ ⇌ PO₄³⁻ + H⁺ | 12.350 |
+| 1 | $\ce{H3PO4 <=> H2PO4- + H+}$ | 2.148 |
+| 2 | $\ce{H2PO4- <=> HPO4^2- + H+}$ | 7.198 |
+| 3 | $\ce{HPO4^2- <=> PO4^3- + H+}$ | 12.350 |
 
 Each step is one `ThermodynamicReaction`.
-All four phosphate forms belong to a single `Component` because total phosphate is
-conserved.
+All four phosphate forms belong to a single `Component` because total phosphate is conserved:
 
 ```{code-cell} ipython3
 pKa1, pKa2, pKa3 = 2.148, 7.198, 12.350
@@ -129,12 +167,11 @@ for pH in [4.0, 7.2, 10.0]:
     print(f"{pH:>6.1f}  {ana:>12.4f}  {c_eq['H3PO4']:>12.4f}  {abs(c_eq['H3PO4']-ana):>10.2e}")
 ```
 
+
 ## Ionic strength corrections
 
-In real buffers, activity coefficients shift the apparent p$K_a$ values at nonzero
-ionic strength (see @nonidealities, @acid-base).
-`ActivityCoefficientDavies` implements the Davies equation, valid up to
-$I \approx 0.5\ \text{mol/L}$, and is passed per reaction:
+Activity coefficients shift the apparent p$K_a$ values at nonzero ionic strength (@nonidealities, @acid-base).
+`ActivityCoefficientDavies` is passed per reaction and is evaluated at every Newton step by the self-consistent loop (@implementation-activity):
 
 ```{code-cell} ipython3
 model_phos_davies = ReactionModel(
@@ -158,8 +195,7 @@ model_phos_davies = ReactionModel(
 )
 ```
 
-At physiological ionic strength ($I = 150\ \text{mol/m}^3$), phosphate is particularly
-sensitive because its species carry charges 0, $-1$, $-2$, and $-3$:
+At physiological ionic strength ($I = 150\ \text{mol/m}^3$), phosphate is particularly sensitive because its species carry charges 0, $-1$, $-2$, and $-3$:
 
 ```{code-cell} ipython3
 pH  = 7.2
