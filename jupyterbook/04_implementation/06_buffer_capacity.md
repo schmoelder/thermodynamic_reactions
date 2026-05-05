@@ -104,12 +104,10 @@ beta_num = np.abs(dH / dpH) / 1000.0    # mol/L per pH unit
 
 pH_mid  = 0.5 * (pH_num[:-1] + pH_num[1:])
 
-# Analytical β for reference (@speciation-buffers)
 def beta_analytical(pH):
     h  = 10.0**(-pH)
     kw = 1e-14
     a0, a1, a2, a3 = phosphate_fractions(pH)
-    # contributions: H+, OH-, and each adjacent pair for polyprotic acid
     beta_water = np.log(10) * (h + kw/h)
     beta_buf   = np.log(10) * c_phos/1000 * (
         a0*a1 + a1*a2*4 + a2*a3*9
@@ -237,10 +235,7 @@ model_phos_davies = ReactionModel(
     T=298.15,
 )
 
-# The Davies equation with I_bg = 150 mM becomes ill-conditioned above pH ≈ 11.5:
-# PO4-3 carries z = -3, giving a very large γ correction that causes overflow in
-# the Newton iterations. That region is outside IEX practical range anyway.
-# Below pH 11 the analytical initial guess converges cleanly at every point.
+# z=-3 γ correction overflows Newton above pH ≈ 11.5; outside IEX practical range
 pH_dav = np.linspace(3.0, 11.0, 180)
 H_dav = np.array([
     solve_equilibrium(model_phos_davies, solve_at_pH(model_phos, pH, c_phos), T=298.15)["H+"]
@@ -249,7 +244,6 @@ H_dav = np.array([
 pH_dav  = -np.log10(H_dav / C_REF)
 beta_dav = np.abs(np.diff(H_dav) / np.diff(pH_dav)) / 1000.0
 
-# Compare peak positions
 idx_ideal  = np.argmax(beta_num)
 idx_davies = np.argmax(beta_dav)
 print(f"Peak β (ideal):  {beta_num[idx_ideal]:.4f} mol/L/pH  at pH {pH_mid[idx_ideal]:.2f}")
@@ -264,6 +258,4 @@ strength will deliver a different pH on-column once the salt gradient is applied
 
 ---
 
-The final chapter describes the integration contract between this library and
-CADET-Core: the residual/Jacobian interface and the Jacobian verification
-(@implementation-interface).
+The next chapter adds Arrhenius temperature dependence to the rate constants, completing the kinetic picture before the CADET-Core interface (@implementation-kinetics).
