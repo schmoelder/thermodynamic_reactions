@@ -251,4 +251,4 @@ At 150 mM the suppression reaches $\approx 0.25$--$0.35$ units; ignoring this in
 
 ---
 
-With activities and ionic strength in place, the next chapter applies Arrhenius kinetics to show how $k_f(T)$ and $k_r(T) = k_f(T)/K(T)$ enforce thermodynamic consistency across temperature (@implementation-kinetics).
+With activities and ionic strength in place, the next chapter applies the full equilibrium framework to acid-base chemistry: proton-transfer reactions as algebraic constraints, pH via $a_{\ce{H+}}$, and activity corrections shifting the apparent pKa (@implementation-acid-base).

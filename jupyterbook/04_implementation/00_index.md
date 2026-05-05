@@ -58,7 +58,7 @@ The choice of ionic strength model is decoupled from the choice of activity coef
 - @implementation-rate-laws: mass-action rate laws from irreversible to reversible multi-species reactions.
 - @implementation-equilibrium: thermodynamic consistency ($k_r = k_f/K(T)$), $K(T)$ via van't Hoff, and the equilibrium (DAE) mode.
 - @implementation-activity: activity corrections ($a_i = \gamma_i c_i/c^\circ$), ionic strength models, Debye-Hückel and Davies, and the apparent pKa shift.
-- @implementation-kinetics: Arrhenius $k_f(T)$, thermodynamic consistency across temperatures, and saturation kinetics (Michaelis-Menten, Hill).
 - @implementation-acid-base: pH, the `pKa` factory, water autoionisation, and Davies corrections.
 - @implementation-buffer: buffer capacity, mixed buffers, and ionic strength effects on $\beta$.
+- @implementation-kinetics: Arrhenius $k_f(T)$, thermodynamic consistency across temperatures, and saturation kinetics (Michaelis-Menten, Hill).
 - @implementation-interface: the residual/Jacobian contract and planned CADET-Core integration.

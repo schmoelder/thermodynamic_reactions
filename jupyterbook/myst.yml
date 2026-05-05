@@ -46,9 +46,9 @@ project:
         - file: 04_implementation/02_rate_laws.md
         - file: 04_implementation/03_equilibrium_reactions.md
         - file: 04_implementation/04_activity_corrections.md
-        - file: 04_implementation/05_kinetics.md
-        - file: 04_implementation/06_acid_base.md
-        - file: 04_implementation/07_buffer_capacity.md
+        - file: 04_implementation/05_acid_base.md
+        - file: 04_implementation/06_buffer_capacity.md
+        - file: 04_implementation/07_kinetics.md
         - file: 04_implementation/08_interface.md
     - title: Appendix
       children:
