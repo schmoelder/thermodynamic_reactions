@@ -32,8 +32,8 @@ project:
         - file: 03_reactions/01_reaction_coordinates.md
         - file: 03_reactions/02_reaction_gibbs_energy.md
         - file: 03_reactions/03_equilibrium_constant.md
-        - file: 03_reactions/04_equilibrium_temperature.md
-        - file: 03_reactions/05_adsorption.md
+        - file: 03_reactions/04_adsorption.md
+        - file: 03_reactions/05_equilibrium_temperature.md
         - file: 03_reactions/06_acids_bases.md
         - file: 03_reactions/07_speciation_buffers.md
         - file: 03_reactions/08_reaction_mechanisms.md

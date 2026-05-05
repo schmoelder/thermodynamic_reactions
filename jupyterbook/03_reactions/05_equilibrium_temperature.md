@@ -9,7 +9,8 @@ kernelspec:
 
 The equilibrium constant $K$ is tabulated at 298 K, but equilibrium systems rarely operate at exactly 25 °C.
 Chromatographic adsorption columns are commonly run at 4--37 °C, and pKa values of buffers shift measurably between lab and physiological temperature.
-This chapter derives how $K(T)$ varies via the **Kirchhoff relations** and the **van't Hoff equation**, results used immediately in both adsorption (@adsorption) and acid-base equilibria (@acid-base).
+This chapter derives how $K(T)$ varies via the **Kirchhoff relations** and the **van't Hoff equation**.
+The result is general: it applies uniformly to any equilibrium constant derived from $\Delta_r G^\circ = -RT \ln K$, including the adsorption constant $K_\text{ads}$ from @adsorption and the acid dissociation constant $K_a$ introduced in @acid-base.
 
 ## Standard thermodynamic data
 
@@ -40,6 +41,7 @@ $$\Delta_r H^\circ(T_2) = \Delta_r H^\circ(T_1) + \int_{T_1}^{T_2} \Delta_r C_p\
 where $\Delta_r C_p = \sum_i \nu_i C_{p,i}$.
 Similarly, $\Delta_r S^\circ(T_2) = \Delta_r S^\circ(T_1) + \int_{T_1}^{T_2} (\Delta_r C_p / T)\, dT$.
 When $\Delta_r C_p$ is small or the temperature range is narrow, $\Delta_r H^\circ$ and $\Delta_r S^\circ$ are approximately constant and both integrals can be dropped.
+The Kirchhoff relations correct the thermodynamic data; the van't Hoff equation (below) then uses that corrected $\Delta_r H^\circ$ to predict how $K$ shifts with temperature.
 
 ## Van't Hoff equation
 
@@ -61,7 +63,7 @@ A van't Hoff plot of $\ln K$ versus $1/T$ has slope $-\Delta_r H^\circ / R$, whi
 The van't Hoff equation links temperature to the position of equilibrium: heating favours the endothermic direction, cooling the exothermic one.
 The Haber process ($\ce{N2 + 3 H2 <=> 2 NH3}$, $\Delta_r H^\circ = -92\,\text{kJ/mol}$) illustrates the scale: between 25 °C and 500 °C, $K$ drops by several orders of magnitude, drastically reducing equilibrium yield.
 Industrial plants operate at 400--500 °C as a compromise between reaction rate and equilibrium yield.
-The same temperature dependence governs pKa shifts and adsorption constants, both taken up in @acid-base and @adsorption.
+The same equation governs $K_\text{ads}$ for adsorption (@adsorption) and $K_a$ for acid-base equilibria (@acid-base), with each reaction's $\Delta_r H^\circ$ setting the slope.
 ```
 
 ```{code-cell} ipython3
@@ -110,4 +112,4 @@ The slope equals $-\Delta_r H^\circ / R$: exothermic reactions have $K$ decreasi
 
 ---
 
-The next chapter applies the equilibrium framework to adsorption: the distribution of solute between mobile and stationary phases, with saturation effects captured by the Langmuir isotherm.
+The next chapter applies the same equilibrium framework to acid-base reactions, where $K_a$ is the equilibrium constant for proton transfer and the van't Hoff equation governs its shift with temperature (@acid-base).

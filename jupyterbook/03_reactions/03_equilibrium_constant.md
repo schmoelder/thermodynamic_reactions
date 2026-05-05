@@ -47,10 +47,8 @@ $$
 = \sum_i \nu_i \Delta_f H^\circ_i - T \sum_i \nu_i S^\circ_i
 $$
 
-The standard enthalpy of formation $\Delta_f H^\circ_i$ and the standard molar entropy $S^\circ_i$ are tabulated at $T = 298.15\,\mathrm{K}$ and $P^\circ = 1\,\mathrm{bar}$.
+The standard enthalpy of formation $\Delta_f H^\circ_i$ and the standard molar entropy $S^\circ_i$ are tabulated at $T = 298.15\,\mathrm{K}$, $P^\circ = 1\,\mathrm{bar}$, and $c^\circ = 1\,\mathrm{mol/L}$.
 The entropy values are absolute because the third law provides a reference: $S \to 0$ as $T \to 0$.
-
-This gives $K$ at 298.15 K.
 The temperature dependence of $K$ is developed in @equilibrium-temperature.
 
 ---

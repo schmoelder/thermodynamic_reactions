@@ -13,8 +13,6 @@ Since all $n_i$ are determined by $\xi$, the Gibbs energy becomes a function $G(
 
 ## Reaction Gibbs energy
 
-todo: more standard is Gibbs energy of reaction, right?
-
 The Gibbs energy at composition $\xi$ is:
 $$
 G(\xi) = \sum_i \mu_i(\xi)\, n_i(\xi).
@@ -136,13 +134,19 @@ When $Q < K$ the system is below equilibrium and $\Delta_r G < 0$; when $Q > K$ 
 ## Le Chatelier's principle
 
 The $Q$/$K$ framework gives a quantitative account of Le Chatelier's principle (@thermodynamic-potentials).
-Any perturbation that moves $Q$ away from $K$ creates a nonzero $\Delta_r G$, which drives the composition back:
+Any perturbation to an intensive variable drives the system toward a new equilibrium that partially opposes the change.
+The three conjugate pairs of the fundamental relation each produce one class of perturbation.
 
-- adding a reactant reduces $Q$ below $K$, making $\Delta_r G < 0$ and pushing the reaction forward;
-- removing a product has the same effect;
-- adding a product raises $Q$ above $K$, making $\Delta_r G > 0$ and pushing the reaction in reverse.
+**Composition ($\mu_i$, $n_i$):** a perturbation in species amount shifts $Q$ but not $K$.
+Adding a reactant reduces $Q$ below $K$, making $\Delta_r G < 0$ and driving the reaction forward; adding a product raises $Q$ above $K$ and reverses it.
+Removing a species has the opposite effect.
 
-Temperature and pressure perturbations act through $K$ itself rather than through $Q$; these are developed in @equilibrium-temperature.
+**Temperature ($T$, $S$):** a temperature change shifts $K$ itself, not $Q$.
+For an exothermic reaction ($\Delta_r H^\circ < 0$), raising $T$ decreases $K$, shifting equilibrium toward reactants — the system absorbs heat to partially oppose the imposed temperature rise.
+The quantitative form is the van't Hoff equation (@equilibrium-temperature).
+
+**Pressure ($P$, $V$):** a pressure increase shifts equilibrium toward the side with fewer moles of gas, reducing total volume and opposing the compression.
+Reactions in solution are nearly pressure-independent because partial molar volumes $\bar{V}_i$ are small.
 
 ---
 
