@@ -79,34 +79,17 @@ Three objects cover all cases.
 
 **`Component`** is the primary abstraction for model construction.
 It represents a named chemical entity and groups the species that entity can exist as, such as different protonation or charge states.
-For reactions where each component exists as a single species, `Component("A")` suffices; it auto-creates `Species("A", charge=0)`.
-
-```{code-cell} ipython3
-from reactions.api import Component
-
-a       = Component("A")          # shorthand: one species, charge 0
-b       = Component("B")
-```
-
-```{admonition} Components are a library concept
-:class: note
-
-CADET-Core only operates on a flat list of species concentrations and has no notion of components.
-The `Component` abstraction exists to simplify model construction and enable automation, for example in pKa-based reaction generation.
-For simple reactions without speciation, a one-to-one mapping between species and components is sufficient.
-```
-
-**`Species`** is a single chemical form within a component, identified by name and charge.
-Keyword arguments are forwarded to `Species` when using the shorthand, so charge and solvent status can be set directly on `Component`:
+Keyword arguments are forwarded to the underlying `Species`, so charge and solvent status can be set directly:
 
 ```{code-cell} ipython3
 from reactions.api import Component, Species
 
+a      = Component("A")                   # shorthand: one species, charge 0
 proton = Component("H+",  charge=+1)
 water  = Component("H2O", is_solvent=True)
 ```
 
-An explicit species list is needed when a component spans multiple protonation or charge states, such as phosphate:
+An explicit species list is needed when a component spans multiple charge states:
 
 ```{code-cell} ipython3
 phosphate = Component("phosphate", [
@@ -115,6 +98,13 @@ phosphate = Component("phosphate", [
     Species("HPO4-2", charge=-2),
     Species("PO4-3",  charge=-3),
 ])
+```
+
+```{admonition} Components are a library concept
+:class: note
+
+CADET-Core operates on a flat list of species concentrations and has no notion of components.
+The `Component` abstraction exists to simplify model construction and enable automation, for example in pKa-based reaction generation.
 ```
 
 **`ReactionModel`** assembles components and reactions into the system passed to CADET-Core.
