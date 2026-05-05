@@ -91,11 +91,10 @@ At $K = 1$ both species are equally present; at the example value $K = 4$ (dotte
 80 % of material ends up as B.
 ```
 
-## Temperature dependence
+## Temperature dependence of $K$
 
-Setting $k_r = k_f / K(T_\text{ref})$ calibrates `MassActionReaction` to the correct equilibrium at one temperature.
-Away from $T_\text{ref}$, $K(T)$ follows the van't Hoff equation (@equilibrium-temperature) while $k_f/k_r$ stays fixed; the long-time limit diverges from the true equilibrium, with the error growing with distance from the calibration temperature (@fig-eq-drift).
-`ThermodynamicReaction` with `EquilibriumConstantVantHoff` recomputes $k_r = k_f / K(T)$ at every temperature, so the ratio tracks $K(T)$ exactly.
+`ThermodynamicReaction` with `EquilibriumConstantVantHoff` keeps $k_r(T) = k_f(T)/K(T)$ exact at every temperature.
+`MassActionReaction` with a fixed ratio is correct only at the calibration temperature; elsewhere the ratio drifts from $K(T)$, with the error growing with distance from that point (@fig-eq-drift).
 
 ```{code-cell} ipython3
 :tags: [remove-cell]
@@ -130,8 +129,6 @@ Equilibrium constant $K(T)$ (van't Hoff, $\Delta H^\circ = -20\ \text{kJ/mol}$) 
 The shaded region is the error incurred by `MassActionReaction` at temperatures other than the calibration point.
 `ThermodynamicReaction` with `EquilibriumConstantVantHoff` tracks $K(T)$ exactly by recomputing $k_r = k_f / K(T)$ at every evaluation.
 ```
-
-## Temperature dependence via van't Hoff
 
 The van't Hoff equation (@equilibrium-temperature) relates $K$ to the standard enthalpy and entropy of reaction,
 
