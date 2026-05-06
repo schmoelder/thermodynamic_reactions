@@ -8,8 +8,7 @@ kernelspec:
 (implementation-equilibrium)=
 # Thermodynamic Consistency and K(T)
 
-The previous chapter showed that treating $k_f$ and $k_r$ as independent, temperature-independent parameters breaks the link between kinetics and thermodynamics: their ratio no longer tracks the equilibrium constant $K(T)$ as temperature changes.
-`ThermodynamicReaction` restores this consistency by taking $K(T)$ as the primary input and deriving $k_r(T) = k_f(T)/K(T)$ at every temperature, rather than treating $k_r$ as a free parameter.
+`ThermodynamicReaction` takes $K(T)$ as the primary input and derives $k_r(T) = k_f(T)/K(T)$ at every temperature, rather than treating $k_r$ as a free parameter.
 In the fast-reaction limit, the kinetic formulation transitions naturally to equilibrium mode, where the ODE for the dependent species is replaced by the algebraic constraint $\ln Q_j - \ln K_j(T) = 0$, enforced at each grid point.
 
 ## A⇌B: equilibrium with a fixed K
@@ -94,7 +93,7 @@ At $K = 1$ both species are equally present; at the example value $K = 4$ (dotte
 ## Temperature dependence of $K$
 
 `ThermodynamicReaction` with `EquilibriumConstantVantHoff` keeps $k_r(T) = k_f(T)/K(T)$ exact at every temperature.
-`MassActionReaction` with a fixed ratio is correct only at the calibration temperature; elsewhere the ratio drifts from $K(T)$, with the error growing with distance from that point (@fig-eq-drift).
+A fixed ratio coincides with $K(T)$ only at the calibration point; the divergence grows with temperature distance from it (@fig-eq-drift).
 
 ```{code-cell} ipython3
 :tags: [remove-cell]
@@ -125,9 +124,9 @@ fig.tight_layout()
 ```{figure} #cell-eq-drift
 :name: fig-eq-drift
 
-Equilibrium constant $K(T)$ (van't Hoff, $\Delta H^\circ = -20\ \text{kJ/mol}$) vs the fixed ratio $k_f/k_r$ calibrated at 25 °C.
-The shaded region is the error incurred by `MassActionReaction` at temperatures other than the calibration point.
-`ThermodynamicReaction` with `EquilibriumConstantVantHoff` tracks $K(T)$ exactly by recomputing $k_r = k_f / K(T)$ at every evaluation.
+Equilibrium constant $K(T)$ (van't Hoff, $\Delta H^\circ = -20\ \text{kJ/mol}$) alongside the fixed ratio $k_f/k_r$ calibrated at 25 °C.
+The two curves coincide only at the calibration temperature; the shaded region shows how the divergence grows away from it.
+`ThermodynamicReaction` with `EquilibriumConstantVantHoff` keeps the ratio on the $K(T)$ curve at every temperature.
 ```
 
 The van't Hoff equation (@equilibrium-temperature) relates $K$ to the standard enthalpy and entropy of reaction,
