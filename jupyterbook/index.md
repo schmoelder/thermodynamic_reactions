@@ -68,3 +68,24 @@ Part 2 builds the thermodynamic framework: Gibbs energy, chemical potential, and
 Part 3 develops the theory of chemical reactions, from equilibrium constants and acid-base speciation through kinetics and the mass action law.
 Part 4 implements the complete framework as a Python library and connects it to the CADET solver interface.
 
+This is not a gentle introduction to chemistry.
+It is a principle-first reconstruction of reaction thermodynamics for computational modeling, aimed at graduate students and researchers who already have some exposure to calculus, equilibrium chemistry, and the concept of Gibbs energy.
+The goal is a structurally correct and self-consistent foundation, not a minimal explanation.
+Readers who want a first exposure to thermodynamics should start at Part 1; those who already know the Gibbs energy can enter at Part 2 or later (see reading paths below).
+
+```{admonition} Reading paths
+:class: tip
+
+The book supports multiple entry points depending on background.
+
+| Background                             | Recommended entry point                             |
+| -------------------------------------- | --------------------------------------------------- |
+| New to thermodynamics                  | Part 1                                              |
+| Know ideal gas law                     | {ref}`laws-of-thermodynamics`                       |
+| Know Gibbs energy                      | {ref}`nonidealities`                                |
+| Know MAL, want thermodynamic grounding | {ref}`equilibrium` → {ref}`multicomponent` → Part 4 |
+| CADET developer, know MAL              | {ref}`multicomponent` → Part 4                      |
+
+Note for the Part 4 entry reader: {ref}`nonidealities` (activity, Debye-Hückel, Davies) is a prerequisite for the activity and acid-base chapters in Part 4.
+```
+
