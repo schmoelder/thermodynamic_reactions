@@ -14,16 +14,14 @@ CADET solves a transport equation with a reaction source term $\mathbf{r}(\mathb
 The part develops one reaction model, extended one feature at a time:
 
 $$
-\varphi = k_f \prod_i c_i^{e_i} - k_r \prod_j c_j^{e_j}
-\quad\xrightarrow{k_r = k_f/K(T)}\quad
-\varphi(a_i, T)
-\quad\xrightarrow{\text{fast reaction}}\quad
-\ln Q = \ln K(T).
+\varphi(a_i, T) = k_f(T)\prod_i a_i^{e_i} - k_r(T)\prod_j a_j^{e_j},
+\quad k_r(T) = \frac{k_f(T)}{K(T)},
+\quad a_i = \frac{\gamma_i c_i}{c^\circ}.
 $$
 
-Each step addresses one specific limitation of the previous.
-`MassActionReaction` and `ThermodynamicReaction` are not two different tools; they are the same model with different features enabled.
-Under ideal conditions ($\gamma = 1$, $c^\circ = 1\ \text{M}$) and at fixed temperature they are numerically equivalent; the only difference is whether $k_r = k_f/K(T)$ is enforced.
+Each chapter adds one feature.
+`MassActionReaction` is the existing CADET interface and a special case of `ThermodynamicReaction` with $\gamma_i = 1$, $c^\circ = 1\ \text{M}$, and $k_r$ as a free parameter.
+Equilibrium (via $K(T)$) determines the admissible state; kinetics only sets how fast it is reached.
 
 ```{admonition} Install
 :class: note
@@ -35,30 +33,39 @@ Install the library once from the project root:
 
 ```{admonition} Key design decisions
 :class: tip
+**One object, three knobs.**
+`ThermodynamicReaction` is the central object.
+Every chapter in this part configures one of three independent arguments:
+
+| Argument               | Controls                                                   | Default                      |
+| ---------------------- | ---------------------------------------------------------- | ---------------------------- |
+| `equilibrium_constant` | $K(T)$; sets the equilibrium composition                   | required                     |
+| `rate_constant`        | $k_f(T)$; sets the relaxation timescale (`mode="kinetic"`) | omit for `mode="equil"`      |
+| `activity_coefficient` | $\gamma_i$; corrects for non-ideality                      | `ActivityCoefficientIdeal()` |
+
+`MassActionReaction` is a special case: $\gamma_i = 1$, $c^\circ = 1\ \text{M}$, and $k_r$ treated as a free parameter rather than derived from $K(T)$.
 
 **Kinetic source term.**
 The reaction contribution to $\partial c_i / \partial t$ is $r_i = \sum_j \nu_{ij}\, \varphi_j(\mathbf{a}, T)$, where $\varphi_j$ is evaluated in terms of activities $a_i = \gamma_i c_i / c^\circ$.
 
-**Thermodynamic consistency.**
-Forward and reverse rate constants are never independent: $k_r(T) = k_f(T) / K(T)$.
-`ThermodynamicReaction` enforces this by deriving $k_r(T)$ from $K(T)$ at every evaluation.
-
 **Equilibrium (DAE) mode.**
 When a reaction is fast relative to the transport timescale, its ODE is replaced by the algebraic constraint $\ln Q(\mathbf{a}, T) = \ln K(T)$, turning the transport PDE into a PDAE.
-This is a timescale-separation argument, not a large-$K$ limit.
+This is a timescale-separation limit (fast reactions), not a limit in the value of $K$.
 
 **Activity corrections.**
 Ionic strength $I = \tfrac{1}{2}\sum_i c_i z_i^2$ is computed once per time step and passed to every activity coefficient module via `PhysicalState`.
-The choice of ionic strength model is decoupled from the choice of activity coefficient model; any combination is valid.
+The ionic strength model and activity coefficient model are decoupled at the API level and can be combined consistently within their validity ranges.
+
+All reactions are evaluated as $\varphi(\mathbf{a}, T)$; the rest of the API only determines how $\mathbf{a}$, $k_f$, and $K$ are computed.
 ```
 
 **Chapters in this part:**
 
-- @implementation-source-term: PDE context and building blocks (`Species`, `Component`, `ReactionModel`).
-- @implementation-rate-laws: mass-action rate laws from irreversible to reversible multi-species reactions.
-- @implementation-equilibrium: thermodynamic consistency ($k_r = k_f/K(T)$), $K(T)$ via van't Hoff, and the equilibrium (DAE) mode.
+- @implementation-source-term: PDE context, building blocks (`Species`, `Component`, `ReactionModel`), and `MassActionReaction` as the existing interface.
+- @implementation-equilibrium: `ThermodynamicReaction` in equilibrium mode; $K(T)$ via van't Hoff, Kirchhoff correction, and custom forms.
+- @implementation-kinetics: kinetic mode, `RateConstantFixed` and `RateConstantArrhenius`; thermodynamic consistency across temperatures.
 - @implementation-activity: activity corrections ($a_i = \gamma_i c_i/c^\circ$), ionic strength models, Debye-Hückel and Davies, and the apparent pKa shift.
 - @implementation-acid-base: pH, the `pKa` factory, water autoionisation, and Davies corrections.
 - @implementation-buffer: buffer capacity, mixed buffers, and ionic strength effects on $\beta$.
-- @implementation-kinetics: Arrhenius $k_f(T)$, thermodynamic consistency across temperatures, and saturation kinetics (Michaelis-Menten, Hill).
-- @implementation-interface: the residual/Jacobian contract and planned CADET-Core integration.
+- @implementation-enzyme: saturation kinetics (`MichaelisMenten`, `HillRate`) as the C2 finite-site constraint expressed as a kinetic rate law.
+- @implementation-interface: the residual/Jacobian contract and CADET-Core integration.

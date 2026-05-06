@@ -433,6 +433,12 @@ class EquilibriumConstantCustom(EquilibriumConstantBase):
     ----------
     func : callable
         Any callable ``(T: float) -> float`` returning the dimensionless K at T [K].
+
+    Notes
+    -----
+    The callable is evaluated at a fixed scalar T; no analytic dK/dT is available.
+    If T becomes a state variable (e.g., in an energy balance), the Jacobian will be
+    incomplete unless dK/dT is supplied separately.
     """
 
     func: Callable[[float], float]

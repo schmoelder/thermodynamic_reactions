@@ -192,6 +192,7 @@ chloride  = Component("chloride",  [Species("Cl-", charge=-1)])
 sodium    = Component("sodium",    [Species("Na+", charge=+1)])
 ```
 
+Species names are labels only; the `charge` argument is authoritative for all electrostatic calculations.
 Both scale as $z_i^2$: a divalent ion at the same ionic strength receives a correction four times larger than a monovalent one.
 
 
@@ -297,7 +298,7 @@ print(f"pH from a(H+)      = {-np.log10(gamma_H * c_H / C_REF):.4f}")
 ## Apparent pKa
 
 The same activity correction shifts the observable pKa.
-For $\ce{HA <=> A- + H+}$, substituting activities into $Q = K$ and taking logarithms gives (@speciation-buffers):
+For $\ce{HA <=> A- + H+}$, substituting activities into $Q(\mathbf{a}) = K$ with $Q = \prod_i a_i^{\nu_i}$ and taking logarithms gives (@speciation-buffers):
 
 $$
 \text{pKa}^\text{app} = \text{pKa} + \sum_i \nu_i \log_{10} \gamma_i.

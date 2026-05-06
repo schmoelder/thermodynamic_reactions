@@ -22,6 +22,7 @@ kernelspec:
 | $C_p$                | Heat capacity at constant pressure                                   | J/(mol K)                    | @thermodynamic-potentials   |
 | $e_{ij}$             | Kinetic exponent of species $i$ in reaction $j$ (CADET)              |                              | @implementation-source-term |
 | $E_a$                | Activation energy                                                    | J/mol                        | @maxwell-boltzmann          |
+| $E_\text{tot}$       | Total enzyme concentration                                           | mol/L                        | @implementation-enzyme      |
 | $f$                  | Fugacity                                                             | Pa                           | @nonidealities              |
 | $f_i$                | Speciation fraction of species $i$ at given pH                       |                              | @speciation-buffers         |
 | $f_{\text{react},i}$ | Net production rate of species $i$ $= \sum_j \nu_{ij}\,\varphi_j$    | mol/(L$\cdot$s)              | @implementation-source-term |
@@ -34,6 +35,7 @@ kernelspec:
 | $I$                  | Ionic strength                                                       | mol/L                        | @nonidealities              |
 | $k$                  | Rate constant                                                        | mol$^{1-n}$L$^{n-1}$s$^{-1}$ | @kinetics                   |
 | $k_B$                | Boltzmann constant $= 1.380\times10^{-23}$ J/K                       | J/K                          | @entropy                    |
+| $k_\text{cat}$       | Catalytic rate constant (enzyme turnover number)                     | s$^{-1}$                     | @implementation-enzyme      |
 | $k_f$, $k_r$         | Forward and reverse rate constants                                   | same as $k$                  | @mass-action-law            |
 | $K$                  | Equilibrium constant $= Q\big                                        | _\text{eq}$                  |                             | @equilibrium |
 | $K_a$                | Acid dissociation constant                                           |                              | @acid-base                  |

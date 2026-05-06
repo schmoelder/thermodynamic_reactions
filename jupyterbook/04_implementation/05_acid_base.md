@@ -1,11 +1,4 @@
 ---
-jupytext:
-  formats: md:myst
-  text_representation:
-    extension: .md
-    format_name: myst
-    format_version: 0.13
-    jupytext_version: 1.16.0
 kernelspec:
   display_name: Python 3 (ipykernel)
   language: python
@@ -112,7 +105,8 @@ Phosphoric acid dissociates in three steps spanning the full biochemical pH rang
 | 3 | $\ce{HPO4^2- <=> PO4^3- + H+}$ | 12.350 |
 
 Each step is one `ThermodynamicReaction`.
-All four phosphate forms belong to a single `Component` because total phosphate is conserved:
+All four phosphate forms belong to a single `Component` because total phosphate is conserved.
+Species names include conventional charge notation for readability; the `charge` argument is authoritative for all activity calculations:
 
 ```{code-cell} ipython3
 pKa1, pKa2, pKa3 = 2.148, 7.198, 12.350
@@ -124,7 +118,7 @@ phosphate = Component("phosphate", [
     Species("PO4-3",  charge=-3),
 ])
 
-model_phos = ReactionModel(
+model_phosphate_ideal = ReactionModel(
     components=[phosphate, proton, hydroxide, water],
     reactions=[
         ThermodynamicReaction("H3PO4 <-> H2PO4- + H+",  mode="equil",
@@ -138,8 +132,10 @@ model_phos = ReactionModel(
     ],
     T=298.15,
 )
-print(model_phos)
+print(model_phosphate_ideal)
 ```
+
+The analytic speciation fractions serve as both initial guesses for the Newton solver and a verification reference:
 
 ```{code-cell} ipython3
 def phosphate_fractions(pH, Ka1, Ka2, Ka3):
@@ -148,7 +144,7 @@ def phosphate_fractions(pH, Ka1, Ka2, Ka3):
     return h**3/D, Ka1*h**2/D, Ka1*Ka2*h/D, Ka1*Ka2*Ka3/D
 
 Ka1 = 10**(-pKa1); Ka2 = 10**(-pKa2); Ka3 = 10**(-pKa3)
-c_tot_phos = 100.0   # mol/m³
+c_tot_phosphate = 100.0   # mol/m³
 
 print(f"{'pH':>6}  {'H3PO4 ana':>12}  {'H3PO4 num':>12}  {'error':>10}")
 for pH in [4.0, 7.2, 10.0]:
@@ -156,14 +152,14 @@ for pH in [4.0, 7.2, 10.0]:
     H  = 10.0**(-pH) * C_REF
     OH = 1e-14 * C_REF**2 / H
     c0 = {
-        "H3PO4":  max(a0*c_tot_phos, 1e-10),
-        "H2PO4-": max(a1*c_tot_phos, 1e-10),
-        "HPO4-2": max(a2*c_tot_phos, 1e-10),
-        "PO4-3":  max(a3*c_tot_phos, 1e-10),
+        "H3PO4":  max(a0*c_tot_phosphate, 1e-10),
+        "H2PO4-": max(a1*c_tot_phosphate, 1e-10),
+        "HPO4-2": max(a2*c_tot_phosphate, 1e-10),
+        "PO4-3":  max(a3*c_tot_phosphate, 1e-10),
         "H+": H, "OH-": OH,
     }
-    c_eq = solve_equilibrium(model_phos, c0, T=298.15)
-    ana  = a0 * c_tot_phos
+    c_eq = solve_equilibrium(model_phosphate_ideal, c0, T=298.15)
+    ana  = a0 * c_tot_phosphate
     print(f"{pH:>6.1f}  {ana:>12.4f}  {c_eq['H3PO4']:>12.4f}  {abs(c_eq['H3PO4']-ana):>10.2e}")
 ```
 
@@ -171,10 +167,10 @@ for pH in [4.0, 7.2, 10.0]:
 ## Ionic strength corrections
 
 Activity coefficients shift the apparent p$K_a$ values at nonzero ionic strength (@nonidealities, @acid-base).
-`ActivityCoefficientDavies` is passed per reaction and is evaluated at every Newton step by the self-consistent loop (@implementation-activity):
+`ActivityCoefficientDavies` is passed per reaction; ionic strength is recomputed from the current concentration state and passed into $\gamma_i$ before each residual evaluation, so activity corrections enter the nonlinear solve consistently (@implementation-activity):
 
 ```{code-cell} ipython3
-model_phos_davies = ReactionModel(
+model_phosphate_davies = ReactionModel(
     components=[phosphate, proton, hydroxide, water],
     reactions=[
         ThermodynamicReaction("H3PO4 <-> H2PO4- + H+",  mode="equil",
@@ -203,14 +199,14 @@ a0, a1, a2, a3 = phosphate_fractions(pH, Ka1, Ka2, Ka3)
 H   = 10.0**(-pH) * C_REF
 OH  = 1e-14 * C_REF**2 / H
 c0  = {
-    "H3PO4":  max(a0*c_tot_phos, 1e-10),
-    "H2PO4-": max(a1*c_tot_phos, 1e-10),
-    "HPO4-2": max(a2*c_tot_phos, 1e-10),
-    "PO4-3":  max(a3*c_tot_phos, 1e-10),
+    "H3PO4":  max(a0*c_tot_phosphate, 1e-10),
+    "H2PO4-": max(a1*c_tot_phosphate, 1e-10),
+    "HPO4-2": max(a2*c_tot_phosphate, 1e-10),
+    "PO4-3":  max(a3*c_tot_phosphate, 1e-10),
     "H+": H, "OH-": OH,
 }
-eq_ideal  = solve_equilibrium(model_phos,        c0, T=298.15)
-eq_davies = solve_equilibrium(model_phos_davies, c0, T=298.15)
+eq_ideal  = solve_equilibrium(model_phosphate_ideal,        c0, T=298.15)
+eq_davies = solve_equilibrium(model_phosphate_davies, c0, T=298.15)
 
 print(f"At pH 7.2, I = 150 mol/m³ vs ideal (mol/m³):")
 print(f"{'Species':>10}  {'ideal':>10}  {'Davies':>10}  {'shift':>10}")

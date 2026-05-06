@@ -6,15 +6,18 @@ kernelspec:
 ---
 
 (implementation-equilibrium)=
-# Thermodynamic Consistency and K(T)
+# Equilibrium and Thermodynamic Consistency
 
-`ThermodynamicReaction` takes $K(T)$ as the primary input and derives $k_r(T) = k_f(T)/K(T)$ at every temperature, rather than treating $k_r$ as a free parameter.
-In the fast-reaction limit, the kinetic formulation transitions naturally to equilibrium mode, where the ODE for the dependent species is replaced by the algebraic constraint $\ln Q_j - \ln K_j(T) = 0$, enforced at each grid point.
+Part 3 established the equilibrium condition $Q = K$ and its temperature dependence via the van't Hoff equation (@equilibrium, @equilibrium-temperature).
+`ThermodynamicReaction` is the physically constrained formulation: given $K(T)$, it enforces $\ln Q(\mathbf{a}, T) = \ln K(T)$ as a residual constraint, and derives $k_r(T) = k_f(T)/K(T)$ whenever a rate constant is also supplied.
+`MassActionReaction`, by contrast, treats $k_r$ as a free parameter with no thermodynamic grounding (@implementation-source-term).
+This chapter works through the equilibrium mode, leaving kinetic mode for the next chapter.
 
-## A⇌B: equilibrium with a fixed K
+
+## $\ce{A <=> B}$: equilibrium with a fixed $K$
 
 The simplest case is a single reversible reaction.
-For $\text{A} \rightleftharpoons \text{B}$ with ideal activities the equilibrium condition $Q = K$ gives (@equilibrium)
+For $\ce{A <=> B}$ with ideal activities the equilibrium condition $Q = K$ gives (@equilibrium)
 
 $$
 c_\text{B}^\text{eq} = \frac{K}{1+K}\,c_\text{tot}, \qquad
@@ -23,7 +26,7 @@ $$
 
 As $K$ increases, A converts more completely to B; for $K \gg 1$ the reaction goes
 to completion (@fig-eq-ab).
-`ThermodynamicReaction(mode="equil")` enforces this constraint algebraically; `solve_equilibrium` finds the composition by Newton iteration in log space.
+`ThermodynamicReaction(mode="equil")` enforces this constraint algebraically; `solve_equilibrium` finds the composition by Newton iteration on the residual $\ln Q - \ln K$ in log-activity space.
 
 ```{code-cell} ipython3
 import numpy as np
@@ -32,7 +35,6 @@ from reactions.api import (
     EquilibriumConstant,
     EquilibriumConstantVantHoff,
     EquilibriumConstantVantHoffCp,
-    MassActionReaction,
     ThermodynamicReaction,
     ReactionModel,
 )
@@ -85,15 +87,15 @@ fig.tight_layout()
 ```{figure} #cell-eq-ab
 :name: fig-eq-ab
 
-Equilibrium fractions of A and B as a function of $K$ for A⇌B.
+Equilibrium fractions of A and B as a function of $K$ for $\ce{A <=> B}$.
 At $K = 1$ both species are equally present; at the example value $K = 4$ (dotted line)
 80 % of material ends up as B.
 ```
 
+
 ## Temperature dependence of $K$
 
-`ThermodynamicReaction` with `EquilibriumConstantVantHoff` keeps $k_r(T) = k_f(T)/K(T)$ exact at every temperature.
-A fixed ratio coincides with $K(T)$ only at the calibration point; the divergence grows with temperature distance from it (@fig-eq-drift).
+When temperature varies, a fixed ratio $k_f/k_r$ calibrated at one temperature diverges from the true $K(T)$; `ThermodynamicReaction` tracks it exactly at every temperature (@fig-eq-drift).
 
 ```{code-cell} ipython3
 :tags: [remove-cell]
@@ -129,14 +131,13 @@ The two curves coincide only at the calibration temperature; the shaded region s
 `ThermodynamicReaction` with `EquilibriumConstantVantHoff` keeps the ratio on the $K(T)$ curve at every temperature.
 ```
 
-The van't Hoff equation (@equilibrium-temperature) relates $K$ to the standard enthalpy and entropy of reaction,
+The van't Hoff equation (@equilibrium-temperature) gives $K(T)$ from standard thermodynamic data,
 
 $$
 \ln K(T) = -\frac{\Delta H^\circ}{RT} + \frac{\Delta S^\circ}{R}.
 $$
 
-`EquilibriumConstantVantHoff` evaluates this at any temperature.
-For an exothermic reaction ($\Delta H^\circ < 0$) heating decreases $K$, shifting the equilibrium back towards the reactant (@fig-eq-vanthoff).
+For an exothermic reaction ($\Delta H^\circ < 0$) heating decreases $K$, shifting the equilibrium toward the reactant (@fig-eq-vanthoff).
 
 ```{code-cell} ipython3
 dH = -20e3    # J/mol  (exothermic)
@@ -180,7 +181,7 @@ Temperature dependence of $K$ (left) and equilibrium fraction of B (right) for $
 Heating shifts the equilibrium towards A, consistent with Le Chatelier's principle.
 ```
 
-Passing `EquilibriumConstantVantHoff` to `ThermodynamicReaction` makes the equilibrium composition temperature-aware: `solve_equilibrium` calls `K(T)` at the specified temperature.
+Passing `EquilibriumConstantVantHoff` to `ThermodynamicReaction` makes the equilibrium composition temperature-aware: `solve_equilibrium` calls $K(T)$ at the specified temperature.
 
 ```{code-cell} ipython3
 model_vH = ReactionModel(
@@ -209,6 +210,7 @@ print(f"K(320 K)  = {K_320:.6f}")
 print(f"c_B / c_A = {c_320['B'] / c_320['A']:.6f}   (error: {abs(c_320['B'] / c_320['A'] - K_320):.2e})")
 ```
 
+
 ## Heat capacity correction
 
 For reactions where $\Delta H^\circ$ itself varies with temperature, `EquilibriumConstantVantHoffCp` applies the Kirchhoff relation (@equilibrium-temperature):
@@ -220,9 +222,11 @@ $$
 $$
 
 A large positive $\Delta C_p$ means $\Delta H^\circ(T)$ itself increases with temperature.
-If $\Delta C_p$ is large enough, an initially exothermic reaction becomes endothermic at high $T$, reversing the direction of the $K(T)$ curve, a behaviour the two-parameter van't Hoff model cannot capture:
+If $\Delta C_p$ is large enough, an initially exothermic reaction becomes endothermic at high $T$, reversing the direction of the $K(T)$ curve, a behavior the two-parameter van't Hoff model cannot capture:
 
 ```{code-cell} ipython3
+from reactions.api import EquilibriumConstantCustom, EquilibriumConstantTabulated
+
 K_cp = EquilibriumConstantVantHoffCp(dH=dH, dS=dS, dCp=+200.0, T_ref=298.15)
 ```
 
@@ -252,12 +256,9 @@ Van't Hoff plot ($\ln K$ vs $1/T$) comparing `EquilibriumConstantVantHoff` and `
 ```
 
 The Kirchhoff correction matters when $\Delta C_p$ is large or the temperature range is wide; for most aqueous reactions at near-ambient conditions `EquilibriumConstantVantHoff` is adequate (@fig-eq-cp).
-For empirically fitted $K(T)$ (a polynomial, exponential, or any other functional form), `EquilibriumConstantCustom` accepts any callable `(T: float) -> float`, and `EquilibriumConstantTabulated` interpolates linearly through measured $(T, K)$ pairs:
+For empirically fitted $K(T)$, `EquilibriumConstantCustom` accepts any callable `(T: float) -> float`, and `EquilibriumConstantTabulated` interpolates linearly through measured $(T, K)$ pairs:
 
 ```{code-cell} ipython3
-from reactions.api import EquilibriumConstantCustom, EquilibriumConstantTabulated
-import numpy as np
-
 # Fitted exponential from experiment
 K_exp = EquilibriumConstantCustom(lambda T: 2.5 * np.exp(-1500 / T))
 
@@ -272,5 +273,5 @@ Both slot into `ThermodynamicReaction` identically to the van't Hoff forms.
 
 ---
 
-With $K(T)$ enforced, ideal activities ($\gamma_i = 1$) are still assumed.
-The next chapter replaces concentrations with activities $a_i = \gamma_i c_i / c^\circ$, completing the non-ideal picture before temperature-dependent kinetics are introduced (@implementation-activity).
+Equilibrium mode determines *where* the system ends up; it says nothing about *how fast* it gets there.
+The next chapter introduces kinetic mode, where a rate constant sets the relaxation timescale while $k_r(T) = k_f(T)/K(T)$ remains enforced throughout (@implementation-kinetics).

@@ -1,11 +1,4 @@
 ---
-jupytext:
-  formats: md:myst
-  text_representation:
-    extension: .md
-    format_name: myst
-    format_version: 0.13
-    jupytext_version: 1.16.0
 kernelspec:
   display_name: Python 3 (ipykernel)
   language: python
@@ -15,11 +8,9 @@ kernelspec:
 (implementation-buffer)=
 # Buffer Capacity
 
-Buffer capacity $\beta = -dn_b / d\text{pH}$ measures how much strong base (in
-mol/L) is needed to shift the pH by one unit (@speciation-buffers).
-Computing it numerically requires only the equilibrium model from
-@implementation-acid-base: solve for speciation at a series of pH values, then
-differentiate numerically.
+Buffer capacity $\beta = -dn_b / d\text{pH}$ measures how much strong base $n_b$ (mol/L) is needed to shift the pH by one unit (@speciation-buffers).
+In equilibrium calculations, $\beta$ is computed from the sensitivity of the equilibrium composition to changes in proton activity; no explicit base addition is required; $n_b$ is implicitly represented by the proton mass balance.
+Computing it numerically requires only the equilibrium model from @implementation-acid-base: sweep over target proton activities, re-solve equilibrium consistently at each point, then differentiate the resulting proton balance numerically.
 
 ```{code-cell} ipython3
 import numpy as np
@@ -43,7 +34,7 @@ water     = Component("water",     [Species("H2O",  charge=0, is_solvent=True)])
 ## Phosphate buffer: pH curve and β
 
 Three coupled algebraic constraints describe phosphate speciation.
-Sweeping over imposed pH and solving gives the speciation at each point;
+Sweeping over target proton activities and re-solving equilibrium at each point gives the speciation curve;
 numerical differentiation of the proton balance yields $\beta$:
 
 ```{code-cell} ipython3
@@ -124,14 +115,14 @@ for i, pH in enumerate(pH_mid[::20]):
         print(f"{pH:>6.2f}  {beta_num[idx]:>18.4f}  {beta_ana[idx]:>10.4f}  {diff:>10.3f}")
 ```
 
-The numerical curve matches the analytical formula from @speciation-buffers; small
-deviations arise from finite-difference step size at the extremes of the pH range.
+The numerical curve matches the analytical formula from @speciation-buffers; small deviations arise from finite-difference step size at the extremes of the pH range.
+In the analytical expression, the coefficients 1, 4, 9 are the squared charge changes $(\Delta z)^2$ between successive protonation states; higher charges amplify the sensitivity of charge redistribution to proton activity.
 
 ## Mixed buffer: citrate + phosphate
 
 No single buffer covers a wide pH range with flat capacity.
-Citrate (three p$K_a$ values spanning pH 3--7) combined with phosphate gives a
-nearly flat $\beta$ from pH 3 to 8:
+Citrate (three p$K_a$ values spanning pH 3--7) combined with phosphate gives a nearly flat $\beta$ from pH 3 to 8.
+The apparent additivity holds because the two acid systems couple only weakly through the shared proton reservoir; the full equilibrium solve captures the residual coupling:
 
 ```{code-cell} ipython3
 pKa_cit = [3.128, 4.761, 6.396]    # NIST
@@ -211,8 +202,8 @@ for pH, b in zip(pH_m_mid[::15], beta_m[::15]):
 
 A salt background shifts apparent pKa values (@speciation-buffers, @implementation-activity),
 which broadens and shifts the buffer capacity peak.
-The same model with `IonicStrengthBackground` and `ActivityCoefficientDavies` shows
-the ionic strength correction:
+The ideal speciation is used as the initial guess; the non-ideal model then fully re-equilibrates under the activity-corrected residuals.
+The same model with `IonicStrengthBackground` and `ActivityCoefficientDavies` shows the ionic strength correction:
 
 ```{code-cell} ipython3
 model_phos_davies = ReactionModel(
