@@ -40,6 +40,16 @@ Thermodynamic consistency is lost: the model does not guarantee the correct stea
 Use empirical orders when they fit data; use MAL when thermodynamic consistency matters.
 ```
 
+```{admonition} Equilibrium is independent of mechanism
+:class: note
+
+$K$ is fixed by $\Delta_r G^\circ = -RT \ln K$, which depends only on the standard chemical potentials of the species, not on how the reaction proceeds.
+A catalyst, a solvent change, or a complex multi-step mechanism alters the rate at which equilibrium is reached, but not the equilibrium composition itself.
+The consistency condition $k_f/k_r = K$ is exact for elementary steps.
+For a complex mechanism, the apparent overall rate constants can be concentration-dependent (Michaelis-Menten is the canonical example), and their ratio need not equal $K$ globally.
+The relation holds only for each microscopic elementary step individually.
+```
+
 @fig-mal illustrates the consistency condition for $\text{A} \rightleftharpoons \text{B}$ with $K = 3$: the forward and reverse rates cross at exactly the thermodynamic equilibrium extent.
 
 ```{code-cell} ipython3
