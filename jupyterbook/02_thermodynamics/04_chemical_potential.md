@@ -217,6 +217,19 @@ The pressure correction $\bar{V}_i \Delta P$ for a liquid is negligible compared
 
 This expression holds in the ideal dilute solution limit ($\gamma_i = 1$); deviations are captured through the activity $a_i = \gamma_i c_i / c^\circ$ introduced in @nonidealities.
 
+```{admonition} Intuition
+:class: tip
+
+The term $RT \ln(c_i/c^\circ)$ sets the **energy scale** of concentration effects.
+
+At 25 °C, $RT \approx 2.5\ \text{kJ/mol}$:
+- a tenfold concentration difference gives $RT \ln 10 \approx 5.7\ \text{kJ/mol}$
+- a hundredfold difference gives $\approx 11.4\ \text{kJ/mol}$
+
+These are not small corrections: 5–10 kJ/mol is comparable to weak intermolecular interactions such as hydrogen bonds, and large enough to drive diffusion, dissolution, and chemical reactions.
+$\mu_i$ is therefore not an abstract derivative: it is a **free energy per mole**, and concentration differences translate into quantitatively significant driving forces.
+```
+
 **Standard states.**
 The reference values $P^\circ$ and $c^\circ$ serve the same role: the argument of a logarithm must be dimensionless.
 Any choice works; changing them shifts $\mu^\circ$ by a constant, leaving all physical predictions unchanged since those depend on differences $\Delta\mu$.
