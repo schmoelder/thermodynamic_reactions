@@ -19,10 +19,12 @@ kernelspec:
 | $a_i$                | Activity of species $i$                                              |                              | @nonidealities              |
 | $c^\circ$            | Standard concentration $= 1$ mol/L                                   | mol/L                        | @chemical-potential         |
 | $c_i$                | Molar concentration of species $i$ $= n_i/V$                         | mol/L                        | @ideal-gas                  |
+| $c_s$                | Counter-ion concentration in solution (SMA)                          | mol/L                        | @multicomponent             |
 | $C_p$                | Heat capacity at constant pressure                                   | J/(mol K)                    | @thermodynamic-potentials   |
 | $e_{ij}$             | Kinetic exponent of species $i$ in reaction $j$ (CADET)              |                              | @implementation-source-term |
 | $E_a$                | Activation energy                                                    | J/mol                        | @maxwell-boltzmann          |
 | $E_\text{tot}$       | Total enzyme concentration                                           | mol/L                        | @implementation-enzyme      |
+| $F$                  | Faraday constant $= 96\,485$ C/mol                                   | C/mol                        | @multicomponent             |
 | $f$                  | Fugacity                                                             | Pa                           | @nonidealities              |
 | $f_i$                | Speciation fraction of species $i$ at given pH                       |                              | @speciation-buffers         |
 | $f_{\text{react},i}$ | Net production rate of species $i$ $= \sum_j \nu_{ij}\,\varphi_j$    | mol/(L$\cdot$s)              | @implementation-source-term |
@@ -54,13 +56,15 @@ kernelspec:
 | pH                   | Negative log proton activity $= -\log_{10} a_{\text{H}^+}$           |                              | @acid-base                  |
 | $\text{p}K_a$        | Negative log acid dissociation constant $= -\log_{10} K_a$           |                              | @acid-base                  |
 | $q$                  | Adsorbed amount per volume                                           | mol/m$^3$                    | @adsorption                 |
+| $\bar{q}_0$          | Free binding sites in SMA resin $= \Lambda - \sum_j(\nu_j+\sigma_j)q_j$ | mol/m$^3$               | @multicomponent             |
 | $q_\text{max}$       | Maximum adsorption capacity                                          | mol/m$^3$                    | @adsorption                 |
+| $q_s$                | Counter-ion loading in resin phase (SMA)                             | mol/m$^3$                    | @multicomponent             |
 | $\delta Q$           | Infinitesimal heat                                                   | J                            | @laws-of-thermodynamics     |
 | $Q$                  | Reaction quotient $= \prod_i a_i^{\nu_i}$                            |                              | @reaction-gibbs-energy      |
 | $r$                  | Reaction rate                                                        | mol/(L$\cdot$s)              | @kinetics                   |
 | $R$                  | Gas constant $= 8.314$ J/(mol K)                                     | J/(mol K)                    | @pressure                   |
 | $S$                  | Thermodynamic entropy ($= k_B \ln W$)                                | J/K                          | @entropy                    |
-| $\mathbf{S}$         | Stoichiometric matrix $(S_{ij} = \nu_{ij})$                          |                              | @implementation-source-term |
+| $\mathbf{S}$         | Stoichiometric matrix $(S_{ij} = \nu_{ij})$                          |                              | @multicomponent             |
 | $T$                  | Temperature                                                          | K                            | @entropy                    |
 | $U$                  | Internal energy                                                      | J                            | @particles                  |
 | $v$, $\mathbf{v}$    | Particle velocity / speed                                            | m/s                          | @particles                  |
@@ -81,21 +85,26 @@ kernelspec:
 
 | Symbol               | Meaning                                                              | Unit                          | First use |
 | -------------------- | -------------------------------------------------------------------- | ----------------------------- | --------- |
+| $\alpha_{ij}$        | Separation factor $= K_i/K_j$                                        |                               | @multicomponent    |
 | $\beta$              | Inverse temperature $= 1/k_BT$                                       | J$^{-1}$                      | @maxwell-boltzmann |
 | $\beta$              | Buffer capacity $= dc_b/d(\text{pH})$                                | mol/L                         | @speciation-buffers |
 | $\gamma_i$           | Activity coefficient of species $i$                                  |                               | @nonidealities |
 | $\varepsilon$        | Particle energy                                                      | J                             | @particles |
 | $\kappa^{-1}$        | Debye length                                                         | m                             | @nonidealities |
+| $\Lambda$            | Ionic capacity of ion-exchange resin (total chargeable sites)        | mol/m$^3$                     | @multicomponent    |
 | $\mu_i$              | Chemical potential of species $i$                                    | J/mol                         | @laws-of-thermodynamics |
 | $\mu_i^\circ$        | Standard chemical potential                                          | J/mol                         | @chemical-potential |
 | $\mu_g$              | Specific growth rate (Monod)                                         | s$^{-1}$                      | @saturation |
 | $\mu_{g,\text{max}}$ | Maximum specific growth rate                                         | s$^{-1}$                      | @saturation |
-| $\nu_i$              | Stoichiometric coefficient (positive: product, negative: reactant)   |                               | @reaction-coordinates |
+| $\nu_i$              | Stoichiometric coefficient (positive: product, negative: reactant); characteristic charge in SMA |  | @reaction-coordinates |
+| $\sigma_i$           | Steric shielding factor (SMA): sites blocked by adsorbed species $i$ |                               | @multicomponent    |
+| $\theta$             | Surface occupancy fraction $= q/q_\text{max}$                        |                               | @adsorption        |
 | $\xi$                | Extent of reaction                                                   | mol                           | @reaction-coordinates |
 | $\rho$               | Total mass density $= \sum_i \rho_i = \sum_i c_i M_i$                | kg/m$^3$                      | @ideal-gas |
 | $\rho_i$             | Mass concentration of species $i$ $= c_i M_i$                        | kg/m$^3$                      | @ideal-gas |
 | $\varphi$            | Fugacity coefficient $= f/P$                                         |                               | @nonidealities |
 | $\varphi_j$          | Reaction flux of reaction $j$ (CADET)                                | mol/(L$\cdot$s)               | @implementation-source-term |
+| $\psi_D$             | Donnan potential                                                     | V                             | @multicomponent    |
 | $\Omega$             | Number of microstates                                                |                               | @entropy |
 
 **Note.** S

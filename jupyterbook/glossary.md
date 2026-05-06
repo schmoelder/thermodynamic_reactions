@@ -67,7 +67,7 @@ Boltzmann constant
 Buffer capacity
 : $\beta = dc_b/d(\text{pH})$: the concentration of strong base required to raise the pH by one unit.
   For a monoprotic buffer at concentration $c_\text{tot}$, the maximum capacity $\beta_\text{max} = (\ln 10 / 4)\,c_\text{tot}$ occurs at $\text{pH} = \text{p}K_a$.
-  Introduced in @acid-base.
+  Introduced in @speciation-buffers.
 
 Boltzmann factor
 : The factor $e^{-\varepsilon/k_BT}$ giving the relative probability of a state with energy $\varepsilon$ in a system at thermal equilibrium.
@@ -103,6 +103,16 @@ Conjugate pairs
 : The intensive-extensive variable pairs $(T, S)$, $(P, V)$, and $(\mu_i, n_i)$ that appear in the fundamental relation.
   Each product has units of energy.
   Introduced in @thermodynamic-potentials.
+
+Donnan equilibrium
+: The partitioning of mobile ions between a bulk solution and a charged phase (e.g., an ion-exchange resin), governed by $\mu$-equality across the phase boundary with an additional electrostatic term $z_i F \psi_D$.
+  The Donnan potential $\psi_D$ arises from the fixed charge of the resin and is determined self-consistently by the electroneutrality condition in the resin phase.
+  Introduced in @multicomponent.
+
+Donnan potential
+: $\psi_D$: the electrostatic potential difference at the boundary between a charged phase and a bulk solution, arising from the fixed charge density of the phase.
+  It shifts the equilibrium partitioning of all mobile ions and is determined by requiring electroneutrality in the resin phase.
+  Introduced in @multicomponent.
 
 Davies equation
 : An empirical extension of Debye-Hückel for ionic strengths up to $I \approx 0.5\ \text{mol/L}$:
@@ -149,6 +159,11 @@ Elementary reaction
   For elementary reactions, the reaction order equals the stoichiometric coefficient exactly.
   Introduced in @kinetics.
 
+Competitive Langmuir isotherm
+: $q_i = q_{\text{max},i}\,K_i\,c_i / (1 + \sum_j K_j\,c_j)$: the multicomponent generalisation of the Langmuir isotherm when $N$ species compete for the same finite-site pool.
+  The shared denominator couples all species: a high concentration of species $j$ suppresses the loading of species $i$ even when $c_i$ is unchanged.
+  Introduced in @multicomponent.
+
 Complex reaction
 : A reaction whose balanced chemical equation hides a multi-step mechanism.
   The reaction order is determined experimentally and need not match the stoichiometric coefficients.
@@ -172,12 +187,18 @@ Equilibrium mode
 Extent of reaction
 : The single coordinate $\xi$ (SI unit: mol) that tracks how far a reaction has proceeded.
   All composition changes follow $dn_i = \nu_i\,d\xi$; specifying $\xi$ and the initial amounts determines the full composition.
-  Introduced in @equilibrium.
+  Introduced in @reaction-coordinates.
 
 First law of thermodynamics
 : Energy is conserved: $dU = \delta Q - \delta W + \sum_i \mu_i\,dn_i$.
   Any change in internal energy is accounted for by heat, mechanical work, and chemical work.
   Introduced in @laws-of-thermodynamics.
+
+Finite-site constraint
+: The structural constraint that a fixed pool of binding sites (or active sites) is partitioned between occupied and free states: $\theta + \theta_\text{free} = 1$.
+  Applied at equilibrium under $\mu$-equality, it yields the Langmuir isotherm; applied to enzyme kinetics under the quasi-steady-state approximation, it yields Michaelis-Menten.
+  Saturation is the shared consequence of this constraint class in both settings.
+  Introduced in @adsorption.
 
 Fugacity
 : The effective pressure $f$ of a real gas, defined so that $\mu = \mu^\circ + RT\ln(f/P^\circ)$ holds exactly.
@@ -211,6 +232,11 @@ Henderson-Hasselbalch equation
 : $\text{pH} = \text{p}K_a + \log_{10}([\text{A}^-]/[\text{HA}])$: the pH of a weak acid buffer at equilibrium in dilute ideal solution.
   Derived directly from the equilibrium condition $Q = K_a$; valid within roughly two pH units of $\text{p}K_a$ before activity corrections become significant.
   Introduced in @acid-base.
+
+Ionic capacity
+: $\Lambda$: the total density of chargeable sites in an ion-exchange resin, in mol/m³.
+  Sets the upper bound on ion binding; plays the role of $q_\text{max}$ in the SMA model, to which the Langmuir isotherm reduces at unit characteristic charge.
+  Introduced in @multicomponent.
 
 Henry's law
 : For a dilute solute in equilibrium with its vapor, the partial pressure is proportional to mole fraction: $P_i = K_{H,i} x_i$.
@@ -247,7 +273,7 @@ Kirchhoff relations
 : Equations giving the temperature dependence of $\Delta_r H^\circ$ and $\Delta_r S^\circ$:
   $\Delta_r H^\circ(T_2) = \Delta_r H^\circ(T_1) + \int_{T_1}^{T_2} \Delta_r C_p\,dT$.
   Allow tabulated 298 K data to be extrapolated to other temperatures.
-  Introduced in @equilibrium.
+  Introduced in @equilibrium-temperature.
 
 Kinetic energy
 : The energy of a particle due to its motion, $\varepsilon = \frac{1}{2}mv^2$ for a single particle.
@@ -268,6 +294,11 @@ Le Chatelier's principle
 : When a system at equilibrium is perturbed, it responds in a way that counteracts the perturbation.
   A consequence of the minimisation of Gibbs energy: changing $T$ shifts entropy, changing $P$ shifts volume, changing composition shifts species amounts, all to restore $dG = 0$. 
   Introduced in @thermodynamic-potentials.
+
+Henry coefficient
+: $H = q_\text{max}\,K_\text{ads}$: the slope of the adsorption isotherm in the dilute limit, where $q \approx H c$.
+  In the Henry region ($K_\text{ads}c \ll 1$) the Langmuir isotherm is linear; $H$ determines the retention factor in linear chromatography.
+  Introduced in @adsorption.
 
 Langmuir isotherm
 : $q = q_\text{max}\, K_\text{ads}\, c / (1 + K_\text{ads}\, c)$: adsorption isotherm for a finite number of binding sites.
@@ -343,6 +374,11 @@ Molar volume
   For an ideal gas, $V_m = RT/P$.
   Introduced in @ideal-gas.
 
+Occupancy
+: $\theta = q / q_\text{max}$: the fraction of adsorption sites occupied by solute.
+  Together with $\theta_\text{free} = 1 - \theta$, it enforces the finite-site constraint; $\theta \to 1$ at saturation regardless of solution concentration.
+  Introduced in @adsorption.
+
 Pseudo-first-order
 : A kinetic regime in which a reaction that is formally higher-order appears first-order because one or more reactants are in large excess.
   For $\ce{A + B -> P}$ with $[B] \gg [A]$, the rate $r \approx k'[A]$ where $k' = k_f[B]$ is the pseudo-first-order rate constant.
@@ -414,6 +450,17 @@ Raoult's law
   A symmetric activity model for the pure-component reference; $\gamma_i \to 1$ as $x_i \to 1$.
   Introduced in @nonidealities.
 
+Separation factor
+: $\alpha_{ij} = K_i / K_j$: the ratio of adsorption equilibrium constants for two species competing for the same stationary phase.
+  When $\alpha_{ij} > 1$, species $i$ has higher affinity and will displace species $j$ from the stationary phase at sufficient loading.
+  Introduced in @multicomponent.
+
+Steric Mass Action model
+: The equilibrium binding model for ion-exchange chromatography: $q_i = K_i\,c_i\,(\bar{q}_0 / c_s)^{\nu_i}$, where $\bar{q}_0 = \Lambda - \sum_j(\nu_j + \sigma_j)q_j$ is the number of free binding sites.
+  Each adsorbed protein displaces $\nu_i$ counter-ions and sterically blocks $\sigma_i$ additional sites.
+  Reduces to the Langmuir isotherm at $\nu_i = 1$, $\sigma_i = 0$.
+  Introduced in @multicomponent.
+
 Second law of thermodynamics
 : The entropy of an isolated system never decreases: $dS \geq 0$.
   Spontaneous processes increase entropy because macrostates with more microstates are overwhelmingly more probable.
@@ -448,7 +495,7 @@ Stoichiometric coefficient
 Stoichiometric matrix
 : $\mathbf{S}$: the $n_\text{species} \times n_\text{reactions}$ matrix with entries $S_{ij} = \nu_{ij}$.
   In canonical form it maps reaction fluxes to source terms: $\mathbf{f}_\text{react} = \mathbf{S}\boldsymbol{\varphi}$.
-  Introduced in @implementation-source-term.
+  Introduced in @multicomponent.
 
 Temperature
 : The quantity that is equal in two systems when they are in thermal equilibrium.

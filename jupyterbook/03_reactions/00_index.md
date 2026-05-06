@@ -14,7 +14,7 @@ Two constraint types organize all phenomena here.
 **Stoichiometric constraints** tie composition to a single scalar $\xi$; equilibrium is $\Delta_r G = 0$.
 **Finite-site constraints** partition a conserved pool of sites between free and occupied states; the same occupancy logic produces saturation in both equilibrium (Langmuir isotherm) and kinetics (Michaelis-Menten).
 
-Stage I covers equilibrium under both constraint types, then their applications (temperature dependence, acid-base, speciation).
+Stage I covers equilibrium under both constraint types, then extends to multicomponent systems (competitive adsorption, SMA, Donnan) and their applications (temperature dependence, acid-base, speciation).
 Stage II covers dynamics: how composition relaxes toward equilibrium, and how the same finite-site constraint that gives the Langmuir isotherm yields Michaelis-Menten kinetics.
 
 ```{admonition} Key results
@@ -50,6 +50,7 @@ $$q = \frac{q_\text{max}\,K_\text{ads}\,c}{1 + K_\text{ads}\,c} \qquad r = \frac
 - **@reaction-gibbs-energy**: $G(\xi)$, reaction Gibbs energy $\Delta_r G$, reaction quotient $Q$, Le Chatelier's principle
 - **@equilibrium**: equilibrium constant $K$, mass-action form, tabulated data
 - **@adsorption**: finite-site equilibrium, Langmuir isotherm
+- **@multicomponent**: competitive Langmuir, SMA (ion exchange), Donnan equilibrium, multicomponent reaction networks
 - **@equilibrium-temperature**: Kirchhoff relations, van't Hoff equation
 - **@acid-base**: proton transfer, $K_a$, pH, Henderson-Hasselbalch
 - **@speciation-buffers**: Bjerrum diagrams, buffer capacity, ionic strength corrections

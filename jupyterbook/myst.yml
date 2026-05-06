@@ -33,13 +33,14 @@ project:
         - file: 03_reactions/02_reaction_gibbs_energy.md
         - file: 03_reactions/03_equilibrium_constant.md
         - file: 03_reactions/04_adsorption.md
-        - file: 03_reactions/05_equilibrium_temperature.md
-        - file: 03_reactions/06_acids_bases.md
-        - file: 03_reactions/07_speciation_buffers.md
-        - file: 03_reactions/08_reaction_mechanisms.md
-        - file: 03_reactions/09_mass_action_law.md
-        - file: 03_reactions/10_kinetics_temperature.md
-        - file: 03_reactions/11_enzyme_kinetics.md
+        - file: 03_reactions/05_multicomponent.md
+        - file: 03_reactions/06_equilibrium_temperature.md
+        - file: 03_reactions/07_acids_bases.md
+        - file: 03_reactions/08_speciation_buffers.md
+        - file: 03_reactions/09_reaction_mechanisms.md
+        - file: 03_reactions/10_mass_action_law.md
+        - file: 03_reactions/11_kinetics_temperature.md
+        - file: 03_reactions/12_enzyme_kinetics.md
     - file: 04_implementation/00_index.md
       children:
         - file: 04_implementation/01_source_term.md

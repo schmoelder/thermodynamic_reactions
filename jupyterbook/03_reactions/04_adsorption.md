@@ -71,9 +71,8 @@ A large $K_\text{ads}$ means the train fills at lower platform concentration.
 Adsorption sits between phase equilibrium (@phase-equilibrium) and reaction equilibrium (@equilibrium): like phase equilibrium it describes partitioning between two regions; like reaction equilibrium it is governed by a $K$ derived from $\Delta G^\circ$.
 The occupancy constraint is what sets it apart from both.
 
-The same finite-site logic reappears in kinetics: when a finite pool of enzyme active sites is the catalytic resource, the rate saturates in exactly the same way (@saturation).
+The same finite-site logic extends to multiple competing species sharing one site pool (@multicomponent), and reappears in kinetics as Michaelis-Menten saturation when a finite pool of enzyme active sites is the catalytic resource (@saturation).
 
 ---
 
-Temperature shifts $K_\text{ads}$ through the van't Hoff equation, just as it shifts any equilibrium constant.
-That dependence is developed in @equilibrium-temperature, which covers all equilibrium constants, $K$, $K_\text{ads}$, and $K_a$, uniformly.
+The next chapter generalises the single-component isotherm to competing species, ion exchange, and Donnan equilibrium, all instances of the same $\mu$-equality framework applied to a shared finite-site pool (@multicomponent).
