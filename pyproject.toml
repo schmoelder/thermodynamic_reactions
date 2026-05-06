@@ -19,4 +19,4 @@ packages = ["reactions"]
 
 [dependency-groups]
 test = ["pytest"]
-docs = ["jupyter-book>=2.0"]
+docs = ["jupyter-book>=2.0", "griffe"]

@@ -3,5 +3,6 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints
 /jupyterbook/_build/*
+/jupyterbook/api/
 *.egg-info
 .vscode

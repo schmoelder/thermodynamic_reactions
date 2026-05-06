@@ -50,6 +50,16 @@ project:
         - file: 04_implementation/06_buffer_capacity.md
         - file: 04_implementation/07_kinetics.md
         - file: 04_implementation/08_interface.md
+    - file: api/00_index.md
+      children:
+        - file: api/01_core.md
+        - file: api/02_ionic_strength.md
+        - file: api/03_activity.md
+        - file: api/04_equilibrium_constants.md
+        - file: api/05_rate_constants.md
+        - file: api/06_rate_laws.md
+        - file: api/07_reactions.md
+        - file: api/08_solver.md
     - title: Appendix
       children:
         - file: notation.md
