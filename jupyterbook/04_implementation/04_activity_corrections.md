@@ -10,14 +10,20 @@ kernelspec:
 
 The previous chapters used ideal activities $a_i = c_i / c^\circ$ with $\gamma_i = 1$.
 Replacing concentrations with activities $a_i = \gamma_i c_i / c^\circ$ in every occurrence of $Q$ and $K$ is the full non-ideal correction; all non-ideality enters through $\gamma_i$.
-The sources of non-ideality vary: long-range electrostatic interactions between ions (dominant in aqueous electrolytes at finite ionic strength), excluded-volume effects at high concentration, and specific ion interactions such as salting effects.
+The sources of non-ideality vary: long-range electrostatic interactions between ions (dominant in aqueous electrolytes at finite ionic strength), excluded-volume effects at high concentration, and specific ion interactions.
 The choice of activity model determines which sources are captured.
-Activity coefficients for real solutions and the Debye-Hückel / Davies models are established in @nonidealities; this chapter wires them into the reaction model.
+Activity coefficients and the Debye-Hückel/Davies models are derived in @nonidealities; this chapter wires them into the reaction model.
 
-## Activity models
+
+## General activity corrections
 
 `ThermodynamicReaction` accepts an `activity_coefficient` argument.
-`ActivityCoefficientCustom` accepts any callable `(state, charges) -> np.ndarray`, allowing any activity model without modifying the framework:
+The contract is a callable `(state, charges) -> np.ndarray` that returns $\gamma_i$ for each species given the current physical state and charge numbers.
+`ActivityCoefficientCustom` wraps any such callable, making any activity model available without modifying the framework.
+
+A constant activity coefficient already illustrates the effect.
+For $\ce{A <=> B}$ with ideal $K = 4$, setting $\gamma_\text{B} = 0.7$ while $\gamma_\text{A} = 1$ reduces $a_\text{B}$ relative to $c_\text{B}$, so the solver must increase $c_\text{B}$ to satisfy $Q = K$.
+The apparent equilibrium constant in concentration space becomes $K_c = K\,\gamma_\text{A}/\gamma_\text{B} = 4/0.7 \approx 5.71$:
 
 ```{code-cell} ipython3
 import numpy as np
@@ -30,11 +36,155 @@ from reactions.api import (
     ActivityCoefficientCustom,
     PhysicalState,
     EquilibriumConstant,
+    RateConstantFixed,
     ThermodynamicReaction, ReactionModel,
     pKa,
 )
-from reactions.solver import solve_equilibrium
+from reactions.solver import solve_equilibrium, simulate
 
+K_thermo = 4.0
+gamma_B  = 0.7
+c_tot    = 1000.0   # mol/m³
+
+comp_ab = Component("ab", [Species("A"), Species("B")])
+
+model_ideal = ReactionModel(
+    components=[comp_ab],
+    reactions=[
+        ThermodynamicReaction(
+            "A <-> B",
+            mode="equil",
+            equilibrium_constant=EquilibriumConstant(K_thermo),
+        ),
+    ],
+)
+
+model_custom = ReactionModel(
+    components=[comp_ab],
+    reactions=[
+        ThermodynamicReaction(
+            "A <-> B",
+            mode="equil",
+            equilibrium_constant=EquilibriumConstant(K_thermo),
+            activity_coefficient=ActivityCoefficientCustom(
+                lambda state, charges: np.array([1.0, gamma_B])
+            ),
+        ),
+    ],
+)
+
+c_ideal  = solve_equilibrium(model_ideal,  c0={"A": c_tot / 2, "B": c_tot / 2})
+c_custom = solve_equilibrium(model_custom, c0={"A": c_tot / 2, "B": c_tot / 2})
+```
+
+```{code-cell} ipython3
+:tags: [remove-cell]
+
+K_c_expected = K_thermo / gamma_B   # apparent K in concentration space
+print(f"Ideal:   c_B/c_A = {c_ideal['B']/c_ideal['A']:.4f}  (K = {K_thermo})")
+print(f"Custom:  c_B/c_A = {c_custom['B']/c_custom['A']:.4f}  (K_c = K/γ_B = {K_c_expected:.4f})")
+```
+
+```{code-cell} ipython3
+:tags: [remove-cell]
+:label: cell-custom-gamma
+
+import matplotlib.pyplot as plt
+
+gamma_B_range = np.linspace(0.3, 1.5, 300)
+K_c_range     = K_thermo / gamma_B_range
+fB_range      = K_c_range / (1 + K_c_range)
+fB_ideal      = K_thermo / (1 + K_thermo)
+
+fig, ax = plt.subplots()
+ax.plot(gamma_B_range, fB_range, color="C0", label=r"non-ideal ($\gamma_\mathrm{A}=1$, $K=4$)")
+ax.axhline(fB_ideal, color="gray", lw=0.8, ls="--", label=f"ideal ($\\gamma_i = 1$,  $c_B/c_{{tot}} = {fB_ideal:.2f}$)")
+ax.axvline(1.0,     color="gray", lw=0.6, ls=":")
+ax.plot(gamma_B, K_thermo / gamma_B / (1 + K_thermo / gamma_B),
+        "o", color="C0", ms=7, zorder=5, label=rf"example $\gamma_\mathrm{{B}} = {gamma_B}$")
+ax.set_xlabel(r"$\gamma_\mathrm{B}$")
+ax.set_ylabel(r"$c_\mathrm{B}^\mathrm{eq}\,/\,c_\mathrm{tot}$")
+ax.legend()
+fig.tight_layout()
+```
+
+```{figure} #cell-custom-gamma
+:name: fig-custom-gamma
+
+Equilibrium fraction of B as a function of $\gamma_\text{B}$ for $\ce{A <=> B}$ with $K = 4$ and $\gamma_\text{A} = 1$.
+The dashed line is the ideal result ($\gamma_i = 1$); $\gamma_\text{B} < 1$ stabilises B and shifts the equilibrium toward the product, while $\gamma_\text{B} > 1$ destabilises it.
+The filled circle marks the example value $\gamma_\text{B} = 0.7$.
+```
+
+The ratio $c_\text{B}/c_\text{A}$ shifts from $K = 4$ to $K/\gamma_\text{B} \approx 5.71$, confirming that $\gamma_i \ne 1$ is absorbed into the equilibrium composition rather than the equilibrium constant.
+The same shift appears in kinetic simulations: both systems relax toward equilibrium at the same rate, but converge to different long-time compositions (@fig-custom-gamma-kinetics):
+
+```{code-cell} ipython3
+model_ideal_kin = ReactionModel(
+    components=[comp_ab],
+    reactions=[
+        ThermodynamicReaction(
+            "A <-> B",
+            mode="kinetic",
+            equilibrium_constant=EquilibriumConstant(K_thermo),
+            rate_constant=RateConstantFixed(2000.0),
+        ),
+    ],
+)
+
+model_custom_kin = ReactionModel(
+    components=[comp_ab],
+    reactions=[
+        ThermodynamicReaction(
+            "A <-> B",
+            mode="kinetic",
+            equilibrium_constant=EquilibriumConstant(K_thermo),
+            rate_constant=RateConstantFixed(2000.0),
+            activity_coefficient=ActivityCoefficientCustom(
+                lambda state, charges: np.array([1.0, gamma_B])
+            ),
+        ),
+    ],
+)
+
+result_ideal  = simulate(model_ideal_kin,  c0={"A": c_tot, "B": 0.0}, t_span=(0, 2.0))
+result_custom = simulate(model_custom_kin, c0={"A": c_tot, "B": 0.0}, t_span=(0, 2.0))
+```
+
+```{code-cell} ipython3
+:tags: [remove-cell]
+:label: cell-custom-gamma-kinetics
+
+fB_ideal_eq  = K_thermo / (1 + K_thermo)
+fB_custom_eq = (K_thermo / gamma_B) / (1 + K_thermo / gamma_B)
+
+fig, ax = plt.subplots()
+ax.plot(result_ideal.t,  result_ideal["B"],  color="C0", label="ideal ($\\gamma_i = 1$)")
+ax.plot(result_custom.t, result_custom["B"], color="C1", label=rf"non-ideal ($\gamma_\mathrm{{B}} = {gamma_B}$)")
+ax.axhline(fB_ideal_eq  * c_tot, color="C0", lw=0.8, ls="--")
+ax.axhline(fB_custom_eq * c_tot, color="C1", lw=0.8, ls="--")
+ax.set_xlabel("time [s]")
+ax.set_ylabel(r"$c_\mathrm{B}$ [mol/m³]")
+ax.legend()
+fig.tight_layout()
+```
+
+```{figure} #cell-custom-gamma-kinetics
+:name: fig-custom-gamma-kinetics
+
+Concentration of B over time for ideal and non-ideal ($\gamma_\text{B} = 0.7$, $\gamma_\text{A} = 1$) cases with $K = 4$.
+Both trajectories start from pure A and follow the same initial slope; the non-ideal system converges to a higher equilibrium concentration (dashed lines) because $\gamma_\text{B} < 1$ stabilises B relative to A.
+```
+
+Any callable that maps `(state, charges)` to an array of activity coefficients slots in identically; the solver loop is unchanged.
+
+
+## Activity models for aqueous electrolytes
+
+For aqueous electrolyte solutions the two built-in models cover the relevant range.
+`ActivityCoefficientDebyeHuckel` implements the Debye-Hückel limiting law, accurate to $I \approx 100\ \text{mol/m}^3$; `ActivityCoefficientDavies` adds an empirical linear correction that extends validity to $\approx 500\ \text{mol/m}^3$ (@nonidealities, @fig-activity):
+
+```{code-cell} ipython3
 proton    = Component("proton",    [Species("H+",  charge=+1)])
 hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
 water     = Component("water",     [Species("H2O", charge=0, is_solvent=True)])
@@ -42,12 +192,12 @@ chloride  = Component("chloride",  [Species("Cl-", charge=-1)])
 sodium    = Component("sodium",    [Species("Na+", charge=+1)])
 ```
 
-For aqueous electrolyte solutions the two built-in models cover the relevant range: `ActivityCoefficientDebyeHuckel` is accurate to $I \approx 100\ \text{mol/m}^3$; `ActivityCoefficientDavies` extends validity to $\approx 500\ \text{mol/m}^3$ (@fig-activity).
+Both scale as $z_i^2$: a divalent ion at the same ionic strength receives a correction four times larger than a monovalent one.
 
 
 ## Ionic strength
 
-For the Debye-Hückel and Davies models, $\gamma_i$ depends on the ionic strength $I = \frac{1}{2}\sum_i c_i z_i^2 / c^\circ$, which must be evaluated from the current composition before $\gamma_i$ can be computed.
+For the Debye-Hückel and Davies models, $\gamma_i$ depends on the ionic strength $I = \frac{1}{2}\sum_i z_i^2 c_i / c^\circ$, which must be evaluated from the current composition before $\gamma_i$ can be computed.
 Three strategies cover different modelling choices:
 
 **`IonicStrengthIdeal`** computes $I$ from the dynamic species in the model.
@@ -223,10 +373,10 @@ for I_bg_mM in I_bg_range:
     I_bg = float(I_bg_mM)
     for results, coeff in [(pKa_dh, ActivityCoefficientDebyeHuckel()),
                            (pKa_dav, ActivityCoefficientDavies())]:
-        model  = make_model(coeff, I_bg)
-        c_eq   = solve_equilibrium(model, c0_loop, T=298.15)
-        pH_eq  = -np.log10(c_eq["H+"] / C_REF)
-        A_frac = c_eq["A-"] / (c_eq["HA"] + c_eq["A-"])
+        model_i = make_model(coeff, I_bg)
+        c_eq    = solve_equilibrium(model_i, c0_loop, T=298.15)
+        pH_eq   = -np.log10(c_eq["H+"] / C_REF)
+        A_frac  = c_eq["A-"] / (c_eq["HA"] + c_eq["A-"])
         results.append(pH_eq - np.log10(A_frac / (1 - A_frac)))
 
 fig, ax = plt.subplots()
