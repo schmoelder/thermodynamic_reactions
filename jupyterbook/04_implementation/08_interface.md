@@ -21,8 +21,8 @@ $$
 where the residual vector $F$ has one entry per dynamic species.
 The library exposes this interface via two methods on `ReactionModel`:
 
-- `ReactionModel.residual(c, c_dot, T)` --- assembles $F$
-- `ReactionModel.jacobian(c, c_dot, T)` --- returns $\partial F / \partial \mathbf{c}$
+- `ReactionModel.residual(c, c_dot, T)`: assembles $F$
+- `ReactionModel.jacobian(c, c_dot, T)`: returns $\partial F / \partial \mathbf{c}$
 
 Two types of row appear in $F$:
 

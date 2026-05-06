@@ -44,7 +44,7 @@ $$q = \frac{q_\text{max}\,K_\text{ads}\,c}{1 + K_\text{ads}\,c} \qquad r = \frac
 
 **Chapters in this part:**
 
-*Stage I — Equilibrium*
+*Stage I: Equilibrium*
 
 - **@reaction-coordinates**: extent of reaction $\xi$, stoichiometric coefficients, physical range
 - **@reaction-gibbs-energy**: $G(\xi)$, reaction Gibbs energy $\Delta_r G$, reaction quotient $Q$, Le Chatelier's principle
@@ -54,7 +54,7 @@ $$q = \frac{q_\text{max}\,K_\text{ads}\,c}{1 + K_\text{ads}\,c} \qquad r = \frac
 - **@acid-base**: proton transfer, $K_a$, pH, Henderson-Hasselbalch
 - **@speciation-buffers**: Bjerrum diagrams, buffer capacity, ionic strength corrections
 
-*Stage II — Dynamics*
+*Stage II: Dynamics*
 
 - **@kinetics**: reaction rates, elementary steps, mechanisms, rate-determining step
 - **@mass-action-law**: mass-action rate law, thermodynamic consistency $k_f/k_r = K$

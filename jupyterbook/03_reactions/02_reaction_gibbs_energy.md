@@ -142,7 +142,7 @@ Adding a reactant reduces $Q$ below $K$, making $\Delta_r G < 0$ and driving the
 Removing a species has the opposite effect.
 
 **Temperature ($T$, $S$):** a temperature change shifts $K$ itself, not $Q$.
-For an exothermic reaction ($\Delta_r H^\circ < 0$), raising $T$ decreases $K$, shifting equilibrium toward reactants — the system absorbs heat to partially oppose the imposed temperature rise.
+For an exothermic reaction ($\Delta_r H^\circ < 0$), raising $T$ decreases $K$, shifting equilibrium toward reactants; the system absorbs heat to partially oppose the imposed temperature rise.
 The quantitative form is the van't Hoff equation (@equilibrium-temperature).
 
 **Pressure ($P$, $V$):** a pressure increase shifts equilibrium toward the side with fewer moles of gas, reducing total volume and opposing the compression.
