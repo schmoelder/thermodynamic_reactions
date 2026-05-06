@@ -120,6 +120,8 @@ $$
 This means the activity coefficients of different species in the same solution are linked: the activity coefficients cannot be chosen independently for each species.
 If the activity coefficient of the solute increases with concentration, the activity coefficient of the solvent must respond accordingly.
 In practice this constrains how activity coefficient models are constructed and tested.
+The underlying thermodynamic potential is the **excess Gibbs energy** $G^E = \Delta G^\text{mix} - \Delta G^\text{mix,ideal}$: activity coefficients arise as its partial molar derivatives, $RT\ln\gamma_i = (\partial G^E/\partial n_i)_{T,P,n_{j\neq i}}$, in exact analogy with $\mu_i = (\partial G/\partial n_i)_{T,P,n_{j\neq i}}$.
+Models such as NRTL or UNIQUAC (for non-electrolyte mixtures) and Pitzer (for concentrated electrolytes) are built by specifying $G^E$ and deriving $\gamma_i$ from it; the Debye-Hückel and Davies models used in this book bypass $G^E$ and specify $\gamma_i$ directly from the physics of the ionic atmosphere.
 
 
 ## Debye-Hückel theory for electrolyte solutions
