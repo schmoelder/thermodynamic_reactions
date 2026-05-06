@@ -252,6 +252,23 @@ Van't Hoff plot ($\ln K$ vs $1/T$) comparing `EquilibriumConstantVantHoff` and `
 ```
 
 The Kirchhoff correction matters when $\Delta C_p$ is large or the temperature range is wide; for most aqueous reactions at near-ambient conditions `EquilibriumConstantVantHoff` is adequate (@fig-eq-cp).
+For empirically fitted $K(T)$ — a polynomial, exponential, or any other functional form — `EquilibriumConstantCustom` accepts any callable `(T: float) -> float`, and `EquilibriumConstantTabulated` interpolates linearly through measured $(T, K)$ pairs:
+
+```{code-cell} ipython3
+from reactions.api import EquilibriumConstantCustom, EquilibriumConstantTabulated
+import numpy as np
+
+# Fitted exponential from experiment
+K_exp = EquilibriumConstantCustom(lambda T: 2.5 * np.exp(-1500 / T))
+
+# Measured data points
+K_tab = EquilibriumConstantTabulated(
+    T_data=[280.0, 298.15, 320.0, 350.0],
+    K_data=[5.2,   4.0,    2.8,   1.7  ],
+)
+```
+
+Both slot into `ThermodynamicReaction` identically to the van't Hoff forms.
 
 ---
 

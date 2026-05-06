@@ -41,7 +41,7 @@ The reaction contribution to $\partial c_i / \partial t$ is $r_i = \sum_j \nu_{i
 
 **Thermodynamic consistency.**
 Forward and reverse rate constants are never independent: $k_r(T) = k_f(T) / K(T)$.
-Storing $k_r$ separately breaks this identity whenever temperature changes.
+`ThermodynamicReaction` enforces this by deriving $k_r(T)$ from $K(T)$ at every evaluation.
 
 **Equilibrium (DAE) mode.**
 When a reaction is fast relative to the transport timescale, its ODE is replaced by the algebraic constraint $\ln Q(\mathbf{a}, T) = \ln K(T)$, turning the transport PDE into a PDAE.

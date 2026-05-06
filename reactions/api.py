@@ -426,6 +426,22 @@ class EquilibriumConstantVantHoffCp(EquilibriumConstantBase):
 
 
 @dataclass
+class EquilibriumConstantCustom(EquilibriumConstantBase):
+    """K(T) from any callable — use for fitted polynomials, exponentials, or lookup tables.
+
+    Parameters
+    ----------
+    func : callable
+        Any callable ``(T: float) -> float`` returning the dimensionless K at T [K].
+    """
+
+    func: Callable[[float], float]
+
+    def K(self, T: float) -> float:  # noqa: N802
+        return float(self.func(T))
+
+
+@dataclass
 class EquilibriumConstantTabulated(EquilibriumConstantBase):
     """
     K(T) from linearly interpolated tabulated data.

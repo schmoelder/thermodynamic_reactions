@@ -21,7 +21,7 @@ k_f(T) = A\,\exp\!\left(-\frac{E_a}{RT}\right).
 $$
 
 `RateConstantArrhenius` evaluates this at any temperature and is passed as the `rate_constant` argument of `ThermodynamicReaction`.
-If the reverse rate constant $k_r$ were held fixed rather than derived from $K(T)$, the ratio $k_f(T)/k_r$ would drift away from $K(T)$ as temperature changes; this is the failure mode that `ThermodynamicReaction` prevents (@fig-impl-arrhenius).
+Pairing `RateConstantArrhenius` with `ThermodynamicReaction` ensures that $k_r(T) = k_f(T)/K(T)$ is recomputed at every evaluation; the ratio tracks $K(T)$ exactly across the full temperature range (@fig-impl-arrhenius).
 
 ```{code-cell} ipython3
 import numpy as np
@@ -74,9 +74,9 @@ fig.tight_layout()
 :name: fig-impl-arrhenius
 
 Left: Arrhenius plot ($\ln k_f$ vs $1/T$) for $A = 10^{10}\ \text{s}^{-1}$, $E_a = 40\ \text{kJ/mol}$.
-Right: with a fixed $k_r$ (calibrated at 25 °C), $k_f(T)/k_r$ diverges from $K(T)$ as temperature
-changes (shaded error); `ThermodynamicReaction` recomputes $k_r = k_f(T)/K(T)$ at every step,
-keeping the ratio on the solid curve.
+Right: a fixed $k_r$ (calibrated at 25 °C) keeps $k_f(T)/k_r$ on the dashed line while $K(T)$
+shifts with temperature (shaded region); `ThermodynamicReaction` recomputes $k_r = k_f(T)/K(T)$
+at every step, keeping the ratio on the solid $K(T)$ curve.
 ```
 
 ## Thermodynamic consistency across temperatures
