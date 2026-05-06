@@ -10,7 +10,7 @@ kernelspec:
 
 Single-component Langmuir (@adsorption) and single-reaction equilibrium (@equilibrium) treat one species in isolation.
 Real chromatographic systems involve many species competing for the same finite-site pool, coupled through shared counter-ions and a common solvent.
-This chapter extends both C1 and C2 equilibria to multicomponent systems, recovering the competitive Langmuir isotherm, the Steric Mass Action model, and the Donnan equilibrium as special cases of the same $\mu$-equality framework.
+This chapter extends both stoichiometric and finite-site equilibria to multicomponent systems, recovering the competitive Langmuir isotherm, the Steric Mass Action model, and the Donnan equilibrium as special cases of the same $\mu$-equality framework.
 
 
 ## Competitive adsorption

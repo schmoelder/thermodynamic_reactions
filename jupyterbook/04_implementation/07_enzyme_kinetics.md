@@ -9,9 +9,9 @@ kernelspec:
 # Enzyme Kinetics
 
 Mass action kinetics are unbounded in substrate concentration in the model form: the rate is linear or polynomial in concentration with no ceiling.
-For enzyme-catalysed reactions the rate saturates because the enzyme active site becomes limiting; under quasi-steady-state or rapid equilibrium assumptions, this produces Michaelis-Menten kinetics: the same finite-site constraint (C2) that produces the Langmuir isotherm at equilibrium (@adsorption, @saturation).
+For enzyme-catalysed reactions the rate saturates because the enzyme active site becomes limiting; under quasi-steady-state or rapid equilibrium assumptions, this produces Michaelis-Menten kinetics: the same finite-site saturation that produces the Langmuir isotherm at equilibrium (@adsorption, @saturation).
 
-This chapter is an orthogonal extension along the C2 axis: it depends on the kinetic framework introduced in @implementation-kinetics, but is independent of the C1 acid-base and activity chemistry in @implementation-activity through @implementation-buffer.
+This chapter is an orthogonal extension: it depends on the kinetic framework introduced in @implementation-kinetics, but is independent of the acid-base and activity chemistry in @implementation-activity through @implementation-buffer.
 `EnzymaticReaction` slots into the same $\mathbf{S}\boldsymbol{\varphi}$ framework as `ThermodynamicReaction`; only the rate closure $\varphi$ changes.
 This is a third closure class: `ThermodynamicReaction` closes via an equilibrium constraint, `MassActionReaction` via a linear rate law, and `EnzymaticReaction` via a saturating nonlinear closure.
 
@@ -91,10 +91,8 @@ fig.tight_layout()
 ```{figure} #cell-saturation
 :name: fig-saturation
 
-Michaelis-Menten and Hill ($n=3$) rate laws compared to the linear (mass-action) limit,
-for $V_\text{max} = 1\ \text{mol/(m}^3\text{·s)}$ and $K_m = 200\ \text{mol/m}^3$.
-Both saturate at $V_\text{max}$ for $[S] \gg K_m$; the Hill curve is sigmoidal due to
-cooperativity.
+Michaelis-Menten and Hill ($n=3$) rate laws compared to the linear (mass-action) limit, for $V_\text{max} = 1\ \text{mol/(m}^3\text{·s)}$ and $K_m = 200\ \text{mol/m}^3$.
+Both saturate at $V_\text{max}$ for $[S] \gg K_m$; the Hill curve is sigmoidal due to cooperativity.
 The dotted line is the linear approximation valid at low substrate concentration.
 ```
 

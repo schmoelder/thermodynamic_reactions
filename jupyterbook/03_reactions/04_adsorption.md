@@ -31,7 +31,7 @@ $$\theta + \theta_\text{free} = 1,$$
 
 where $\theta_\text{free} = 1 - \theta$ is the fraction of free sites.
 This bound limits loading: as $\theta \to 1$, no free sites remain regardless of solution concentration.
-This is the C2 constraint; it has no counterpart in stoichiometric (C1) equilibria.
+This finite-site constraint has no counterpart in stoichiometric equilibria, where concentrations are free to range without an imposed ceiling.
 
 
 ## The Langmuir isotherm

@@ -67,5 +67,5 @@ All reactions are evaluated as $\varphi(\mathbf{a}, T)$; the rest of the API onl
 - @implementation-activity: activity corrections ($a_i = \gamma_i c_i/c^\circ$), ionic strength models, Debye-Hückel and Davies, and the apparent pKa shift.
 - @implementation-acid-base: pH, the `pKa` factory, water autoionisation, and Davies corrections.
 - @implementation-buffer: buffer capacity, mixed buffers, and ionic strength effects on $\beta$.
-- @implementation-enzyme: saturation kinetics (`MichaelisMenten`, `HillRate`) as the C2 finite-site constraint expressed as a kinetic rate law.
+- @implementation-enzyme: saturation kinetics (`MichaelisMenten`, `HillRate`) as the finite-site constraint expressed as a kinetic rate law.
 - @implementation-interface: the residual/Jacobian contract and CADET-Core integration.
