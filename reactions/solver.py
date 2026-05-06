@@ -16,7 +16,6 @@ from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
 from reactions.api import ReactionModel
@@ -64,6 +63,7 @@ class SimulationResult:
         species : list[str], optional
             Subset of species to plot. Default: all.
         """
+        import matplotlib.pyplot as plt
         if ax is None:
             _, ax = plt.subplots()
         names = species or self.species

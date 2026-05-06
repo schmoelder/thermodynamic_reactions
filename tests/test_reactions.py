@@ -206,6 +206,81 @@ def test_vanthoff_converges_at_each_temperature(T):
 
 
 # ---------------------------------------------------------------------------
+# ThermodynamicReaction reduces to MassActionReaction under ideal conditions
+#
+# ThermodynamicReaction uses activities a_i = c_i / C_REF (ideal, γ=1):
+#   v = kf_thermo * prod(a_i^e_fwd) = (kf_thermo / C_REF^n) * prod(c_i^e_fwd)
+# MassActionReaction uses concentrations directly:
+#   v = kf_MA * prod(c_i^e_fwd)
+# Equivalence requires kf_thermo = kf_MA * C_REF^n.
+# For the equilibrium constant: K_thermo = K_conc * C_REF^(n_fwd - n_bwd),
+# where n_fwd and n_bwd are the sums of forward and backward exponents.
+# ---------------------------------------------------------------------------
+
+
+def test_thermodynamic_reduces_to_mass_action_n1():
+    """n=1 (A⇌B): ThermodynamicReaction with kf*C_REF matches MassActionReaction exactly."""
+    kf_MA, kr_MA = 2.0, 0.5
+    K_conc = kf_MA / kr_MA   # K unchanged for n_fwd=n_bwd=1
+
+    comp = Component("ab", [Species("A"), Species("B")])
+    model_ma = ReactionModel(
+        components=[comp],
+        reactions=[MassActionReaction("A <-> B", kf=kf_MA, kr=kr_MA)],
+    )
+    model_td = ReactionModel(
+        components=[comp],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstant(K_eq=K_conc),
+                rate_constant=RateConstantFixed(kf_value=kf_MA * C_REF),
+            )
+        ],
+    )
+
+    c0 = {"A": 800.0, "B": 200.0}
+    result_ma = simulate(model_ma, c0, (0, 2.0))
+    result_td = simulate(model_td, c0, (0, 2.0))
+
+    assert np.max(np.abs(result_ma["A"] - result_td["A"])) < 1e-6
+    assert np.max(np.abs(result_ma["B"] - result_td["B"])) < 1e-6
+
+
+def test_thermodynamic_reduces_to_mass_action_n2():
+    """n=2 (2A⇌B): ThermodynamicReaction with kf*C_REF^2, K*C_REF matches MassActionReaction."""
+    kf_MA = 1e-3   # m³/(mol·s)
+    kr_MA = 2e-4   # 1/s
+    K_conc = kf_MA / kr_MA
+    # n_fwd=2, n_bwd=1 → K_thermo = K_conc * C_REF^(2-1) = K_conc * C_REF
+
+    comp = Component("ab", [Species("A"), Species("B")])
+    model_ma = ReactionModel(
+        components=[comp],
+        reactions=[MassActionReaction("2 A <-> B", kf=kf_MA, kr=kr_MA)],
+    )
+    model_td = ReactionModel(
+        components=[comp],
+        reactions=[
+            ThermodynamicReaction(
+                "2 A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstant(K_eq=K_conc * C_REF),
+                rate_constant=RateConstantFixed(kf_value=kf_MA * C_REF**2),
+            )
+        ],
+    )
+
+    c0 = {"A": 400.0, "B": 100.0}
+    result_ma = simulate(model_ma, c0, (0, 5.0))
+    result_td = simulate(model_td, c0, (0, 5.0))
+
+    assert np.max(np.abs(result_ma["A"] - result_td["A"])) < 1e-4
+    assert np.max(np.abs(result_ma["B"] - result_td["B"])) < 1e-4
+
+
+# ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------
 

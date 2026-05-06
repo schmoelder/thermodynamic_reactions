@@ -521,15 +521,16 @@ class RateConstantBase(ABC):
         MassActionReaction:     kf  in  (m³/mol)^(n-1) / s
         ThermodynamicReaction:  kf  in  mol/(m³·s)  for any order
 
-    For first-order reactions (n=1) the two conventions coincide.
-    For higher-order reactions, the numerical value of kf differs by
-    powers of C_REF = 1000 mol/m³:
+    For any reaction order n, the numerical value of kf differs between
+    the two classes by a factor of C_REF^n:
 
-        kf_thermo = kf_massaction * C_REF^(n-1)
+        kf_thermo = kf_massaction * C_REF^n
 
+    where C_REF = 1000 mol/m³.  For first-order reactions (n=1) this
+    means kf_thermo = kf_massaction * 1000: the same numerical value
+    gives dynamics ~1000× slower in ThermodynamicReaction.
     When fitting kf to experimental data, be consistent: use the same
-    reaction class for fitting and prediction.  If you have literature
-    values in mol/L units, multiply by 1000^(n-1) to convert to mol/m³.
+    reaction class for fitting and prediction.
     """
 
     @abstractmethod
@@ -979,14 +980,14 @@ class ThermodynamicReaction(ReactionBase):
             rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
         )
 
-    Converting from a MassActionReaction kf (first-order, n=1 — no change needed):
+    Converting from a MassActionReaction kf (first-order, n=1):
         # MassActionReaction("A <-> B", kf=2.0, kr=0.5)
-        # kf_thermo = kf_mass * C_REF^(1-1) = 2.0 * 1 = 2.0  mol/(m³·s)
+        # kf_thermo = kf_mass * C_REF^1 = 2.0 * 1000 = 2000  mol/(m³·s)
         ThermodynamicReaction(
             "A <-> B",
             mode="kinetic",
             equilibrium_constant=EquilibriumConstant(K_eq=4.0),
-            rate_constant=RateConstantFixed(kf_value=2.0),
+            rate_constant=RateConstantFixed(kf_value=2000.0),
         )
     """
 
