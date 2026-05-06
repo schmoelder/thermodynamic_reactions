@@ -20,7 +20,7 @@ $$\Delta_r G^\circ = \Delta_r H^\circ - T\Delta_r S^\circ$$
 
 $$\Delta_r H^\circ = \sum_i \nu_i \Delta_f H^\circ_i, \qquad \Delta_r S^\circ = \sum_i \nu_i S^\circ_i$$
 
-Standard enthalpies of formation $\Delta_f H^\circ$ and standard molar entropies $S^\circ$ are measured at $T^\circ = 298.15\,\text{K}$ and $P^\circ = 1\,\text{bar}$.
+Standard enthalpies of formation $\Delta_f H^\circ$ and standard molar entropies $S^\circ$ are measured at $T^\circ = 298.15\,\text{K}$ and $P^\circ = 1\,\mathrm{bar}$.
 The third law (@laws-of-thermodynamics) provides absolute values of $S^\circ$ via integration of $C_p / T$ from 0 K; unlike enthalpies, entropies have a natural zero.
 
 ```{admonition} Intuition
@@ -61,7 +61,7 @@ A van't Hoff plot of $\ln K$ versus $1/T$ has slope $-\Delta_r H^\circ / R$, whi
 ```{admonition} Intuition
 :class: tip
 The van't Hoff equation links temperature to the position of equilibrium: heating favours the endothermic direction, cooling the exothermic one.
-The Haber process ($\ce{N2 + 3 H2 <=> 2 NH3}$, $\Delta_r H^\circ = -92\,\text{kJ/mol}$) illustrates the scale: between 25 °C and 500 °C, $K$ drops by several orders of magnitude, drastically reducing equilibrium yield.
+The Haber process ($\ce{N2 + 3 H2 <=> 2 NH3}$, $\Delta_r H^\circ = -92\,\mathrm{kJ/mol}$) illustrates the scale: between 25 °C and 500 °C, $K$ drops by several orders of magnitude, drastically reducing equilibrium yield.
 Industrial plants operate at 400--500 °C as a compromise between reaction rate and equilibrium yield.
 The same equation governs $K_\text{ads}$ for adsorption (@adsorption) and $K_a$ for acid-base equilibria (@acid-base), with each reaction's $\Delta_r H^\circ$ setting the slope.
 ```

@@ -18,7 +18,7 @@ The constraint $k_r(T) = k_f(T)/K(T)$ is enforced in both modes.
 `ThermodynamicReaction(mode="kinetic")` requires a `rate_constant` argument.
 `RateConstantFixed` supplies a constant $k_f$ independent of temperature; the simplest choice when the rate is known at one operating condition.
 
-The rate constant in `ThermodynamicReaction` has units $\text{mol}/(\text{m}^3\cdot\text{s})$ because the reaction flux is evaluated in terms of dimensionless activities $a_i = c_i / c^\circ$ rather than concentrations directly.
+The rate constant in `ThermodynamicReaction` has units $\text{mol}/(\text{m}^3\cdot\mathrm{s})$ because the reaction flux is evaluated in terms of dimensionless activities $a_i = c_i / c^\circ$ rather than concentrations directly.
 For a first-order reaction at ideal conditions this is related to the mass-action rate constant by $k_f^\text{thermo} = k_f^\text{MA} \cdot c^\circ$ (@implementation-source-term, @mass-action-law).
 
 ```{code-cell} ipython3
@@ -94,7 +94,7 @@ fig.tight_layout()
 ```{figure} #cell-kin-fixed
 :name: fig-kin-fixed
 
-Kinetic simulation of $\ce{A <=> B}$ with $K = 4$ and $k_f = 2000\ \text{mol/(m}^3\text{s)}$.
+Kinetic simulation of $\ce{A <=> B}$ with $K = 4$ and $k_f = 2000\ \mathrm{mol/(m^3 \cdot s)}$.
 Dashed lines are the equilibrium concentrations from `solve_equilibrium`; the trajectory converges to the same values.
 The rate constant sets the timescale; $K$ alone sets the endpoint.
 ```
@@ -153,7 +153,7 @@ fig.tight_layout()
 ```{figure} #cell-impl-arrhenius
 :name: fig-impl-arrhenius
 
-Left: Arrhenius plot ($\ln k_f$ vs $1/T$) for $A = 10^{10}\ \text{s}^{-1}$, $E_a = 40\ \text{kJ/mol}$.
+Left: Arrhenius plot ($\ln k_f$ vs $1/T$) for $A = 10^{10}\ \mathrm{s}^{-1}$, $E_a = 40\ \mathrm{kJ/mol}$.
 Right: a fixed $k_r$ (calibrated at 25 °C) keeps $k_f(T)/k_r$ on the dashed line while $K(T)$
 shifts with temperature (shaded region); `ThermodynamicReaction` recomputes $k_r = k_f(T)/K(T)$
 at every step, keeping the ratio on the solid $K(T)$ curve.
@@ -251,7 +251,7 @@ fig.tight_layout()
 :name: fig-two-temps
 
 Kinetic trajectories for $\ce{A <=> B}$ at $T = 298\ \text{K}$ (left) and $T = 320\ \text{K}$ (right),
-with $E_a = 40\ \text{kJ/mol}$, $\Delta H^\circ = -20\ \text{kJ/mol}$.
+with $E_a = 40\ \mathrm{kJ/mol}$, $\Delta H^\circ = -20\ \mathrm{kJ/mol}$.
 Dashed lines are the analytical equilibria $c_\text{B}^\text{eq} = c_\text{tot}\,K(T)/(1+K(T))$.
 The exothermic reaction has a smaller $K$ at higher temperature (Le Chatelier's principle),
 so less B accumulates at $320\ \text{K}$.

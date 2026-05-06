@@ -30,7 +30,7 @@ Equilibrium is the stationary point where $\Delta_r G = 0$.
 
 ## Geometric interpretation
 
-For $\mathrm{A} \rightleftharpoons \mathrm{B}$, taking $V = 1/c^\circ$ with $n_{\mathrm{A},0} = 1\,\mathrm{mol}$ so that $a_i = n_i/(V c^\circ) = n_i/\mathrm{mol}$, inserting
+For $\ce{A <=> B}$, taking $V = 1/c^\circ$ with $n_{\mathrm{A},0} = 1\,\mathrm{mol}$ so that $a_i = n_i/(V c^\circ) = n_i/\mathrm{mol}$, inserting
 $a_\mathrm{A} = 1 - \xi$ and $a_\mathrm{B} = \xi$ into $G = \sum_i \mu_i n_i$ gives:
 
 $$
@@ -101,7 +101,7 @@ fig.tight_layout()
 ```{figure} #cell-g-xi
 :name: fig-g-xi
 
-Gibbs energy $G(\xi)$ for $\mathrm{A} \rightleftharpoons \mathrm{B}$ with $\Delta_r G^\circ < 0$.
+Gibbs energy $G(\xi)$ for $\ce{A <=> B}$ with $\Delta_r G^\circ < 0$.
 Tangent lines at two off-equilibrium compositions have nonzero slope ($\Delta_r G \ne 0$); the tangent at the minimum is horizontal ($\Delta_r G = 0$).
 ```
 

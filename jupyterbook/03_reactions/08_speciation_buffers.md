@@ -13,16 +13,16 @@ That answer enables buffer design and reveals how ionic strength shifts the appa
 
 ## Speciation: Bjerrum diagrams
 
-The total analytical concentration $c_\text{tot} = [\text{HA}] + [\text{A}^-]$ is conserved.
+The total analytical concentration $c_\text{tot} = [\ce{HA}] + [\ce{A-}]$ is conserved.
 Solving for the individual fractions at a given pH:
 
 $$
-f_{\text{A}^-} = \frac{1}{1 + 10^{\text{p}K_a - \text{pH}}},
-\qquad f_\text{HA} = 1 - f_{\text{A}^-}
+f_{\ce{A-}} = \frac{1}{1 + 10^{\text{p}K_a - \text{pH}}},
+\qquad f_{\ce{HA}} = 1 - f_{\ce{A-}}
 $$
 
 A plot of these fractions versus pH is called a **Bjerrum diagram**.
-Each species traces a sigmoid; the inflection of $f_{\text{A}^-}$ lies at $\text{pH} = \text{p}K_a$.
+Each species traces a sigmoid; the inflection of $f_{\ce{A-}}$ lies at $\text{pH} = \text{p}K_a$.
 
 ```{code-cell} ipython3
 :tags: [remove-cell]
@@ -63,8 +63,8 @@ The two forms cross at $\text{pH} = \text{p}K_a$ where each fraction equals one 
 The speciation fraction of the species that has lost $k$ protons is:
 
 $$
-f_k = \frac{\alpha_k\,[\text{H}^+]^{n-k}}{\displaystyle\sum_{j=0}^{n}
-\alpha_j\,[\text{H}^+]^{n-j}}
+f_k = \frac{\alpha_k\,[\ce{H+}]^{n-k}}{\displaystyle\sum_{j=0}^{n}
+\alpha_j\,[\ce{H+}]^{n-j}}
 $$
 
 Each transition produces one inflection point in the diagram at the corresponding pKa.
@@ -120,7 +120,7 @@ fig.tight_layout()
 
 Bjerrum diagram for phosphoric acid ($\text{p}K_{a1} = 2.15$, $\text{p}K_{a2} = 7.20$, $\text{p}K_{a3} = 12.35$, NIST).
 The three transitions span the full biochemical pH range.
-Near pH 7, $\text{H}_2\text{PO}_4^-$ and $\text{HPO}_4^{2-}$ coexist, making phosphate an effective physiological buffer.
+Near pH 7, $\ce{H2PO4-}$ and $\ce{HPO4^2-}$ coexist, making phosphate an effective physiological buffer.
 ```
 
 ## Buffer capacity
@@ -137,19 +137,19 @@ where $c_b$ is the concentration of strong base added to the solution.
 **Derivation (monoprotic).** For a monoprotic buffer at total concentration $c_\text{tot}$, the proton balance at any stage of titration is:
 
 $$
-[\text{H}^+] + c_b = [\text{OH}^-] + [\text{A}^-]
+[\ce{H+}] + c_b = [\ce{OH-}] + [\ce{A-}]
 $$
 
-Differentiating with respect to pH and using $d[\text{H}^+]/d(\text{pH}) = -\ln 10\cdot[\text{H}^+]$, $d[\text{OH}^-]/d(\text{pH}) = \ln 10\cdot[\text{OH}^-]$, and $d[\text{A}^-]/d(\text{pH}) = \ln 10\cdot c_\text{tot}\,f_\text{HA}\,f_{\text{A}^-}$:
+Differentiating with respect to pH and using $d[\ce{H+}]/d(\text{pH}) = -\ln 10\cdot[\ce{H+}]$, $d[\ce{OH-}]/d(\text{pH}) = \ln 10\cdot[\ce{OH-}]$, and $d[\ce{A-}]/d(\text{pH}) = \ln 10\cdot c_\text{tot}\,f_{\ce{HA}}\,f_{\ce{A-}}$:
 
 $$
 \beta = \ln 10 \left(
-  [\text{H}^+] + [\text{OH}^-] + c_\text{tot}\,f_\text{HA}\,f_{\text{A}^-}
+  [\ce{H+}] + [\ce{OH-}] + c_\text{tot}\,f_{\ce{HA}}\,f_{\ce{A-}}
 \right)
 $$
 
 The first two terms arise from water autoionisation and dominate at extreme pH.
-The buffer term $c_\text{tot}\,f_\text{HA}\,f_{\text{A}^-}$ is maximised when $f_\text{HA} = f_{\text{A}^-} = \tfrac{1}{2}$, i.e. at $\text{pH} = \text{p}K_a$:
+The buffer term $c_\text{tot}\,f_{\ce{HA}}\,f_{\ce{A-}}$ is maximised when $f_{\ce{HA}} = f_{\ce{A-}} = \tfrac{1}{2}$, i.e. at $\text{pH} = \text{p}K_a$:
 
 $$
 \beta_\text{max} = \frac{\ln 10}{4}\,c_\text{tot} \approx 0.576\,c_\text{tot}
@@ -212,8 +212,8 @@ $$
 \left[\sum_{k=0}^{n} k^2 f_k - \left(\sum_{k=0}^{n} k\,f_k\right)^2\right]
 $$
 
-For a monoprotic acid the sum reduces to $f_\text{HA}\,f_{\text{A}^-}$, recovering the formula above.
-For phosphate ($n = 3$), the dominant contribution near pH 7 comes from the $\text{H}_2\text{PO}_4^-$/$\text{HPO}_4^{2-}$ pair ($\text{p}K_{a2} = 7.20$), which is why phosphate is the standard physiological buffer.
+For a monoprotic acid the sum reduces to $f_{\ce{HA}}\,f_{\ce{A-}}$, recovering the formula above.
+For phosphate ($n = 3$), the dominant contribution near pH 7 comes from the $\ce{H2PO4-}$/$\ce{HPO4^2-}$ pair ($\text{p}K_{a2} = 7.20$), which is why phosphate is the standard physiological buffer.
 
 **Common buffers.** The design rule is to choose a buffer whose $\text{p}K_a$ is within one unit of the target pH.
 For coverage over a wider range, multiple buffers with staggered $\text{p}K_a$ values are combined.
@@ -235,7 +235,7 @@ The equilibrium constants in thermodynamic tables are based on activities.
 At nonzero ionic strength, activity coefficients shift the apparent constant that governs observable concentration ratios.
 
 The activity coefficients $\gamma_i(I, z_i)$ follow from Debye-Hückel or Davies theory (@nonidealities, @fig-activity).
-Starting from $K_a = K_a^\text{app}\cdot \gamma_{\text{H}^+}\gamma_{\text{A}^-}/\gamma_\text{HA}$ and applying the Davies equation with the charge of the acid form denoted $z$:
+Starting from $K_a = K_a^\text{app}\cdot \gamma_{\ce{H+}}\gamma_{\ce{A-}}/\gamma_{\ce{HA}}$ and applying the Davies equation with the charge of the acid form denoted $z$:
 
 $$
 \text{p}K_a^\text{app} = \text{p}K_a
@@ -243,9 +243,9 @@ $$
 $$
 
 The factor $(1 - z)$ grows with the charge magnitude of the acid.
-For a neutral acid ($z = 0$, meaning the undissociated acid form carries zero net charge, e.g. acetic acid AcOH): the shift is $-2A\,f(I)$, about $-0.24$ at physiological ionic strength ($I = 0.15\ \text{mol/L}$).
-For $\text{H}_2\text{PO}_4^-$ ($z = -1$): the factor is 4, giving a shift near $-0.5$.
-For $\text{HPO}_4^{2-}$ ($z = -2$): the factor is 6, giving a shift near $-0.7$.
+For a neutral acid ($z = 0$, meaning the undissociated acid form carries zero net charge, e.g. acetic acid AcOH): the shift is $-2A\,f(I)$, about $-0.24$ at physiological ionic strength ($I = 0.15\ \mathrm{mol/L}$).
+For $\ce{H2PO4-}$ ($z = -1$): the factor is 4, giving a shift near $-0.5$.
+For $\ce{HPO4^2-}$ ($z = -2$): the factor is 6, giving a shift near $-0.7$.
 
 ```{code-cell} ipython3
 :tags: [remove-cell]
@@ -285,7 +285,7 @@ fig.tight_layout()
 :name: fig-pka-ionic-strength
 
 Apparent pKa shift as a function of ionic strength for three charge-type transitions (Davies equation, 25 °C).
-At $I = 150\ \text{mmol/L}$, a neutral acid shifts by $-0.24$; a dianion acid shifts by $-0.72$.
+At $I = 150\ \mathrm{mmol/L}$, a neutral acid shifts by $-0.24$; a dianion acid shifts by $-0.72$.
 ```
 
 ## Consequences for chromatography

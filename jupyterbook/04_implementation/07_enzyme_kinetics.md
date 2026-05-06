@@ -91,7 +91,7 @@ fig.tight_layout()
 ```{figure} #cell-saturation
 :name: fig-saturation
 
-Michaelis-Menten and Hill ($n=3$) rate laws compared to the linear (mass-action) limit, for $V_\text{max} = 1\ \text{mol/(m}^3\text{·s)}$ and $K_m = 200\ \text{mol/m}^3$.
+Michaelis-Menten and Hill ($n=3$) rate laws compared to the linear (mass-action) limit, for $V_\text{max} = 1\ \mathrm{mol/(m^3 \cdot s)}$ and $K_m = 200\ \mathrm{mol/m^3}$.
 Both saturate at $V_\text{max}$ for $[S] \gg K_m$; the Hill curve is sigmoidal due to cooperativity.
 The dotted line is the linear approximation valid at low substrate concentration.
 ```
@@ -134,8 +134,8 @@ fig.tight_layout()
 :name: fig-enzyme-sim
 
 Substrate depletion and product formation for Michaelis-Menten (left) and Hill $n=3$ (right)
-kinetics with $V_\text{max} = 1\ \text{mol/(m}^3\text{s)}$, $K_m = 200\ \text{mol/m}^3$,
-$[S]_0 = 600\ \text{mol/m}^3$.
+kinetics with $V_\text{max} = 1\ \mathrm{mol/(m^3 \cdot s)}$, $K_m = 200\ \mathrm{mol/m}^3$,
+$[S]_0 = 600\ \mathrm{mol/m}^3$.
 The Hill model shows a sigmoidal initial phase: when $[S] \gg K_m$ effective cooperativity maintains a high rate near $V_\text{max}$; depletion accelerates once $[S]$ drops
 toward $K_m$, then slows again in the linear regime below $K_m$.
 ```

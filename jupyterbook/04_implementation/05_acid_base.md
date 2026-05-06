@@ -191,7 +191,7 @@ model_phosphate_davies = ReactionModel(
 )
 ```
 
-At physiological ionic strength ($I = 150\ \text{mol/m}^3$), phosphate is particularly sensitive because its species carry charges 0, $-1$, $-2$, and $-3$:
+At physiological ionic strength ($I = 150\ \mathrm{mol/m}^3$), phosphate is particularly sensitive because its species carry charges 0, $-1$, $-2$, and $-3$:
 
 ```{code-cell} ipython3
 pH  = 7.2

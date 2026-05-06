@@ -222,9 +222,9 @@ This expression holds in the ideal dilute solution limit ($\gamma_i = 1$); devia
 
 The term $RT \ln(c_i/c^\circ)$ sets the **energy scale** of concentration effects.
 
-At 25 °C, $RT \approx 2.5\ \text{kJ/mol}$:
-- a tenfold concentration difference gives $RT \ln 10 \approx 5.7\ \text{kJ/mol}$
-- a hundredfold difference gives $\approx 11.4\ \text{kJ/mol}$
+At 25 °C, $RT \approx 2.5\ \mathrm{kJ/mol}$:
+- a tenfold concentration difference gives $RT \ln 10 \approx 5.7\ \mathrm{kJ/mol}$
+- a hundredfold difference gives $\approx 11.4\ \mathrm{kJ/mol}$
 
 These are not small corrections: 5–10 kJ/mol is comparable to weak intermolecular interactions such as hydrogen bonds, and large enough to drive diffusion, dissolution, and chemical reactions.
 $\mu_i$ is therefore not an abstract derivative: it is a **free energy per mole**, and concentration differences translate into quantitatively significant driving forces.
@@ -233,7 +233,7 @@ $\mu_i$ is therefore not an abstract derivative: it is a **free energy per mole*
 **Standard states.**
 The reference values $P^\circ$ and $c^\circ$ serve the same role: the argument of a logarithm must be dimensionless.
 Any choice works; changing them shifts $\mu^\circ$ by a constant, leaving all physical predictions unchanged since those depend on differences $\Delta\mu$.
-By convention $P^\circ = 1\,\text{bar}$ and $c^\circ = 1\,\text{mol/L}$, so values expressed in these units enter the logarithm directly.
+By convention $P^\circ = 1\,\mathrm{bar}$ and $c^\circ = 1\,\mathrm{mol/L}$, so values expressed in these units enter the logarithm directly.
 
 ```{admonition} Connection to statistical mechanics
 :class: note

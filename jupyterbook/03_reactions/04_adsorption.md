@@ -52,7 +52,7 @@ Solving for $\theta$ and substituting $q = q_\text{max} \theta$ yields the **Lan
 
 $$q = \frac{q_\text{max}\, K_\text{ads}\, c}{1 + K_\text{ads}\, c},$$
 
-where $c^\circ = 1\,\text{mol/L}$ has been absorbed into $K_\text{ads}$.
+where $c^\circ = 1\,\mathrm{mol/L}$ has been absorbed into $K_\text{ads}$.
 
 At low loading ($K_\text{ads} c \ll 1$) the denominator approaches unity and the isotherm is linear: $q \approx q_\text{max} K_\text{ads} c \equiv Hc$, with $H = q_\text{max} K_\text{ads}$ the Henry coefficient.
 At high loading ($K_\text{ads} c \gg 1$) the isotherm saturates at $q_\text{max}$, because all sites are occupied.

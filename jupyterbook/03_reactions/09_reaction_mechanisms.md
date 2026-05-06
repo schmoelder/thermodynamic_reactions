@@ -46,7 +46,7 @@ The nucleophilic substitution $\text{CH}_3\text{Br} + \text{OH}^- \to \text{CH}_
 The rate law is exactly
 
 $$
-r = k\,[\text{CH}_3\text{Br}][\text{OH}^-]
+r = k\,[\text{CH}_3\text{Br}][\ce{OH-}]
 $$
 
 Order equals stoichiometry because there is one elementary step and two molecules must meet for it to occur.
@@ -96,7 +96,7 @@ The overall reaction $\text{H}_2 + \text{Br}_2 \to 2\,\text{HBr}$ suggests a bim
 The experimental rate law is instead:
 
 $$
-r = \frac{k[\text{H}_2][\text{Br}_2]^{1/2}}{1 + k'[\text{HBr}]/[\text{Br}_2]}
+r = \frac{k[\ce{H2}][\ce{Br2}]^{1/2}}{1 + k'[\ce{HBr}]/[\ce{Br2}]}
 $$
 
 The half-order in Br$_2$ and the inhibition by product HBr both arise from the underlying radical chain mechanism (initiation, propagation, termination steps).

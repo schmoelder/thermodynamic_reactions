@@ -126,7 +126,7 @@ fig.tight_layout()
 ```{figure} #cell-eq-drift
 :name: fig-eq-drift
 
-Equilibrium constant $K(T)$ (van't Hoff, $\Delta H^\circ = -20\ \text{kJ/mol}$) alongside the fixed ratio $k_f/k_r$ calibrated at 25 °C.
+Equilibrium constant $K(T)$ (van't Hoff, $\Delta H^\circ = -20\ \mathrm{kJ/mol}$) alongside the fixed ratio $k_f/k_r$ calibrated at 25 °C.
 The two curves coincide only at the calibration temperature; the shaded region shows how the divergence grows away from it.
 `ThermodynamicReaction` with `EquilibriumConstantVantHoff` keeps the ratio on the $K(T)$ curve at every temperature.
 ```
@@ -177,7 +177,7 @@ fig.tight_layout()
 ```{figure} #cell-eq-vanthoff
 :name: fig-eq-vanthoff
 
-Temperature dependence of $K$ (left) and equilibrium fraction of B (right) for $\Delta H^\circ = -20\ \text{kJ/mol}$, $\Delta S^\circ = -50\ \text{J mol}^{-1}\text{K}^{-1}$.
+Temperature dependence of $K$ (left) and equilibrium fraction of B (right) for $\Delta H^\circ = -20\ \mathrm{kJ/mol}$, $\Delta S^\circ = -50\ \mathrm{J\,mol^{-1}\,K^{-1}}$.
 Heating shifts the equilibrium towards A, consistent with Le Chatelier's principle.
 ```
 
@@ -251,7 +251,7 @@ fig.tight_layout()
 ```{figure} #cell-eq-cp
 :name: fig-eq-cp
 
-Van't Hoff plot ($\ln K$ vs $1/T$) comparing `EquilibriumConstantVantHoff` and `EquilibriumConstantVantHoffCp` ($\Delta H^\circ = -20\ \text{kJ/mol}$, $\Delta C_p = +200\ \text{J mol}^{-1}\text{K}^{-1}$).
+Van't Hoff plot ($\ln K$ vs $1/T$) comparing `EquilibriumConstantVantHoff` and `EquilibriumConstantVantHoffCp` ($\Delta H^\circ = -20\ \mathrm{kJ/mol}$, $\Delta C_p = +200\ \mathrm{J\,mol^{-1}\,K^{-1}}$).
 `VantHoff` is a straight line by construction; `VantHoffCp` curves because $\Delta H^\circ(T)$ changes with temperature, eventually reversing sign and turning the slope around.
 ```
 

@@ -17,19 +17,16 @@ The difference is that Langmuir describes the equilibrium occupation fraction, w
 **Mechanism.** The substrate S binds reversibly to enzyme E, forming complex ES, which releases product P:
 
 $$
-\text{E} + \text{S}
-\underset{k_{-1}}{\stackrel{k_1}{\rightleftharpoons}}
-\text{ES}
-\xrightarrow{k_2} \text{E} + \text{P}
+\ce{E + S <=>[$k_1$][$k_{-1}$] ES ->[$k_2$] E + P}
 $$
 
-**Quasi-steady-state approximation.** When the enzyme concentration is much lower than the substrate concentration, the complex ES reaches a quasi-steady state rapidly and $[\text{ES}]$ is approximately constant on the timescale of the overall reaction.
-This is an application of the rate-determining step concept from @kinetics: the slow step is $k_2$ release, and the fast binding equilibrium gives $[\text{ES}]$ in terms of observable quantities.
+**Quasi-steady-state approximation.** When the enzyme concentration is much lower than the substrate concentration, the complex ES reaches a quasi-steady state rapidly and $[\ce{ES}]$ is approximately constant on the timescale of the overall reaction.
+This is an application of the rate-determining step concept from @kinetics: the slow step is $k_2$ release, and the fast binding equilibrium gives $[\ce{ES}]$ in terms of observable quantities.
 
-Setting $d[\text{ES}]/dt \approx 0$ and using the conservation $[\text{E}]_0 = [\text{E}] + [\text{ES}]$:
+Setting $d[\ce{ES}]/dt \approx 0$ and using the conservation $[\ce{E}]_0 = [\ce{E}] + [\ce{ES}]$:
 
 $$
-[\text{ES}] = \frac{[\text{E}]_0 [\text{S}]}{K_m + [\text{S}]},
+[\ce{ES}] = \frac{[\ce{E}]_0 [\ce{S}]}{K_m + [\ce{S}]},
 \qquad K_m = \frac{k_{-1} + k_2}{k_1}
 $$
 
@@ -37,16 +34,16 @@ where $K_m$ is the **Michaelis constant**.
 The rate of product formation is:
 
 $$
-r = k_2[\text{ES}] = \frac{V_\text{max}[\text{S}]}{K_m + [\text{S}]},
-\qquad V_\text{max} = k_2[\text{E}]_0
+r = k_2[\ce{ES}] = \frac{V_\text{max}[\ce{S}]}{K_m + [\ce{S}]},
+\qquad V_\text{max} = k_2[\ce{E}]_0
 $$
 
 **Limiting cases** (@fig-michaelis-menten):
 
-- $[\text{S}] \ll K_m$: $r \approx (V_\text{max}/K_m)[\text{S}]$, first order in S.
-- $[\text{S}] \gg K_m$: $r \approx V_\text{max}$, zeroth order; the enzyme is saturated.
+- $[\ce{S}] \ll K_m$: $r \approx (V_\text{max}/K_m)[\ce{S}]$, first order in S.
+- $[\ce{S}] \gg K_m$: $r \approx V_\text{max}$, zeroth order; the enzyme is saturated.
 
-The transition between regimes occurs near $[\text{S}] = K_m$, where $r = V_\text{max}/2$.
+The transition between regimes occurs near $[\ce{S}] = K_m$, where $r = V_\text{max}/2$.
 These apparent orders arise from enzyme saturation, not stoichiometry; no balanced equation predicts them.
 
 ```{code-cell} ipython3
@@ -94,8 +91,8 @@ fig.tight_layout()
 :name: fig-michaelis-menten
 
 Michaelis-Menten rate as a function of substrate concentration ($V_\text{max} = K_m = 1$).
-At low $[\text{S}]$ the rate is linear (first order); at high $[\text{S}]$ it saturates at $V_\text{max}$ (zeroth order).
-The half-maximum rate occurs at $[\text{S}] = K_m$.
+At low $[\ce{S}]$ the rate is linear (first order); at high $[\ce{S}]$ it saturates at $V_\text{max}$ (zeroth order).
+The half-maximum rate occurs at $[\ce{S}] = K_m$.
 ```
 
 ```{admonition} Intuition
@@ -118,7 +115,7 @@ In that limit the mathematical form becomes identical to Langmuir: site occupanc
 An empirically identical form describes the growth rate of microorganisms limited by a single nutrient S:
 
 $$
-\mu_g = \frac{\mu_{g,\text{max}}[\text{S}]}{K_s + [\text{S}]}
+\mu_g = \frac{\mu_{g,\text{max}}[\ce{S}]}{K_s + [\ce{S}]}
 $$
 
 where $\mu_g$ is the specific growth rate, $\mu_{g,\text{max}}$ the maximum growth rate, and $K_s$ the half-saturation constant.

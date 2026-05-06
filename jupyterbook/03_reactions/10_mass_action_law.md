@@ -50,7 +50,7 @@ For a complex mechanism, the apparent overall rate constants can be concentratio
 The relation holds only for each microscopic elementary step individually.
 ```
 
-@fig-mal illustrates the consistency condition for $\text{A} \rightleftharpoons \text{B}$ with $K = 3$: the forward and reverse rates cross at exactly the thermodynamic equilibrium extent.
+@fig-mal illustrates the consistency condition for $\ce{A <=> B}$ with $K = 3$: the forward and reverse rates cross at exactly the thermodynamic equilibrium extent.
 
 ```{code-cell} ipython3
 :tags: [remove-cell]
@@ -91,7 +91,7 @@ fig.tight_layout()
 ```{figure} #cell-mal
 :name: fig-mal
 
-Forward rate $r_f$, reverse rate $r_r$, and net rate for $\text{A} \rightleftharpoons \text{B}$ with $K = k_f/k_r = 3$.
+Forward rate $r_f$, reverse rate $r_r$, and net rate for $\ce{A <=> B}$ with $K = k_f/k_r = 3$.
 The net rate is zero at $\xi_\text{eq} = K/(1+K) = 0.75$, the equilibrium extent predicted by @equilibrium.
 Setting $k_f/k_r = K$ is what makes the kinetic model land on the correct thermodynamic equilibrium.
 ```

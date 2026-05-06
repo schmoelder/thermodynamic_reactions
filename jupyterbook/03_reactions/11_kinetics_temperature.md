@@ -119,8 +119,8 @@ Rate constants measured at several temperatures determine $E_a$ from the slope.
 ```{admonition} Intuition
 :class: tip
 The Arrhenius equation links activation energy to the temperature sensitivity of a rate constant.
-For a typical reaction with $E_a \approx 50\,\text{kJ/mol}$, a 10 °C increase near room temperature roughly doubles the rate.
-For $E_a \approx 100\,\text{kJ/mol}$, the same increase leads to an approximate fourfold rise.
+For a typical reaction with $E_a \approx 50\,\mathrm{kJ/mol}$, a 10 °C increase near room temperature roughly doubles the rate.
+For $E_a \approx 100\,\mathrm{kJ/mol}$, the same increase leads to an approximate fourfold rise.
 This exponential dependence reflects the Boltzmann-weighted fraction of molecules that have enough energy to cross the barrier, as derived in @maxwell-boltzmann.
 Thermodynamic consistency further constrains forward and reverse reactions, linking their activation energies to the reaction enthalpy, as discussed in the section below.
 ```

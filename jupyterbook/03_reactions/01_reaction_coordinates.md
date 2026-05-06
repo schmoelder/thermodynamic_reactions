@@ -18,7 +18,7 @@ When a reaction occurs, the amounts of all species change simultaneously and in 
 The key observation is that these changes are not independent: all composition changes are locked to a single degree of freedom.
 The molar ratios are encoded by the **stoichiometric coefficients** $\nu_i$: positive for products, negative for reactants.
 
-Take the reaction $\mathrm{A} + 2\mathrm{B} \rightleftharpoons \mathrm{C}$ as a concrete example.
+Take the reaction $\ce{A + 2B <=> C}$ as a concrete example.
 If the system produces a small amount $d\xi$ of $\mathrm{C}$, then by stoichiometry:
 
 $$dn_\mathrm{C} = +d\xi, \qquad dn_\mathrm{B} = -2\,d\xi, \qquad dn_\mathrm{A} = -d\xi$$

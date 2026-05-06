@@ -41,31 +41,31 @@ Neglecting the water equilibrium at very low concentrations of strong acids is a
 A Brønsted acid HA donates a proton to water:
 
 $$
-\text{HA} \rightleftharpoons \text{H}^+ + \text{A}^-
+\ce{HA <=> H+ + A-}
 $$
 
 Its equilibrium constant, the **acid dissociation constant**, follows directly from the equilibrium condition $\Delta_r G = 0$ (see @equilibrium):
 
 $$
-K_a = \frac{a_{\text{H}^+}\,a_{\text{A}^-}}{a_\text{HA}}
+K_a = \frac{a_{\ce{H+}}\,a_{\ce{A-}}}{a_{\ce{HA}}}
 $$
 
-In dilute ideal solution $a_i = c_i/c^\circ$ and water is treated as a pure solvent with $a_{\text{H}_2\text{O}} = 1$, giving:
+In dilute ideal solution $a_i = c_i/c^\circ$ and water is treated as a pure solvent with $a_{\ce{H2O}} = 1$, giving:
 
 $$
-K_a = \frac{[\text{H}^+][\text{A}^-]}{[\text{HA}]}
+K_a = \frac{[\ce{H+}][\ce{A-}]}{[\ce{HA}]}
 $$
 
-where brackets denote concentration relative to the standard state $c^\circ = 1\ \text{mol/L}$.
+where brackets denote concentration relative to the standard state $c^\circ = 1\ \mathrm{mol/L}$.
 
 Water itself autoionises with equilibrium constant:
 
 $$
-K_w = [\text{H}^+][\text{OH}^-]
+K_w = [\ce{H+}][\ce{OH-}]
 $$
 
 At 25 °C, $K_w = 1.01 \times 10^{-14}$.
-The van't Hoff equation (@equilibrium-temperature) with $\Delta H^\circ \approx +55.8\ \text{kJ/mol}$ predicts that $K_w$ rises by roughly one order of magnitude between 0 and 60 °C, shifting the neutral pH from 7.47 to 6.51.
+The van't Hoff equation (@equilibrium-temperature) with $\Delta H^\circ \approx +55.8\ \mathrm{kJ/mol}$ predicts that $K_w$ rises by roughly one order of magnitude between 0 and 60 °C, shifting the neutral pH from 7.47 to 6.51.
 
 The **pKa** scale compresses the wide dynamic range of acid strengths:
 
@@ -82,20 +82,20 @@ Biochemically relevant buffers typically have $\text{p}K_a$ in the range 2--12.
 The **pH** is the negative base-10 logarithm of the proton activity:
 
 $$
-\text{pH} = -\log_{10} a_{\text{H}^+}
+\text{pH} = -\log_{10} a_{\ce{H+}}
 $$
 
-In dilute ideal solution, $a_{\text{H}^+} \approx [\text{H}^+]$.
-At equilibrium, $Q = K_a$ gives $[\text{H}^+] = K_a\,[\text{HA}]/[\text{A}^-]$.
+In dilute ideal solution, $a_{\ce{H+}} \approx [\ce{H+}]$.
+At equilibrium, $Q = K_a$ gives $[\ce{H+}] = K_a\,[\ce{HA}]/[\ce{A-}]$.
 Taking the negative logarithm:
 
 $$
-\text{pH} = \text{p}K_a + \log_{10}\!\frac{[\text{A}^-]}{[\text{HA}]}
+\text{pH} = \text{p}K_a + \log_{10}\!\frac{[\ce{A-}]}{[\ce{HA}]}
 $$
 
 This is the **Henderson-Hasselbalch equation**.
 At $\text{pH} = \text{p}K_a$ the two forms are present in equal amounts.
-The ratio $[\text{A}^-]/[\text{HA}]$ changes by a factor of ten for each pH unit.
+The ratio $[\ce{A-}]/[\ce{HA}]$ changes by a factor of ten for each pH unit.
 
 ---
 

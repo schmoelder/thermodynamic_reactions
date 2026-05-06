@@ -56,7 +56,7 @@ In chemistry it is more convenient to count in moles.
 With $n = N/N_A$ moles and defining the **gas constant**:
 
 $$
-R = N_A k_B = 6.022 \times 10^{23} \times 1.380 \times 10^{-23} \;\text{J/K} = 8.314 \;\text{J/(mol K)}
+R = N_A k_B = 6.022 \times 10^{23} \times 1.380 \times 10^{-23} \;\mathrm{J/K} = 8.314 \;\mathrm{J/(mol K)}
 $$
 
 the pressure equation becomes the ideal gas law:

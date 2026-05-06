@@ -182,7 +182,7 @@ Any callable that maps `(state, charges)` to an array of activity coefficients s
 ## Activity models for aqueous electrolytes
 
 For aqueous electrolyte solutions the two built-in models cover the relevant range.
-`ActivityCoefficientDebyeHuckel` implements the Debye-Hückel limiting law, accurate to $I \approx 100\ \text{mol/m}^3$; `ActivityCoefficientDavies` adds an empirical linear correction that extends validity to $\approx 500\ \text{mol/m}^3$ (@nonidealities, @fig-activity):
+`ActivityCoefficientDebyeHuckel` implements the Debye-Hückel limiting law, accurate to $I \approx 100\ \mathrm{mol/m}^3$; `ActivityCoefficientDavies` adds an empirical linear correction that extends validity to $\approx 500\ \mathrm{mol/m}^3$ (@nonidealities, @fig-activity):
 
 ```{code-cell} ipython3
 proton    = Component("proton",    [Species("H+",  charge=+1)])
@@ -304,7 +304,7 @@ $$
 \text{pKa}^\text{app} = \text{pKa} + \sum_i \nu_i \log_{10} \gamma_i.
 $$
 
-The neutral species $\ce{HA}$ has $\gamma_\text{HA} \approx 1$, while $\ce{A-}$ and $\ce{H+}$ both have $\gamma_i < 1$ at finite $I$, so $\text{pKa}^\text{app} < \text{pKa}$ at any non-zero ionic strength.
+The neutral species $\ce{HA}$ has $\gamma_{\ce{HA}} \approx 1$, while $\ce{A-}$ and $\ce{H+}$ both have $\gamma_i < 1$ at finite $I$, so $\text{pKa}^\text{app} < \text{pKa}$ at any non-zero ionic strength.
 At 150 mM, typical of IEX loading conditions, the suppression reaches $\approx 0.25$--$0.35$ units (@fig-activity-pka):
 
 ```{code-cell} ipython3

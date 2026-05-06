@@ -23,7 +23,7 @@ $$
 K = Q\big|_{\mathrm{eq}} = \prod_i a_i^{\nu_i}\bigg|_{\mathrm{eq}}
 $$
 
-For $\mathrm{A} + 2\mathrm{B} \rightleftharpoons \mathrm{C}$:
+For $\ce{A + 2B <=> C}$:
 $$
 K = \frac{a_\mathrm{C}}{a_\mathrm{A} a_\mathrm{B}^2}
 $$
@@ -41,8 +41,8 @@ $\Delta_r G^\circ$ fixes the equilibrium position; $\Delta_r G$ determines the d
 ```{admonition} Intuition
 :class: tip
 
-The same $RT$ scale from @chemical-potential now controls the equilibrium position: each $5.7\ \text{kJ/mol}$ of $|\Delta_r G^\circ|$ shifts $K$ by one order of magnitude.
-A reaction with $\Delta_r G^\circ = -11.4\ \text{kJ/mol}$ has $K \approx 100$; one with $\Delta_r G^\circ = -57\ \text{kJ/mol}$ (typical of ATP hydrolysis) has $K \approx 10^{10}$.
+The same $RT$ scale from @chemical-potential now controls the equilibrium position: each $5.7\ \mathrm{kJ/mol}$ of $|\Delta_r G^\circ|$ shifts $K$ by one order of magnitude.
+A reaction with $\Delta_r G^\circ = -11.4\ \mathrm{kJ/mol}$ has $K \approx 100$; one with $\Delta_r G^\circ = -57\ \mathrm{kJ/mol}$ (typical of ATP hydrolysis) has $K \approx 10^{10}$.
 The logarithmic compression means that even modest free energy differences produce dramatically product-favoured or reactant-favoured equilibria.
 ```
 

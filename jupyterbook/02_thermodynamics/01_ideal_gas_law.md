@@ -102,7 +102,7 @@ Combining them into a single equation:
 
 $$PV = nRT$$
 
-where $R = 8.314\ \text{J/(mol\,K)}$ is the **gas constant**.
+where $R = 8.314\ \mathrm{J/(mol\,K)}$ is the **gas constant**.
 Every one of the four laws is a special case: fixing $T$ and $n$ recovers Boyle's law; fixing $P$ and $n$ recovers Charles's law; and so on.
 
 $R$ is related to Boltzmann's constant $k_B = 1.380 \times 10^{-23}$ J/K by $R = N_A k_B$, where $N_A = 6.022 \times 10^{23}\ \text{mol}^{-1}$ is Avogadro's number.
@@ -141,14 +141,14 @@ For an ideal gas at fixed $T$ and $P$, $V_m$ is the same for any mixture and equ
 
 **Molar concentration.** The molar concentration of species $i$ is the amount per unit volume:
 
-$$c_i = \frac{n_i}{V} \quad \text{[mol/m}^3\text{ or mol/L]}$$
+$$c_i = \frac{n_i}{V} \quad \mathrm{[mol/m^3\ or\ mol/L]}$$
 
 Molar concentrations are the primary composition variables used throughout this book.
 Where "concentration" appears without qualification, it means molar concentration.
 
 **Mass concentration.** The mass concentration of species $i$ is:
 
-$$\rho_i = \frac{m_i}{V} = c_i M_i \quad \text{[kg/m}^3\text{ or g/L]}$$
+$$\rho_i = \frac{m_i}{V} = c_i M_i \quad \mathrm{[kg/m^3\ or\ g/L]}$$
 
 where $M_i$ is the molar mass of species $i$ (kg/mol).
 Mass concentration is the engineering variant and appears where mass balance or density calculations are needed.

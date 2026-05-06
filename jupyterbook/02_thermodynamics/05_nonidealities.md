@@ -142,7 +142,7 @@ $$
 I = \frac{1}{2}\sum_i z_i^2 \frac{c_i}{c^\circ}
 $$
 
-where $z_i$ is the charge number of ion $i$ and $c^\circ = 1\ \text{mol/L}$ is the standard concentration, making $I$ dimensionless but numerically equal to the ionic strength in mol/L.
+where $z_i$ is the charge number of ion $i$ and $c^\circ = 1\ \mathrm{mol/L}$ is the standard concentration, making $I$ dimensionless but numerically equal to the ionic strength in mol/L.
 
 The excess free energy from the ionic atmosphere gives the **Debye-Hückel limiting law** for a single ionic species $i$ with charge $z_i$:
 
@@ -150,7 +150,7 @@ $$
 \log_{10} \gamma_i = -A z_i^2 \sqrt{I},
 $$
 
-where $A \approx 0.509\ \text{mol}^{-1/2}\text{L}^{1/2}$ at 25 °C.
+where $A \approx 0.509\ \mathrm{mol^{-1/2}\,L^{1/2}}$ at 25 °C.
 The law is exact as $I \to 0$ and accurate to $I \approx 0.1$.
 
 At higher ionic strengths the point-charge approximation breaks down.
@@ -160,9 +160,9 @@ $$
 \log_{10} \gamma_i = -A z_i^2 \left(\frac{\sqrt{I}}{1 + \sqrt{I}} - 0.3\,I\right).
 $$
 
-The electrochemistry convention uses $c^\circ = 1\ \text{mol/L}$, so $I$ above is numerically equal to the molar ionic strength.
-CADET and this library use SI units throughout: concentrations in mol/m³, so $1\ \text{mol/L} = 10^3\ \text{mol/m}^3$.
-The activity coefficient models convert internally; the figure below uses mol/m³ on the horizontal axis, where $1\ \text{mol/m}^3 = 1\ \text{mM}$.
+The electrochemistry convention uses $c^\circ = 1\ \mathrm{mol/L}$, so $I$ above is numerically equal to the molar ionic strength.
+CADET and this library use SI units throughout: concentrations in mol/m³, so $1\ \mathrm{mol/L} = 10^3\ \mathrm{mol/m}^3$.
+The activity coefficient models convert internally; the figure below uses mol/m³ on the horizontal axis, where $1\ \mathrm{mol/m}^3 = 1\ \mathrm{mM}$.
 
 Both expressions scale as $z_i^2$: a divalent ion at the same ionic strength has a correction four times larger than a monovalent one (@fig-activity).
 
@@ -224,8 +224,8 @@ fig.tight_layout()
 :name: fig-activity
 
 Activity coefficient $\gamma_i$ vs ionic strength at 25 °C for monovalent (left) and divalent (right) species.
-Concentrations are in mol/m³ (SI); $1\ \text{mol/m}^3 = 1\ \text{mM}$.
-Debye-Hückel is accurate below $\approx 100\ \text{mol/m}^3$ (dotted line); Davies extends the range to $\approx 500\ \text{mol/m}^3$.
+Concentrations are in mol/m³ (SI); $1\ \mathrm{mol/m}^3 = 1\ \mathrm{mM}$.
+Debye-Hückel is accurate below $\approx 100\ \mathrm{mol/m}^3$ (dotted line); Davies extends the range to $\approx 500\ \mathrm{mol/m}^3$.
 Divalent species experience markedly stronger suppression because both models scale as $z_i^2$.
 ```
 

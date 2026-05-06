@@ -15,7 +15,7 @@ Activation energy
   Introduced in @maxwell-boltzmann.
 
 Acid dissociation constant
-: $K_a = a_{\text{H}^+} a_{\text{A}^-} / a_\text{HA}$: the equilibrium constant for the proton-transfer reaction $\text{HA} \rightleftharpoons \text{H}^+ + \text{A}^-$.
+: $K_a = a_{\ce{H+}} a_{\ce{A-}} / a_{\ce{HA}}$: the equilibrium constant for the proton-transfer reaction $\ce{HA <=> H+ + A-}$.
   It is a special case of the general equilibrium constant $K = \prod_i a_i^{\nu_i}$ (see @equilibrium).
   Introduced in @acid-base.
 
@@ -25,7 +25,7 @@ Adsorption
   Introduced in @adsorption.
 
 Adsorption equilibrium constant
-: $K_\text{ads} = \exp(-\Delta G^\circ_\text{ads}/RT)$: the equilibrium constant for the adsorption reaction $\text{A}_\text{mobile} \rightleftharpoons \text{A}_\text{adsorbed}$.
+: $K_\text{ads} = \exp(-\Delta G^\circ_\text{ads}/RT)$: the equilibrium constant for the adsorption reaction $\ce{A_{\text{mobile}} <=> A_{\text{adsorbed}}}$.
   Determines the partitioning of a species between mobile and stationary phases in chromatography.
   Introduced in @adsorption.
 
@@ -60,7 +60,7 @@ Bjerrum diagram
   Introduced in @acid-base.
 
 Boltzmann constant
-: $k_B = 1.380 \times 10^{-23}\ \text{J/K}$.
+: $k_B = 1.380 \times 10^{-23}\ \mathrm{J/K}$.
   The conversion factor between the statistical temperature $\partial H/\partial U$ and the Kelvin scale.
   Introduced in @entropy.
 
@@ -115,7 +115,7 @@ Donnan potential
   Introduced in @multicomponent.
 
 Davies equation
-: An empirical extension of Debye-Hückel for ionic strengths up to $I \approx 0.5\ \text{mol/L}$:
+: An empirical extension of Debye-Hückel for ionic strengths up to $I \approx 0.5\ \mathrm{mol/L}$:
   $\log_{10}\gamma_i = -Az_i^2\!\left(\sqrt{I}/(1+\sqrt{I}) - 0.3\,I\right)$, where $I$ is in mol/L.
   Introduced in @nonidealities.
 
@@ -215,7 +215,7 @@ Fundamental relation
   Introduced in @thermodynamic-potentials.
 
 Gas constant
-: $R = N_A k_B = 8.314\ \text{J/(mol\,K)}$.
+: $R = N_A k_B = 8.314\ \mathrm{J/(mol\,K)}$.
   The per-mole version of the Boltzmann constant; appears in the ideal gas law $PV = nRT$ and the ideal chemical potential.
 
 Gibbs free energy
@@ -229,7 +229,7 @@ Gibbs-Duhem equation
   Introduced in @thermodynamic-potentials.
 
 Henderson-Hasselbalch equation
-: $\text{pH} = \text{p}K_a + \log_{10}([\text{A}^-]/[\text{HA}])$: the pH of a weak acid buffer at equilibrium in dilute ideal solution.
+: $\text{pH} = \text{p}K_a + \log_{10}([\ce{A-}]/[\ce{HA}])$: the pH of a weak acid buffer at equilibrium in dilute ideal solution.
   Derived directly from the equilibrium condition $Q = K_a$; valid within roughly two pH units of $\text{p}K_a$ before activity corrections become significant.
   Introduced in @acid-base.
 
@@ -346,7 +346,7 @@ Michaelis constant
   Introduced in @saturation.
 
 Michaelis-Menten kinetics
-: The rate law $r = V_\text{max}[\text{S}]/(K_m + [\text{S}])$ for enzyme-catalysed reactions, derived from a quasi-steady-state approximation on the enzyme-substrate complex.
+: The rate law $r = V_\text{max}[\ce{S}]/(K_m + [\ce{S}])$ for enzyme-catalysed reactions, derived from a quasi-steady-state approximation on the enzyme-substrate complex.
   Exhibits first-order behaviour at low substrate and zeroth-order saturation at high substrate, independent of the reaction stoichiometry.
   Introduced in @saturation.
 
@@ -355,7 +355,7 @@ Microstate
   Introduced in @entropy.
 
 Monod equation
-: The empirical growth-rate expression $\mu_g = \mu_{g,\text{max}}[\text{S}]/(K_s + [\text{S}])$ for microbial cultures limited by a single nutrient.
+: The empirical growth-rate expression $\mu_g = \mu_{g,\text{max}}[\ce{S}]/(K_s + [\ce{S}])$ for microbial cultures limited by a single nutrient.
   Mathematically identical to Michaelis-Menten kinetics; reflects the same saturation of catalytic capacity.
   Introduced in @saturation.
 
@@ -395,8 +395,8 @@ Phase equilibrium
   Introduced in @chemical-potential.
 
 pH
-: $\text{pH} = -\log_{10} a_{\text{H}^+}$: a logarithmic measure of proton activity in solution.
-  In dilute ideal solution, $\text{pH} \approx -\log_{10}([\text{H}^+]/c^\circ)$.
+: $\text{pH} = -\log_{10} a_{\ce{H+}}$: a logarithmic measure of proton activity in solution.
+  In dilute ideal solution, $\text{pH} \approx -\log_{10}([\ce{H+}]/c^\circ)$.
   Neutral pH at 25 °C is 7.0; it decreases to 6.5 near 60 °C because $K_w$ is temperature-dependent.
   Introduced in @acid-base.
 
@@ -473,7 +473,7 @@ Spontaneous process
 
 Speciation fraction
 : $f_i$: the fraction of a total element or species present in a particular form.
-  In a monoprotic system: $f_\text{HA} = 1/(1 + 10^{\text{p}K_a - \text{pH}})$, $f_\text{A}^- = 1 - f_\text{HA}$. 
+  In a monoprotic system: $f_{\ce{HA}} = 1/(1 + 10^{\text{p}K_a - \text{pH}})$, $f_{\ce{A-}} = 1 - f_{\ce{HA}}$. 
   Introduced in @speciation-buffers.
 
 Standard chemical potential
@@ -483,7 +483,7 @@ Standard chemical potential
 
 Standard state
 : The reference condition used to make the argument of the logarithm dimensionless in $\mu_i = \mu_i^\circ + RT\ln(\cdots)$.
-  By convention: $P^\circ = 1\ \text{bar}$ for gases, $c^\circ = 1\ \text{mol/L}$ for solutions.
+  By convention: $P^\circ = 1\ \mathrm{bar}$ for gases, $c^\circ = 1\ \mathrm{mol/L}$ for solutions.
   Only differences $\Delta\mu$ are measurable, so the choice does not affect predictions.
   Introduced in @chemical-potential.
 
@@ -532,7 +532,7 @@ Van't Hoff equation
   Introduced in @equilibrium-temperature.
 
 Water autoionization constant
-: $K_w = [\text{H}^+][\text{OH}^-] = 1.01 \times 10^{-14}$ at 25 °C: equilibrium constant for $\text{H}_2\text{O} \rightleftharpoons \text{H}^+ + \text{OH}^-$.
+: $K_w = [\ce{H+}][\ce{OH-}] = 1.01 \times 10^{-14}$ at 25 °C: equilibrium constant for $\ce{H2O <=> H+ + OH-}$.
   Determines the pH of pure water.
   Introduced in @acid-base.
 
