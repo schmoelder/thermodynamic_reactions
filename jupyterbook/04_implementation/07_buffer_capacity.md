@@ -249,4 +249,4 @@ strength will deliver a different pH on-column once the salt gradient is applied
 
 ---
 
-The next chapter adds Arrhenius temperature dependence to the rate constants, completing the kinetic picture before the CADET-Core interface (@implementation-kinetics).
+The next chapter extends the rate framework to saturation kinetics, where finite enzyme active sites produce a concentration-dependent rate that mass action cannot capture (@implementation-enzyme).

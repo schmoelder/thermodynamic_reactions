@@ -326,4 +326,5 @@ A slower rate constant or a faster ramp would introduce a visible lag between th
 ---
 
 The kinetic and equilibrium frameworks are now complete for homogeneous reactions with ideal activities.
-The next chapter extends the activity term $a_i = \gamma_i c_i / c^\circ$ to non-ideal solutions, where the activity coefficient $\gamma_i \neq 1$ shifts the apparent equilibrium composition (@implementation-activity).
+An optional next chapter extends the solver to treat temperature as a dynamic state, coupling the energy balance to the reaction kinetics (@implementation-energy-balance).
+The following chapter extends the activity term $a_i = \gamma_i c_i / c^\circ$ to non-ideal solutions, where the activity coefficient $\gamma_i \neq 1$ shifts the apparent equilibrium composition (@implementation-activity).

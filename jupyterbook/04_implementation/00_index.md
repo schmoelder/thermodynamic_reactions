@@ -64,6 +64,7 @@ All reactions are evaluated as $\varphi(\mathbf{a}, T)$; the rest of the API onl
 - @implementation-source-term: PDE context, building blocks (`Species`, `Component`, `ReactionModel`), and `MassActionReaction` as the existing interface.
 - @implementation-equilibrium: `ThermodynamicReaction` in equilibrium mode; $K(T)$ via van't Hoff, Kirchhoff correction, and custom forms.
 - @implementation-kinetics: kinetic mode, `RateConstantFixed` and `RateConstantArrhenius`; thermodynamic consistency across temperatures.
+- @implementation-energy-balance: coupled energy balance; temperature as a dynamic state; analytic $\partial\varphi/\partial T$ Jacobian. *(optional)*
 - @implementation-activity: activity corrections ($a_i = \gamma_i c_i/c^\circ$), ionic strength models, Debye-Hückel and Davies, and the apparent pKa shift.
 - @implementation-acid-base: pH, the `pKa` factory, water autoionisation, and Davies corrections.
 - @implementation-buffer: buffer capacity, mixed buffers, and ionic strength effects on $\beta$.

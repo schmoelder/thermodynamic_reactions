@@ -46,11 +46,12 @@ project:
         - file: 04_implementation/01_source_term.md
         - file: 04_implementation/02_equilibrium.md
         - file: 04_implementation/03_kinetics.md
-        - file: 04_implementation/04_activity_corrections.md
-        - file: 04_implementation/05_acid_base.md
-        - file: 04_implementation/06_buffer_capacity.md
-        - file: 04_implementation/07_enzyme_kinetics.md
-        - file: 04_implementation/08_interface.md
+        - file: 04_implementation/04_energy_balance.md
+        - file: 04_implementation/05_activity_corrections.md
+        - file: 04_implementation/06_acid_base.md
+        - file: 04_implementation/07_buffer_capacity.md
+        - file: 04_implementation/08_enzyme_kinetics.md
+        - file: 04_implementation/09_interface.md
     - file: api/00_index.md
       children:
         - file: api/01_core.md
