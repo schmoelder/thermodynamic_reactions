@@ -21,6 +21,7 @@ kernelspec:
 | $c_i$                | Molar concentration of species $i$ $= n_i/V$                            | mol/L                        | @ideal-gas                  |
 | $c_s$                | Counter-ion concentration in solution (SMA)                             | mol/L                        | @multicomponent             |
 | $C_p$                | Heat capacity at constant pressure                                      | J/(mol K)                    | @thermodynamic-potentials   |
+| $C_{p,k}$            | Molar heat capacity of solvent species $k$                              | J/(mol K)                    | @implementation-energy-balance |
 | $e_{ij}$             | Kinetic exponent of species $i$ in reaction $j$ (CADET)                 |                              | @implementation-source-term |
 | $E_a$                | Activation energy                                                       | J/mol                        | @maxwell-boltzmann          |
 | $E_\text{tot}$       | Total enzyme concentration                                              | mol/L                        | @implementation-enzyme      |
@@ -33,6 +34,7 @@ kernelspec:
 | $\Delta_r G$         | Reaction Gibbs energy $= dG/d\xi = \sum_i \nu_i \mu_i$                  | J/mol                        | @reaction-gibbs-energy      |
 | $\Delta_r G^\circ$   | Standard reaction Gibbs energy                                          | J/mol                        | @equilibrium                |
 | $H$                  | Enthalpy ($= U + PV$)                                                   | J                            | @thermodynamic-potentials   |
+| $\Delta_r H^\circ$   | Standard reaction enthalpy                                              | J/mol                        | @equilibrium-temperature    |
 | $\mathcal{H}$        | Statistical entropy ($= \ln \Omega = -N\sum_i p_i \ln p_i$)             |                              | @entropy                    |
 | $I$                  | Ionic strength                                                          | mol/L                        | @nonidealities              |
 | $k$                  | Rate constant                                                           | mol$^{1-n}$L$^{n-1}$s$^{-1}$ | @kinetics                   |
@@ -102,6 +104,8 @@ kernelspec:
 | $\xi$                | Extent of reaction                                                                               | mol             | @reaction-coordinates       |
 | $\rho$               | Total mass density $= \sum_i \rho_i = \sum_i c_i M_i$                                            | kg/m$^3$        | @ideal-gas                  |
 | $\rho_i$             | Mass concentration of species $i$ $= c_i M_i$                                                    | kg/m$^3$        | @ideal-gas                  |
+| $\rho C_p$           | Volumetric heat capacity of the fluid $= \sum_k x_k (\rho_k/M_k) C_{p,k}$                        | J/(m$^3$ K)     | @implementation-energy-balance |
+| $\dot{Q}_\text{ext}$ | External heat source rate per unit volume (wall transfer, jacket)                                 | W/m$^3$         | @implementation-energy-balance |
 | $\varphi$            | Fugacity coefficient $= f/P$                                                                     |                 | @nonidealities              |
 | $\varphi_j$          | Reaction flux of reaction $j$ (CADET)                                                            | mol/(L$\cdot$s) | @implementation-source-term |
 | $\psi_D$             | Donnan potential                                                                                 | V               | @multicomponent             |

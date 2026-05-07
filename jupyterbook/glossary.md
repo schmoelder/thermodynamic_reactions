@@ -522,6 +522,11 @@ Transition state
   In Transition State Theory it is treated as a quasi-equilibrium species; the activation Gibbs energy $\Delta G^\ddagger$ determines the rate.
   Introduced in @kinetics-temperature.
 
+Adiabatic invariant
+: A conserved quantity in a system that exchanges no heat with its surroundings.
+  For a single reaction $\ce{A <=> B}$ in a well-mixed adiabatic fluid, $\rho C_p T + \Delta_r H^\circ c_B = \text{const}$: the heat released by the reaction exactly raises the fluid temperature.
+  Introduced in @implementation-energy-balance.
+
 Van der Waals equation
 : $\left(P + an^2/V^2\right)\left(V - nb\right) = nRT$: corrects the ideal gas law for finite molecular size ($b$) and attractions ($a$).
   Introduced in @nonidealities.
@@ -535,6 +540,11 @@ Water autoionization constant
 : $K_w = [\ce{H+}][\ce{OH-}] = 1.01 \times 10^{-14}$ at 25 °C: equilibrium constant for $\ce{H2O <=> H+ + OH-}$.
   Determines the pH of pure water.
   Introduced in @acid-base.
+
+Volumetric heat capacity
+: $\rho C_p$ [J/(m³·K)]: the energy required to raise one cubic metre of fluid by one kelvin.
+  For a dilute solution it is computed from solvent species as $\rho C_p = \sum_k x_k (\rho_k/M_k) C_{p,k}$, where $x_k$ is the mole fraction, $\rho_k/M_k$ the molar concentration, and $C_{p,k}$ the molar heat capacity of solvent $k$.
+  Introduced in @implementation-energy-balance.
 
 Zeroth law of thermodynamics
 : If system A is in thermal equilibrium with B, and B with C, then A and C are also in thermal equilibrium.
