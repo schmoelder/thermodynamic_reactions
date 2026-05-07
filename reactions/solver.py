@@ -191,18 +191,27 @@ def simulate(
         def jac_coupled(t: float, y: np.ndarray) -> np.ndarray:
             c = y[:n]
             T_cur = float(y[n])
+            state = model.make_state(c, T_cur)
+            rho_cp = model.volumetric_heat_capacity(_x_k(t))
             J = np.zeros((n + 1, n + 1))
             J[:n, :n] = -model.jacobian(c, np.zeros(n), T_cur)
             J[:n, n] = -model.jacobian_dT(c, np.zeros(n), T_cur)
-            eps = 1e-6
-            rhs0_T = rhs_coupled(t, y)[n]
-            for k in range(n):
-                y_p = y.copy()
-                y_p[k] += eps
-                J[n, k] = (rhs_coupled(t, y_p)[n] - rhs0_T) / eps
-            y_p = y.copy()
-            y_p[n] += eps
-            J[n, n] = (rhs_coupled(t, y_p)[n] - rhs0_T) / eps
+            # Analytic energy-balance row:
+            #   ∂rhs_T/∂c_k = -Σ_j [ΔH_j / ρCp] · ∂φ_j/∂c_k
+            #   ∂rhs_T/∂T   = -Σ_j [ΔH_j · ∂φ_j/∂T + φ_j · d(ΔH_j)/dT] / ρCp
+            for j, rxn in enumerate(model.reactions):
+                if not model.kinetic_mask[j]:
+                    continue
+                eq = getattr(rxn, "equilibrium_constant", None)
+                if eq is None:
+                    continue
+                dH = eq.reaction_enthalpy(T_cur)
+                dH_dT = eq.d_reaction_enthalpy_dT(T_cur)
+                phi = rxn.net_rate(state, model.species_index, model.charges)
+                dphi_dc = rxn.net_rate_jac(state, model.species_index, model.charges)
+                dphi_dT = rxn.net_rate_dT(state, model.species_index, model.charges)
+                J[n, :n] -= dH / rho_cp * dphi_dc
+                J[n, n] -= (dH * dphi_dT + phi * dH_dT) / rho_cp
             return J
 
         sol = solve_ivp(

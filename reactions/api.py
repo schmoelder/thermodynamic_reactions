@@ -376,6 +376,15 @@ class EquilibriumConstantBase(ABC):
             dlnK = (np.log(self.K(T + eps)) - np.log(self.K(T - eps))) / (2 * eps)
         return R_GAS * T ** 2 * dlnK
 
+    def d_reaction_enthalpy_dT(self, T: float, eps: float = 1e-4) -> float:
+        """
+        Return d(ΔrH°)/dT [J/(mol·K)].
+
+        FD fallback via central difference on reaction_enthalpy(T).
+        Subclasses override with analytic forms where available.
+        """
+        return (self.reaction_enthalpy(T + eps) - self.reaction_enthalpy(T - eps)) / (2 * eps)
+
 
 @dataclass
 class EquilibriumConstant(EquilibriumConstantBase):
@@ -399,6 +408,9 @@ class EquilibriumConstant(EquilibriumConstantBase):
         return self.K_eq
 
     def dlnK_dT(self, T: float) -> float:  # noqa: N802
+        return 0.0
+
+    def d_reaction_enthalpy_dT(self, T: float) -> float:
         return 0.0
 
 
@@ -432,6 +444,9 @@ class EquilibriumConstantVantHoff(EquilibriumConstantBase):
     def reaction_enthalpy(self, T: float) -> float:
         return self.dH
 
+    def d_reaction_enthalpy_dT(self, T: float) -> float:
+        return 0.0
+
 
 @dataclass
 class EquilibriumConstantVantHoffCp(EquilibriumConstantBase):
@@ -464,6 +479,9 @@ class EquilibriumConstantVantHoffCp(EquilibriumConstantBase):
 
     def reaction_enthalpy(self, T: float) -> float:
         return self.dH + self.dCp * (T - self.T_ref)
+
+    def d_reaction_enthalpy_dT(self, T: float) -> float:
+        return self.dCp
 
 
 @dataclass
@@ -537,19 +555,25 @@ class EquilibriumConstantPolynomial(EquilibriumConstantBase):
     def __post_init__(self) -> None:
         self.coeffs = np.asarray(self.coeffs, dtype=float)
         self._powers = np.arange(len(self.coeffs), dtype=float)
-        # derivative coefficients: n·aₙ for n ≥ 1
-        self._deriv_coeffs = self._powers * self.coeffs
+        self._deriv_coeffs = self._powers * self.coeffs           # n·aₙ
+        self._deriv2_coeffs = self._powers * (self._powers - 1) * self.coeffs  # n(n-1)·aₙ
 
     def K(self, T: float) -> float:  # noqa: N802
         return float(np.exp(np.dot(self.coeffs, T ** self._powers)))
 
     def dlnK_dT(self, T: float) -> float:  # noqa: N802
-        # Σ n·aₙ·Tⁿ⁻¹; n=0 term is zero by construction
         powers_m1 = np.where(self._powers > 0, self._powers - 1, 0.0)
         return float(np.dot(self._deriv_coeffs, T ** powers_m1))
 
     def reaction_enthalpy(self, T: float) -> float:
         return R_GAS * T ** 2 * self.dlnK_dT(T)
+
+    def d_reaction_enthalpy_dT(self, T: float) -> float:
+        # d(R T² dlnK/dT)/dT = R(2T dlnK/dT + T² d²lnK/dT²)
+        dlnK = self.dlnK_dT(T)
+        powers_m2 = np.where(self._powers > 1, self._powers - 2, 0.0)
+        d2lnK = float(np.dot(self._deriv2_coeffs, T ** powers_m2))
+        return R_GAS * (2.0 * T * dlnK + T ** 2 * d2lnK)
 
 
 # ---------------------------------------------------------------------------
