@@ -86,7 +86,7 @@ def simulate(
     c0: dict[str, float],
     t_span: tuple[float, float],
     T: Union[float, Callable[[float], float], None] = None,
-    heat_capacity: Optional[float] = None,
+    solvent_composition: Optional[dict] = None,
     n_points: int = 500,
     rtol: float = 1e-8,
     atol: float = 1e-10,
@@ -115,14 +115,16 @@ def simulate(
         Temperature [K].  Pass a float for isothermal simulations, or a
         callable T(t) -> float for a prescribed temperature programme.
         Uses model default if not provided.
-        Must be a float (initial condition) when heat_capacity is given.
-    heat_capacity : float, optional
-        Volumetric heat capacity ρCp [J/(m³·K)].  When provided, T is
-        treated as a dynamic state and solved from the energy balance:
+        Must be a float (initial condition) when solvent_composition is given.
+    solvent_composition : dict, optional
+        Solvent mole fractions {species_name: value}, where value is either
+        a float (fixed) or a callable x_k(t) -> float (gradient programme).
+        When provided, T is treated as a dynamic state solved from the
+        energy balance:
 
-            ρCp · dT/dt = -∑_j ΔH_j(T) · φ_j(c, T)
+            ρCp(t) · dT/dt = -∑_j ΔH_j(T) · φ_j(c, T)
 
-        Only kinetic reactions with a known reaction_enthalpy contribute.
+        ρCp is computed at each step via model.volumetric_heat_capacity().
         Cannot be combined with a callable T.
     n_points : int
         Number of output time points.
@@ -141,19 +143,39 @@ def simulate(
     t_eval = np.linspace(t_span[0], t_span[1], n_points)
 
     # --- coupled energy balance ---
-    if heat_capacity is not None:
+    if solvent_composition is not None:
         if callable(T):
             raise ValueError(
-                "heat_capacity cannot be combined with a callable T. "
+                "solvent_composition cannot be combined with a callable T. "
                 "Pass T as a float (initial temperature)."
             )
         T0 = float(T if T is not None else model.T)
         y_init = np.append(c_init, T0)
 
+        def _x_k(t: float) -> dict:
+            return {
+                name: (val(t) if callable(val) else val)
+                for name, val in solvent_composition.items()
+            }
+
+        # Warn once for any reactions that cannot contribute to the energy balance.
+        import warnings
+        for rxn in model.reactions:
+            if getattr(rxn, "equilibrium_constant", None) is None:
+                warnings.warn(
+                    f"{type(rxn).__name__} has no equilibrium constant and cannot "
+                    "contribute to the energy balance. Its heat of reaction will be "
+                    "treated as zero. Use ThermodynamicReaction with an "
+                    "EquilibriumConstantVantHoff (or similar) to include it.",
+                    UserWarning,
+                    stacklevel=3,
+                )
+
         def rhs_coupled(t: float, y: np.ndarray) -> np.ndarray:
             c = y[:n]
             T_cur = float(y[n])
             dc_dt = -model.residual(c, np.zeros(n), T_cur)
+            rho_cp = model.volumetric_heat_capacity(_x_k(t))
             state = model.make_state(c, T_cur)
             Q_dot = 0.0
             for j, rxn in enumerate(model.reactions):
@@ -163,20 +185,15 @@ def simulate(
                 if eq is None:
                     continue
                 dH = eq.reaction_enthalpy(T_cur)
-                if dH is None:
-                    continue
                 Q_dot += dH * rxn.net_rate(state, model.species_index, model.charges)
-            return np.append(dc_dt, -Q_dot / heat_capacity)
+            return np.append(dc_dt, -Q_dot / rho_cp)
 
         def jac_coupled(t: float, y: np.ndarray) -> np.ndarray:
             c = y[:n]
             T_cur = float(y[n])
             J = np.zeros((n + 1, n + 1))
-            # top-left: analytic d(dc/dt)/dc
             J[:n, :n] = -model.jacobian(c, np.zeros(n), T_cur)
-            # right column: analytic d(dc/dt)/dT
             J[:n, n] = -model.jacobian_dT(c, np.zeros(n), T_cur)
-            # bottom row: FD on the energy balance scalar
             eps = 1e-6
             rhs0_T = rhs_coupled(t, y)[n]
             for k in range(n):

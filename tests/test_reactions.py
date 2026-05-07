@@ -13,14 +13,19 @@ from reactions.api import (
     ActivityCoefficientDavies,
     Component,
     EquilibriumConstant,
+    EquilibriumConstantCustom,
+    EquilibriumConstantPolynomial,
+    EquilibriumConstantTabulated,
     EquilibriumConstantVantHoff,
     EquilibriumConstantVantHoffCp,
     IonicStrengthBackground,
     IonicStrengthFixed,
     MassActionReaction,
     PhysicalState,
+    R_GAS,
     RateConstantArrhenius,
     RateConstantFixed,
+    RateConstantPolynomial,
     ReactionModel,
     Species,
     ThermodynamicReaction,
@@ -905,107 +910,325 @@ def test_jacobian_dc_vanthoff_arrhenius(T):
 # Energy balance (coupled T simulation)
 # ---------------------------------------------------------------------------
 
+# Water: rho=997 kg/m³, M=0.018 kg/mol, Cp=75.3 J/(mol·K)
+# -> rho_cp = (997/0.018)*75.3 ≈ 4.175e6 J/(m³·K)
+_WATER = Species("H2O", charge=0, is_solvent=True,
+                 molar_mass=0.018, density=997.0, heat_capacity=75.3)
+_WATER_COMPONENT = Component("water", [_WATER])
+_WATER_X = {"H2O": 1.0}
+_RHO_CP_WATER = (997.0 / 0.018) * 75.3
 
-def test_coupled_energy_balance_adiabatic():
-    """Adiabatic energy conservation: rho_cp * dT = -dH * dc_B."""
-    K_vH = EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0)
+
+def test_volumetric_heat_capacity_single_solvent():
+    """volumetric_heat_capacity returns correct value for pure water."""
     model = ReactionModel(
-        components=[Component("A"), Component("B")],
+        components=[Component("A"), _WATER_COMPONENT],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> A",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstant(1.0),
+                rate_constant=RateConstantFixed(1.0),
+            ),
+        ],
+    )
+    rho_cp = model.volumetric_heat_capacity(_WATER_X)
+    np.testing.assert_allclose(rho_cp, _RHO_CP_WATER, rtol=1e-10)
+
+
+def test_volumetric_heat_capacity_defaults_single_solvent():
+    """volumetric_heat_capacity defaults x_k=1 when only one solvent present."""
+    model = ReactionModel(
+        components=[Component("A"), _WATER_COMPONENT],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> A",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstant(1.0),
+                rate_constant=RateConstantFixed(1.0),
+            ),
+        ],
+    )
+    assert model.volumetric_heat_capacity() == model.volumetric_heat_capacity(_WATER_X)
+
+
+def test_volumetric_heat_capacity_mixture():
+    """volumetric_heat_capacity weighted sum for two-solvent mixture."""
+    water = Species("H2O",  is_solvent=True, molar_mass=0.018, density=997.0, heat_capacity=75.3)
+    mecn  = Species("MeCN", is_solvent=True, molar_mass=0.041, density=786.0, heat_capacity=91.4)
+    model = ReactionModel(
+        components=[
+            Component("A"),
+            Component("water",  [water]),
+            Component("MeCN",   [mecn]),
+        ],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> A",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstant(1.0),
+                rate_constant=RateConstantFixed(1.0),
+            ),
+        ],
+    )
+    x = {"H2O": 0.7, "MeCN": 0.3}
+    expected = 0.7 * (997.0 / 0.018) * 75.3 + 0.3 * (786.0 / 0.041) * 91.4
+    np.testing.assert_allclose(model.volumetric_heat_capacity(x), expected, rtol=1e-10)
+
+
+def _make_ab_model_with_water(K, kf):
+    """ReactionModel for A <-> B in water, used by energy balance tests."""
+    return ReactionModel(
+        components=[Component("A"), Component("B"), _WATER_COMPONENT],
         reactions=[
             ThermodynamicReaction(
                 "A <-> B",
                 mode="kinetic",
-                equilibrium_constant=K_vH,
-                rate_constant=RateConstantFixed(kf_value=1e5),
+                equilibrium_constant=K,
+                rate_constant=kf,
             ),
         ],
     )
-    c_tot = 1000.0
-    rho_cp = 4.18e6
+
+
+def test_coupled_energy_balance_adiabatic():
+    """Adiabatic energy conservation: rho_cp * dT = -dH * dc_B."""
     dH = -20e3
     T0 = 298.15
-
+    model = _make_ab_model_with_water(
+        EquilibriumConstantVantHoff(dH=dH, dS=-50.0),
+        RateConstantFixed(kf_value=1e5),
+    )
     result = simulate(
         model,
-        c0={"A": c_tot, "B": 0.0},
+        c0={"A": 1000.0, "B": 0.0},
         t_span=(0, 0.5),
         T=T0,
-        heat_capacity=rho_cp,
+        solvent_composition=_WATER_X,
     )
     assert result.success
     dc_B = result["B"][-1]
     dT_sim = result.T_profile[-1] - T0
-    dT_exp = -dH * dc_B / rho_cp
+    dT_exp = -dH * dc_B / _RHO_CP_WATER
     np.testing.assert_allclose(dT_sim, dT_exp, rtol=1e-6)
 
 
 def test_coupled_mass_balance():
     """Mass balance holds throughout the coupled energy-balance simulation."""
-    model = ReactionModel(
-        components=[Component("A"), Component("B")],
-        reactions=[
-            ThermodynamicReaction(
-                "A <-> B",
-                mode="kinetic",
-                equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
-                rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
-            ),
-        ],
-    )
     c_tot = 1000.0
+    model = _make_ab_model_with_water(
+        EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
+        RateConstantArrhenius(A=1e10, Ea=40e3),
+    )
     result = simulate(
         model,
         c0={"A": c_tot, "B": 0.0},
         t_span=(0, 10.0),
         T=298.15,
-        heat_capacity=4.18e6,
+        solvent_composition=_WATER_X,
     )
     total = result["A"] + result["B"]
     np.testing.assert_allclose(total, c_tot, rtol=1e-8)
 
 
 def test_coupled_T_profile_populated():
-    """T_profile is always populated when heat_capacity is given."""
-    model = ReactionModel(
-        components=[Component("A"), Component("B")],
-        reactions=[
-            ThermodynamicReaction(
-                "A <-> B",
-                mode="kinetic",
-                equilibrium_constant=EquilibriumConstant(4.0),
-                rate_constant=RateConstantFixed(2000.0),
-            ),
-        ],
+    """T_profile is always populated when solvent_composition is given."""
+    model = _make_ab_model_with_water(
+        EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
+        RateConstantFixed(kf_value=1e5),
     )
     result = simulate(
         model,
         c0={"A": 1000.0, "B": 0.0},
         t_span=(0, 5.0),
         T=298.15,
-        heat_capacity=4.18e6,
+        solvent_composition=_WATER_X,
     )
     assert result.T_profile is not None
     assert len(result.T_profile) == len(result.t)
 
 
 def test_coupled_callable_T_raises():
-    """Combining heat_capacity with callable T raises ValueError."""
+    """Combining solvent_composition with callable T raises ValueError."""
+    model = _make_ab_model_with_water(
+        EquilibriumConstant(4.0),
+        RateConstantFixed(2000.0),
+    )
+    with pytest.raises(ValueError, match="solvent_composition cannot be combined"):
+        simulate(
+            model,
+            c0={"A": 1000.0},
+            t_span=(0, 1.0),
+            T=lambda t: 298.15 + t,
+            solvent_composition=_WATER_X,
+        )
+
+
+def test_coupled_callable_solvent_composition():
+    """Callable solvent_composition (gradient) is evaluated at each time step."""
+    # 30% MeCN ramp over 10 s — ρCp decreases as water is replaced
+    water = Species("H2O",  is_solvent=True, molar_mass=0.018, density=997.0, heat_capacity=75.3)
+    mecn  = Species("MeCN", is_solvent=True, molar_mass=0.041, density=786.0, heat_capacity=91.4)
+    model = ReactionModel(
+        components=[
+            Component("A"), Component("B"),
+            Component("water", [water]),
+            Component("MeCN",  [mecn]),
+        ],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
+                rate_constant=RateConstantFixed(kf_value=1e5),
+            ),
+        ],
+    )
+    t_end = 5.0
+    x_comp = {
+        "H2O":  lambda t: 1.0 - 0.3 * t / t_end,
+        "MeCN": lambda t: 0.3 * t / t_end,
+    }
+    result = simulate(
+        model,
+        c0={"A": 1000.0, "B": 0.0},
+        t_span=(0, t_end),
+        T=298.15,
+        solvent_composition=x_comp,
+    )
+    assert result.success
+    assert result.T_profile is not None
+
+
+def test_reaction_enthalpy_fd_fallback_custom():
+    """EquilibriumConstantCustom.reaction_enthalpy() falls back to FD via van't Hoff."""
+    dH_true = -20e3
+    dS = -50.0
+    K_fn = lambda T: float(np.exp(-dH_true / (R_GAS * T) + dS / R_GAS))  # noqa: E731
+    eq = EquilibriumConstantCustom(K_fn)
+    # analytic: ΔH = R T² · dlnK/dT = dH_true
+    dH_fd = eq.reaction_enthalpy(298.15)
+    assert abs(dH_fd - dH_true) / abs(dH_true) < 1e-6
+
+
+def test_reaction_enthalpy_fd_fallback_tabulated():
+    """EquilibriumConstantTabulated.reaction_enthalpy() falls back to FD via van't Hoff."""
+    dH_true = -20e3
+    dS = -50.0
+    T_data = np.linspace(270, 370, 200)
+    K_data = np.exp(-dH_true / (R_GAS * T_data) + dS / R_GAS)
+    eq = EquilibriumConstantTabulated(T_data, K_data)
+    dH_fd = eq.reaction_enthalpy(298.15)
+    assert abs(dH_fd - dH_true) / abs(dH_true) < 0.02  # linear interpolation limits accuracy
+
+
+def test_reaction_enthalpy_fixed_K_is_zero():
+    """EquilibriumConstant (fixed K) implies dlnK/dT = 0, so reaction_enthalpy = 0."""
+    eq = EquilibriumConstant(K_eq=4.0)
+    assert eq.reaction_enthalpy(298.15) == 0.0
+
+
+def test_equilibrium_constant_polynomial_K_and_derivative():
+    """EquilibriumConstantPolynomial: K and dlnK/dT match analytic values."""
+    # ln K(T) = a0 + a1*T + a2*T^2
+    a0, a1, a2 = 2.0, -0.01, 3e-5
+    eq = EquilibriumConstantPolynomial([a0, a1, a2])
+    T = 310.0
+    K_expected = np.exp(a0 + a1 * T + a2 * T**2)
+    dlnK_expected = a1 + 2 * a2 * T
+    dH_expected = R_GAS * T**2 * dlnK_expected
+    assert abs(eq.K(T) - K_expected) / K_expected < 1e-12
+    assert abs(eq.dlnK_dT(T) - dlnK_expected) < 1e-12
+    assert abs(eq.reaction_enthalpy(T) - dH_expected) < 1e-6
+
+
+def test_equilibrium_constant_polynomial_constant_case():
+    """Single-coefficient polynomial is a temperature-independent K."""
+    eq = EquilibriumConstantPolynomial([np.log(4.0)])
+    assert abs(eq.K(298.15) - 4.0) < 1e-12
+    assert eq.dlnK_dT(298.15) == 0.0
+    assert eq.reaction_enthalpy(298.15) == 0.0
+
+
+def test_rate_constant_polynomial_kf_and_derivative():
+    """RateConstantPolynomial: kf and dlnkf/dT match analytic values."""
+    b0, b1 = 5.0, -0.005
+    rc = RateConstantPolynomial([b0, b1])
+    T = 320.0
+    kf_expected = np.exp(b0 + b1 * T)
+    dlnkf_expected = b1
+    assert abs(rc.kf(T) - kf_expected) / kf_expected < 1e-12
+    assert abs(rc.dlnkf_dT(T) - dlnkf_expected) < 1e-12
+
+
+def test_polynomial_jacobian_dT_analytic_vs_fd():
+    """jacobian_dT with polynomial K/k is analytic and matches FD."""
+    a0, a1 = 1.5, -8e-3
+    b0, b1 = 4.0, -5e-3
     model = ReactionModel(
         components=[Component("A"), Component("B")],
         reactions=[
             ThermodynamicReaction(
                 "A <-> B",
                 mode="kinetic",
-                equilibrium_constant=EquilibriumConstant(4.0),
-                rate_constant=RateConstantFixed(2000.0),
+                equilibrium_constant=EquilibriumConstantPolynomial([a0, a1]),
+                rate_constant=RateConstantPolynomial([b0, b1]),
             ),
         ],
     )
-    with pytest.raises(ValueError, match="heat_capacity cannot be combined"):
-        simulate(
-            model,
-            c0={"A": 1000.0},
-            t_span=(0, 1.0),
-            T=lambda t: 298.15 + t,
-            heat_capacity=4.18e6,
-        )
+    c = np.array([600.0, 400.0])
+    T = 310.0
+    analytic = model.jacobian_dT(c, np.zeros(2), T)
+    eps = 1e-5
+    fd = (model.residual(c, np.zeros(2), T + eps) -
+          model.residual(c, np.zeros(2), T - eps)) / (2 * eps)
+    np.testing.assert_allclose(analytic, fd, rtol=1e-4)
+
+
+def test_energy_balance_custom_K_matches_vanthoff():
+    """Energy balance with EquilibriumConstantCustom matches VantHoff result."""
+    dH_true = -20e3
+    dS = -50.0
+    K_fn = lambda T: float(np.exp(-dH_true / (R_GAS * T) + dS / R_GAS))  # noqa: E731
+    model_custom = ReactionModel(
+        components=[Component("A"), Component("B"), Component("water", [_WATER])],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstantCustom(K_fn),
+                rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
+            ),
+        ],
+    )
+    model_vH = ReactionModel(
+        components=[Component("A"), Component("B"), Component("water", [_WATER])],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstantVantHoff(dH=dH_true, dS=dS),
+                rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
+            ),
+        ],
+    )
+    kw = dict(c0={"A": 1000.0}, t_span=(0, 2.0), T=298.15, solvent_composition=_WATER_X)
+    r_custom = simulate(model_custom, **kw)
+    r_vH    = simulate(model_vH,    **kw)
+    assert r_custom.success and r_vH.success
+    np.testing.assert_allclose(r_custom.T_profile, r_vH.T_profile, rtol=1e-4)
+
+
+def test_energy_balance_mass_action_warns():
+    """MassActionReaction in an energy balance model raises UserWarning."""
+    import warnings
+    model = ReactionModel(
+        components=[Component("A"), Component("B"), Component("water", [_WATER])],
+        reactions=[MassActionReaction("A <-> B", kf=1.0, kr=0.25)],
+    )
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        simulate(model, c0={"A": 1000.0}, t_span=(0, 0.1), T=298.15,
+                 solvent_composition=_WATER_X)
+    assert any(issubclass(warning.category, UserWarning) for warning in w)
+    assert any("MassActionReaction" in str(warning.message) for warning in w)

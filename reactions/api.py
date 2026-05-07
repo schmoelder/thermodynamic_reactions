@@ -126,6 +126,7 @@ class Species:
     is_solvent: bool = False
     molar_mass: Optional[float] = None
     density: Optional[float] = None
+    heat_capacity: Optional[float] = None  # molar Cp [J/(mol·K)]
 
 
 class Component:
@@ -362,14 +363,18 @@ class EquilibriumConstantBase(ABC):
         """
         return None
 
-    def reaction_enthalpy(self, T: float) -> Optional[float]:
+    def reaction_enthalpy(self, T: float, eps: float = 1e-4) -> float:
         """
-        Return ΔrH°(T) [J/mol], or None if unavailable.
+        Return ΔrH°(T) [J/mol].
 
-        Required for energy balance coupling in simulate().
-        None means this reaction cannot participate in a coupled energy balance.
+        Uses the analytic form if dlnK_dT() returns a value; otherwise falls
+        back to central-difference FD on ln K(T) via the van't Hoff relation:
+            ΔrH°(T) = R T² · d(ln K)/dT
         """
-        return None
+        dlnK = self.dlnK_dT(T)
+        if dlnK is None:
+            dlnK = (np.log(self.K(T + eps)) - np.log(self.K(T - eps))) / (2 * eps)
+        return R_GAS * T ** 2 * dlnK
 
 
 @dataclass
@@ -503,6 +508,48 @@ class EquilibriumConstantTabulated(EquilibriumConstantBase):
 
     def K(self, T: float) -> float:  # noqa: N802
         return float(np.interp(T, self.T_data, self.K_data))
+
+
+@dataclass
+class EquilibriumConstantPolynomial(EquilibriumConstantBase):
+    """
+    K(T) = exp(a₀ + a₁T + a₂T² + ...)
+
+    coeffs = [a₀, a₁, a₂, ...] in ascending power order.
+
+    Analytic derivatives:
+        d(ln K)/dT = a₁ + 2a₂T + 3a₃T² + ...
+        ΔrH°(T)    = R T² · d(ln K)/dT
+
+    Van't Hoff is the special case where coeffs = [dS/R, -dH/R·... wait,
+    van't Hoff has a 1/T term; use EquilibriumConstantVantHoff for that.
+    This class is for empirical polynomial fits where ln K is measured or
+    regressed as a polynomial in T directly.
+
+    Parameters
+    ----------
+    coeffs : array-like
+        Polynomial coefficients [a₀, a₁, ...], ascending power order.
+    """
+
+    coeffs: np.ndarray
+
+    def __post_init__(self) -> None:
+        self.coeffs = np.asarray(self.coeffs, dtype=float)
+        self._powers = np.arange(len(self.coeffs), dtype=float)
+        # derivative coefficients: n·aₙ for n ≥ 1
+        self._deriv_coeffs = self._powers * self.coeffs
+
+    def K(self, T: float) -> float:  # noqa: N802
+        return float(np.exp(np.dot(self.coeffs, T ** self._powers)))
+
+    def dlnK_dT(self, T: float) -> float:  # noqa: N802
+        # Σ n·aₙ·Tⁿ⁻¹; n=0 term is zero by construction
+        powers_m1 = np.where(self._powers > 0, self._powers - 1, 0.0)
+        return float(np.dot(self._deriv_coeffs, T ** powers_m1))
+
+    def reaction_enthalpy(self, T: float) -> float:
+        return R_GAS * T ** 2 * self.dlnK_dT(T)
 
 
 # ---------------------------------------------------------------------------
@@ -646,6 +693,41 @@ class RateConstantArrhenius(RateConstantBase):
 
     def dlnkf_dT(self, T: float) -> float:
         return self.Ea / (R_GAS * T ** 2)
+
+
+@dataclass
+class RateConstantPolynomial(RateConstantBase):
+    """
+    kf(T) = exp(b₀ + b₁T + b₂T² + ...)
+
+    coeffs = [b₀, b₁, b₂, ...] in ascending power order.
+
+    Analytic derivatives:
+        d(ln kf)/dT = b₁ + 2b₂T + 3b₃T² + ...
+
+    Arrhenius is the special case where ln kf = ln A - Ea/(RT), which has a
+    1/T term; use RateConstantArrhenius for that.
+    This class is for empirical polynomial fits in T.
+
+    Parameters
+    ----------
+    coeffs : array-like
+        Polynomial coefficients [b₀, b₁, ...], ascending power order.
+    """
+
+    coeffs: np.ndarray
+
+    def __post_init__(self) -> None:
+        self.coeffs = np.asarray(self.coeffs, dtype=float)
+        self._powers = np.arange(len(self.coeffs), dtype=float)
+        self._deriv_coeffs = self._powers * self.coeffs
+
+    def kf(self, T: float) -> float:
+        return float(np.exp(np.dot(self.coeffs, T ** self._powers)))
+
+    def dlnkf_dT(self, T: float) -> float:
+        powers_m1 = np.where(self._powers > 0, self._powers - 1, 0.0)
+        return float(np.dot(self._deriv_coeffs, T ** powers_m1))
 
 
 @dataclass
@@ -1689,6 +1771,58 @@ class ReactionModel:
                     J[dep, k] = rxn.nu[sp_name] / ck
 
         return J
+
+    def volumetric_heat_capacity(
+        self,
+        x_k: Optional[dict[str, float]] = None,
+    ) -> float:
+        """
+        Volumetric heat capacity ρCp [J/(m³·K)] from solvent species.
+
+        Under the dilute approximation (zero molar volume for solutes):
+            ρCp = Σ_k x_k · (ρ_k / M_k) · Cp_k
+
+        Parameters
+        ----------
+        x_k : dict[str, float], optional
+            Solvent mole fractions {species_name: x_k}.
+            Required when more than one solvent species is present.
+            Defaults to {sole_solvent: 1.0} for single-solvent models.
+
+        Raises
+        ------
+        ValueError
+            If no solvent species are defined, required fields are missing,
+            or x_k is not provided for a multi-solvent model.
+        """
+        solvents = [sp for sp in self._all_species if sp.is_solvent]
+        if not solvents:
+            raise ValueError(
+                "No solvent species (is_solvent=True) found. "
+                "Energy balance requires at least one solvent with "
+                "molar_mass, density, and heat_capacity set."
+            )
+        if x_k is None:
+            if len(solvents) == 1:
+                x_k = {solvents[0].name: 1.0}
+            else:
+                raise ValueError(
+                    "solvent_composition required when more than one "
+                    "solvent species is present."
+                )
+        rho_cp = 0.0
+        for sp in solvents:
+            x = x_k.get(sp.name, 0.0)
+            if x == 0.0:
+                continue
+            for field in ("molar_mass", "density", "heat_capacity"):
+                if getattr(sp, field) is None:
+                    raise ValueError(
+                        f"Solvent '{sp.name}' missing '{field}' — "
+                        "required for energy balance."
+                    )
+            rho_cp += x * (sp.density / sp.molar_mass) * sp.heat_capacity
+        return rho_cp
 
     def jacobian_dT(
         self,
