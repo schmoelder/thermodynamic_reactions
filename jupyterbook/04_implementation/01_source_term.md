@@ -122,11 +122,10 @@ For a reversible step it takes $k_f$ and $k_r$ as independent inputs:
 MassActionReaction("A <-> B", kf=2.0, kr=0.5)
 ```
 
-The long-time equilibrium satisfies $c_\text{B}/c_\text{A} = k_f / k_r$; here that ratio is 4.
+At fixed temperature `MassActionReaction` is exact: $k_f/k_r$ directly sets the equilibrium composition, here $c_\text{B}/c_\text{A} = k_f/k_r = 4$.
 This ratio is a free parameter: nothing in the interface requires it to equal the equilibrium constant $K$ derived from $\Delta_r G^\circ = -RT \ln K$ (@equilibrium).
-If temperature changes, $K(T)$ shifts; `MassActionReaction` has no mechanism to follow it.
-`ThermodynamicReaction` addresses this by enforcing $k_r(T) = k_f(T)/K(T)$ at every evaluation.
-Thermodynamic consistency is optional in `MassActionReaction`; it is enforced by construction in `ThermodynamicReaction`.
+When temperature changes, $K(T)$ shifts; `MassActionReaction` has no mechanism to follow it.
+`ThermodynamicReaction` addresses this by enforcing $k_r(T) = k_f(T)/K(T)$ at every evaluation, so the long-time limit always tracks the thermodynamically correct equilibrium.
 
 ---
 

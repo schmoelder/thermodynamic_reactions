@@ -13,7 +13,7 @@ Units: SI throughout (mol/m³, K, s).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Callable, Optional, Union
 
 import numpy as np
 from scipy.integrate import solve_ivp
@@ -48,6 +48,7 @@ class SimulationResult:
     species: list[str]
     success: bool
     message: str
+    T_profile: Optional[np.ndarray] = None  # None when T was scalar/default
 
     def __getitem__(self, name: str) -> np.ndarray:
         """result['A'] returns the concentration array of species A."""
@@ -84,7 +85,7 @@ def simulate(
     model: ReactionModel,
     c0: dict[str, float],
     t_span: tuple[float, float],
-    T: Optional[float] = None,
+    T: Union[float, Callable[[float], float], None] = None,
     n_points: int = 500,
     rtol: float = 1e-8,
     atol: float = 1e-10,
@@ -109,8 +110,10 @@ def simulate(
         Missing species default to 0.
     t_span : tuple[float, float]
         (t_start, t_end) [s].
-    T : float, optional
-        Temperature [K].  Uses model default if not provided.
+    T : float or callable or None
+        Temperature [K].  Pass a float for isothermal simulations, or a
+        callable T(t) -> float for a prescribed temperature programme.
+        Uses model default if not provided.
     n_points : int
         Number of output time points.
     rtol, atol : float
@@ -119,16 +122,23 @@ def simulate(
     Returns
     -------
     SimulationResult
+        result.T_profile is populated when T is callable, None otherwise.
     """
     species_names = [sp.name for sp in model.species]
     c_init = np.array([c0.get(name, 0.0) for name in species_names])
 
+    T_func: Callable[[float], Optional[float]]
+    if callable(T):
+        T_func = T
+    else:
+        T_func = lambda t: T  # noqa: E731  (scalar or None — constant)
+
     def rhs(t: float, c: np.ndarray) -> np.ndarray:
         # residual(c, c_dot=0) = c_dot - f(c)  =>  f(c) = -residual(c, 0)
-        return -model.residual(c, np.zeros_like(c), T)
+        return -model.residual(c, np.zeros_like(c), T_func(t))
 
     def jac(t: float, c: np.ndarray) -> np.ndarray:
-        return -model.jacobian(c, np.zeros_like(c), T)
+        return -model.jacobian(c, np.zeros_like(c), T_func(t))
 
     t_eval = np.linspace(t_span[0], t_span[1], n_points)
 
@@ -144,12 +154,15 @@ def simulate(
         dense_output=False,
     )
 
+    T_profile = np.array([T_func(t) for t in sol.t]) if callable(T) else None
+
     return SimulationResult(
         t=sol.t,
         c=sol.y.T,
         species=species_names,
         success=sol.success,
         message=sol.message,
+        T_profile=T_profile,
     )
 
 

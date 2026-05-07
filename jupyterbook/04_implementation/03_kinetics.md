@@ -267,6 +267,62 @@ In those cases, use `EnzymaticReaction` with a custom rate closure (@implementat
 Thermodynamic consistency at the overall reaction level cannot be enforced automatically; it must be verified against the microscopic mechanism.
 ```
 
+## Prescribed temperature programme
+
+The two-temperature comparison runs each trajectory at a fixed temperature.
+Passing a callable `T(t)` to `simulate` lets the temperature vary continuously within a single integration: the solver evaluates $k_f(T(t))$, $K(T(t))$, and $k_r(T(t)) = k_f(T(t))/K(T(t))$ at every step, so the instantaneous equilibrium composition shifts along with the temperature.
+
+```{code-cell} ipython3
+T_start, T_end, t_end = 298.15, 320.0, 10.0
+T_ramp = lambda t: T_start + (T_end - T_start) * t / t_end  # noqa: E731
+
+result_ramp = simulate(
+    model,
+    c0={"A": c_tot, "B": 0.0},
+    t_span=(0, t_end),
+    T=T_ramp,
+)
+```
+
+```{code-cell} ipython3
+:tags: [remove-cell]
+:label: cell-T-ramp
+
+T_inst = result_ramp.T_profile
+K_inst = np.array([K_vH.K(T) for T in T_inst])
+B_inst = c_tot * K_inst / (1 + K_inst)
+
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
+
+axes[0].plot(result_ramp.t, result_ramp["A"], color="C0", label="A")
+axes[0].plot(result_ramp.t, result_ramp["B"], color="C1", label="B")
+axes[0].plot(result_ramp.t, B_inst,           color="C1", ls="--", lw=1.0,
+             label=r"$c_B^\mathrm{eq}(T(t))$")
+axes[0].plot(result_ramp.t, c_tot - B_inst,   color="C0", ls="--", lw=1.0)
+axes[0].set_xlabel("time [s]")
+axes[0].set_ylabel(r"concentration [mol/m³]")
+axes[0].legend(fontsize=8)
+
+axes[1].plot(result_ramp.t, T_inst - 273.15, color="C3")
+axes[1].set_xlabel("time [s]")
+axes[1].set_ylabel(r"$T$ [°C]")
+
+fig.tight_layout()
+```
+
+```{figure} #cell-T-ramp
+:name: fig-T-ramp
+
+Kinetic simulation under a linear temperature ramp from $298\ \text{K}$ to $320\ \text{K}$ over $10\ \text{s}$.
+Left: concentration trajectories; dashed lines track the instantaneous equilibrium
+$c_\text{B}^\text{eq}(T(t)) = c_\text{tot}\,K(T(t))/(1+K(T(t)))$.
+Right: the prescribed temperature programme stored in `result_ramp.T_profile`.
+The exothermic reaction loses product B as temperature rises, consistent with Le Chatelier's principle.
+```
+
+The trajectory tracks the moving equilibrium closely because $k_f$ is large relative to the ramp rate.
+A slower rate constant or a faster ramp would introduce a visible lag between the solid and dashed curves, showing that temperature-induced equilibrium shifts are rate-limited by kinetics, not instantaneous.
+
 ---
 
 The kinetic and equilibrium frameworks are now complete for homogeneous reactions with ideal activities.
