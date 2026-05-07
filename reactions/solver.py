@@ -86,6 +86,7 @@ def simulate(
     c0: dict[str, float],
     t_span: tuple[float, float],
     T: Union[float, Callable[[float], float], None] = None,
+    heat_capacity: Optional[float] = None,
     n_points: int = 500,
     rtol: float = 1e-8,
     atol: float = 1e-10,
@@ -114,6 +115,15 @@ def simulate(
         Temperature [K].  Pass a float for isothermal simulations, or a
         callable T(t) -> float for a prescribed temperature programme.
         Uses model default if not provided.
+        Must be a float (initial condition) when heat_capacity is given.
+    heat_capacity : float, optional
+        Volumetric heat capacity ρCp [J/(m³·K)].  When provided, T is
+        treated as a dynamic state and solved from the energy balance:
+
+            ρCp · dT/dt = -∑_j ΔH_j(T) · φ_j(c, T)
+
+        Only kinetic reactions with a known reaction_enthalpy contribute.
+        Cannot be combined with a callable T.
     n_points : int
         Number of output time points.
     rtol, atol : float
@@ -122,11 +132,83 @@ def simulate(
     Returns
     -------
     SimulationResult
-        result.T_profile is populated when T is callable, None otherwise.
+        result.T_profile is populated when T is callable or heat_capacity
+        is given; None otherwise.
     """
     species_names = [sp.name for sp in model.species]
     c_init = np.array([c0.get(name, 0.0) for name in species_names])
+    n = len(c_init)
+    t_eval = np.linspace(t_span[0], t_span[1], n_points)
 
+    # --- coupled energy balance ---
+    if heat_capacity is not None:
+        if callable(T):
+            raise ValueError(
+                "heat_capacity cannot be combined with a callable T. "
+                "Pass T as a float (initial temperature)."
+            )
+        T0 = float(T if T is not None else model.T)
+        y_init = np.append(c_init, T0)
+
+        def rhs_coupled(t: float, y: np.ndarray) -> np.ndarray:
+            c = y[:n]
+            T_cur = float(y[n])
+            dc_dt = -model.residual(c, np.zeros(n), T_cur)
+            state = model.make_state(c, T_cur)
+            Q_dot = 0.0
+            for j, rxn in enumerate(model.reactions):
+                if not model.kinetic_mask[j]:
+                    continue
+                eq = getattr(rxn, "equilibrium_constant", None)
+                if eq is None:
+                    continue
+                dH = eq.reaction_enthalpy(T_cur)
+                if dH is None:
+                    continue
+                Q_dot += dH * rxn.net_rate(state, model.species_index, model.charges)
+            return np.append(dc_dt, -Q_dot / heat_capacity)
+
+        def jac_coupled(t: float, y: np.ndarray) -> np.ndarray:
+            c = y[:n]
+            T_cur = float(y[n])
+            J = np.zeros((n + 1, n + 1))
+            # top-left: analytic d(dc/dt)/dc
+            J[:n, :n] = -model.jacobian(c, np.zeros(n), T_cur)
+            # right column: analytic d(dc/dt)/dT
+            J[:n, n] = -model.jacobian_dT(c, np.zeros(n), T_cur)
+            # bottom row: FD on the energy balance scalar
+            eps = 1e-6
+            rhs0_T = rhs_coupled(t, y)[n]
+            for k in range(n):
+                y_p = y.copy()
+                y_p[k] += eps
+                J[n, k] = (rhs_coupled(t, y_p)[n] - rhs0_T) / eps
+            y_p = y.copy()
+            y_p[n] += eps
+            J[n, n] = (rhs_coupled(t, y_p)[n] - rhs0_T) / eps
+            return J
+
+        sol = solve_ivp(
+            rhs_coupled,
+            t_span,
+            y_init,
+            method="Radau",
+            t_eval=t_eval,
+            jac=jac_coupled,
+            rtol=rtol,
+            atol=atol,
+            dense_output=False,
+        )
+        return SimulationResult(
+            t=sol.t,
+            c=sol.y[:n, :].T,
+            species=species_names,
+            success=sol.success,
+            message=sol.message,
+            T_profile=sol.y[n, :],
+        )
+
+    # --- isothermal or prescribed T(t) ---
     T_func: Callable[[float], Optional[float]]
     if callable(T):
         T_func = T
@@ -139,8 +221,6 @@ def simulate(
 
     def jac(t: float, c: np.ndarray) -> np.ndarray:
         return -model.jacobian(c, np.zeros_like(c), T_func(t))
-
-    t_eval = np.linspace(t_span[0], t_span[1], n_points)
 
     sol = solve_ivp(
         rhs,

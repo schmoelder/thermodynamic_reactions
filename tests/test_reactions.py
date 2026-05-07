@@ -14,6 +14,7 @@ from reactions.api import (
     Component,
     EquilibriumConstant,
     EquilibriumConstantVantHoff,
+    EquilibriumConstantVantHoffCp,
     IonicStrengthBackground,
     IonicStrengthFixed,
     MassActionReaction,
@@ -754,3 +755,257 @@ def test_near_zero_ionic_strength_gives_ideal_activity():
         f"Deviation at smallest I ({deviations[-1]:.4f}) should be much less than "
         f"deviation at largest I ({deviations[0]:.4f})"
     )
+
+
+# ---------------------------------------------------------------------------
+# Jacobian vs finite differences
+# ---------------------------------------------------------------------------
+
+
+def _fd_jacobian_dT(model, c, T, eps=1e-5):
+    """Full-model FD approximation of d(residual)/dT."""
+    r0 = model.residual(c, np.zeros(len(c)), T)
+    return (model.residual(c, np.zeros(len(c)), T + eps) - r0) / eps
+
+
+def _fd_jacobian_dc(model, c, T, eps=1e-5):
+    """Full-model FD approximation of d(residual)/dc."""
+    n = len(c)
+    r0 = model.residual(c, np.zeros(n), T)
+    J = np.zeros((n, n))
+    for k in range(n):
+        c_p = c.copy()
+        c_p[k] += eps
+        J[:, k] = (model.residual(c_p, np.zeros(n), T) - r0) / eps
+    return J
+
+
+@pytest.mark.parametrize("T", [298.15, 310.0, 330.0])
+def test_jacobian_dT_vanthoff_arrhenius(T):
+    """jacobian_dT analytic matches FD: VantHoff K + Arrhenius kf."""
+    model = ReactionModel(
+        components=[Component("A"), Component("B")],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
+                rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
+            ),
+        ],
+    )
+    c = np.array([300.0, 700.0])
+    ana = model.jacobian_dT(c, np.zeros(2), T)
+    fd = _fd_jacobian_dT(model, c, T)
+    np.testing.assert_allclose(ana, fd, rtol=1e-4, atol=1e-8)
+
+
+def test_jacobian_dT_vanthoffcp():
+    """jacobian_dT analytic matches FD: VantHoffCp (temperature-dependent dH)."""
+    model = ReactionModel(
+        components=[Component("A"), Component("B")],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstantVantHoffCp(
+                    dH=-20e3, dS=-50.0, dCp=100.0,
+                ),
+                rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
+            ),
+        ],
+    )
+    c = np.array([300.0, 700.0])
+    ana = model.jacobian_dT(c, np.zeros(2), T=310.0)
+    fd = _fd_jacobian_dT(model, c, T=310.0)
+    np.testing.assert_allclose(ana, fd, rtol=1e-4, atol=1e-8)
+
+
+def test_jacobian_dT_fixed_is_zero():
+    """jacobian_dT is zero for fixed K and fixed kf (no T-dependence)."""
+    model = ReactionModel(
+        components=[Component("A"), Component("B")],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstant(4.0),
+                rate_constant=RateConstantFixed(2000.0),
+            ),
+        ],
+    )
+    c = np.array([300.0, 700.0])
+    ana = model.jacobian_dT(c, np.zeros(2), T=310.0)
+    np.testing.assert_allclose(ana, 0.0, atol=1e-12)
+
+
+def test_jacobian_dT_equil_row():
+    """jacobian_dT analytic matches FD for equilibrium (ln Q - ln K) row."""
+    model = ReactionModel(
+        components=[Component("A"), Component("B")],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="equil",
+                equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
+            ),
+        ],
+    )
+    c = np.array([300.0, 700.0])
+    ana = model.jacobian_dT(c, np.zeros(2), T=310.0)
+    fd = _fd_jacobian_dT(model, c, T=310.0)
+    np.testing.assert_allclose(ana, fd, rtol=1e-4, atol=1e-10)
+
+
+def test_jacobian_dT_mixed_reactions():
+    """jacobian_dT analytic matches FD: two reactions, kinetic + equil."""
+    model = ReactionModel(
+        components=[Component("A"), Component("B"), Component("C")],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
+                rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
+            ),
+            ThermodynamicReaction(
+                "B <-> C",
+                mode="equil",
+                equilibrium_constant=EquilibriumConstant(2.0),
+            ),
+        ],
+    )
+    c = np.array([300.0, 400.0, 300.0])
+    ana = model.jacobian_dT(c, np.zeros(3), T=310.0)
+    fd = _fd_jacobian_dT(model, c, T=310.0)
+    np.testing.assert_allclose(ana, fd, rtol=1e-4, atol=1e-8)
+
+
+@pytest.mark.parametrize("T", [298.15, 310.0, 330.0])
+def test_jacobian_dc_vanthoff_arrhenius(T):
+    """jacobian (d(residual)/dc) analytic matches FD: VantHoff K + Arrhenius kf."""
+    model = ReactionModel(
+        components=[Component("A"), Component("B")],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
+                rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
+            ),
+        ],
+    )
+    c = np.array([300.0, 700.0])
+    ana = model.jacobian(c, np.zeros(2), T)
+    fd = _fd_jacobian_dc(model, c, T)
+    np.testing.assert_allclose(ana, fd, rtol=1e-4, atol=1e-8)
+
+
+# ---------------------------------------------------------------------------
+# Energy balance (coupled T simulation)
+# ---------------------------------------------------------------------------
+
+
+def test_coupled_energy_balance_adiabatic():
+    """Adiabatic energy conservation: rho_cp * dT = -dH * dc_B."""
+    K_vH = EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0)
+    model = ReactionModel(
+        components=[Component("A"), Component("B")],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=K_vH,
+                rate_constant=RateConstantFixed(kf_value=1e5),
+            ),
+        ],
+    )
+    c_tot = 1000.0
+    rho_cp = 4.18e6
+    dH = -20e3
+    T0 = 298.15
+
+    result = simulate(
+        model,
+        c0={"A": c_tot, "B": 0.0},
+        t_span=(0, 0.5),
+        T=T0,
+        heat_capacity=rho_cp,
+    )
+    assert result.success
+    dc_B = result["B"][-1]
+    dT_sim = result.T_profile[-1] - T0
+    dT_exp = -dH * dc_B / rho_cp
+    np.testing.assert_allclose(dT_sim, dT_exp, rtol=1e-6)
+
+
+def test_coupled_mass_balance():
+    """Mass balance holds throughout the coupled energy-balance simulation."""
+    model = ReactionModel(
+        components=[Component("A"), Component("B")],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
+                rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
+            ),
+        ],
+    )
+    c_tot = 1000.0
+    result = simulate(
+        model,
+        c0={"A": c_tot, "B": 0.0},
+        t_span=(0, 10.0),
+        T=298.15,
+        heat_capacity=4.18e6,
+    )
+    total = result["A"] + result["B"]
+    np.testing.assert_allclose(total, c_tot, rtol=1e-8)
+
+
+def test_coupled_T_profile_populated():
+    """T_profile is always populated when heat_capacity is given."""
+    model = ReactionModel(
+        components=[Component("A"), Component("B")],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstant(4.0),
+                rate_constant=RateConstantFixed(2000.0),
+            ),
+        ],
+    )
+    result = simulate(
+        model,
+        c0={"A": 1000.0, "B": 0.0},
+        t_span=(0, 5.0),
+        T=298.15,
+        heat_capacity=4.18e6,
+    )
+    assert result.T_profile is not None
+    assert len(result.T_profile) == len(result.t)
+
+
+def test_coupled_callable_T_raises():
+    """Combining heat_capacity with callable T raises ValueError."""
+    model = ReactionModel(
+        components=[Component("A"), Component("B")],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstant(4.0),
+                rate_constant=RateConstantFixed(2000.0),
+            ),
+        ],
+    )
+    with pytest.raises(ValueError, match="heat_capacity cannot be combined"):
+        simulate(
+            model,
+            c0={"A": 1000.0},
+            t_span=(0, 1.0),
+            T=lambda t: 298.15 + t,
+            heat_capacity=4.18e6,
+        )

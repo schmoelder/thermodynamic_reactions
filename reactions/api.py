@@ -351,6 +351,26 @@ class EquilibriumConstantBase(ABC):
     def K(self, T: float) -> float:  # noqa: N802
         """Return dimensionless equilibrium constant at temperature T [K]."""
 
+    def dlnK_dT(self, T: float) -> Optional[float]:  # noqa: N802
+        """
+        Return d(ln K)/dT [1/K], or None if no analytic form is available.
+
+        Derived from the van't Hoff equation:
+            d(ln K)/dT = ΔH°(T) / (R T²)
+
+        None signals that the caller must fall back to finite differences.
+        """
+        return None
+
+    def reaction_enthalpy(self, T: float) -> Optional[float]:
+        """
+        Return ΔrH°(T) [J/mol], or None if unavailable.
+
+        Required for energy balance coupling in simulate().
+        None means this reaction cannot participate in a coupled energy balance.
+        """
+        return None
+
 
 @dataclass
 class EquilibriumConstant(EquilibriumConstantBase):
@@ -372,6 +392,9 @@ class EquilibriumConstant(EquilibriumConstantBase):
 
     def K(self, T: float) -> float:  # noqa: N802
         return self.K_eq
+
+    def dlnK_dT(self, T: float) -> float:  # noqa: N802
+        return 0.0
 
 
 @dataclass
@@ -398,6 +421,12 @@ class EquilibriumConstantVantHoff(EquilibriumConstantBase):
     def K(self, T: float) -> float:  # noqa: N802
         return float(np.exp(-self.dH / (R_GAS * T) + self.dS / R_GAS))
 
+    def dlnK_dT(self, T: float) -> float:  # noqa: N802
+        return self.dH / (R_GAS * T ** 2)
+
+    def reaction_enthalpy(self, T: float) -> float:
+        return self.dH
+
 
 @dataclass
 class EquilibriumConstantVantHoffCp(EquilibriumConstantBase):
@@ -423,6 +452,13 @@ class EquilibriumConstantVantHoffCp(EquilibriumConstantBase):
         dH_T = self.dH + self.dCp * (T - self.T_ref)
         dS_T = self.dS + self.dCp * np.log(T / self.T_ref)
         return float(np.exp(-dH_T / (R_GAS * T) + dS_T / R_GAS))
+
+    def dlnK_dT(self, T: float) -> float:  # noqa: N802
+        dH_T = self.dH + self.dCp * (T - self.T_ref)
+        return dH_T / (R_GAS * T ** 2)
+
+    def reaction_enthalpy(self, T: float) -> float:
+        return self.dH + self.dCp * (T - self.T_ref)
 
 
 @dataclass
@@ -543,6 +579,17 @@ class RateConstantBase(ABC):
     def kf(self, T: float) -> float:
         """Forward rate constant at temperature T [K]."""
 
+    def dlnkf_dT(self, T: float) -> Optional[float]:
+        """
+        Return d(ln kf)/dT [1/K], or None if no analytic form is available.
+
+        For Arrhenius:  d(ln kf)/dT = Ea / (R T²)
+        For fixed kf:   d(ln kf)/dT = 0
+
+        None signals that the caller must fall back to finite differences.
+        """
+        return None
+
 
 @dataclass
 class RateConstantFixed(RateConstantBase):
@@ -573,6 +620,9 @@ class RateConstantFixed(RateConstantBase):
     def kf(self, T: float) -> float:
         return self.kf_value
 
+    def dlnkf_dT(self, T: float) -> float:
+        return 0.0
+
 
 @dataclass
 class RateConstantArrhenius(RateConstantBase):
@@ -593,6 +643,9 @@ class RateConstantArrhenius(RateConstantBase):
 
     def kf(self, T: float) -> float:
         return self.A * float(np.exp(-self.Ea / (R_GAS * T)))
+
+    def dlnkf_dT(self, T: float) -> float:
+        return self.Ea / (R_GAS * T ** 2)
 
 
 @dataclass
@@ -1077,6 +1130,50 @@ class ThermodynamicReaction(ReactionBase):
         )
         # chain rule: dv/dc_k = dv/da_k * gamma_k / C_REF
         return dv_da * gamma / C_REF
+
+    def net_rate_dT(
+        self,
+        state: PhysicalState,
+        species_index: dict[str, int],
+        charges: np.ndarray,
+        eps: float = 1e-6,
+    ) -> float:
+        """
+        d(phi_j)/dT using the analytic formula:
+
+            dphi/dT = (d ln kf / dT) * phi  +  kr * (d ln K / dT) * P_bwd
+
+        where P_bwd = prod(a_i ^ e_bwd_i) is the backward activity product.
+
+        Derivation: phi = kf * P_fwd - kr * P_bwd; P_fwd and P_bwd have no
+        explicit T-dependence (activities depend on c and gamma, not T directly).
+        Differentiating and using kr = kf / K:
+
+            d(kf/K)/dT = kr * (d ln kf/dT  -  d ln K/dT)
+
+        so:
+            dphi/dT = (d ln kf/dT) * kf * P_fwd
+                    - kr * (d ln kf/dT - d ln K/dT) * P_bwd
+                    = (d ln kf/dT) * phi  +  kr * (d ln K/dT) * P_bwd
+
+        Falls back to finite differences when either derivative is unavailable.
+        """
+        dlnkf = self.rate_constant.dlnkf_dT(state.T)
+        dlnK = self.equilibrium_constant.dlnK_dT(state.T)
+
+        if dlnkf is None or dlnK is None:
+            phi0 = self.net_rate(state, species_index, charges)
+            s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I)
+            return (self.net_rate(s_pert, species_index, charges) - phi0) / eps
+
+        gamma = self.activity_coefficient.activity(state, charges)
+        n = len(state.c)
+        a = gamma * state.c / C_REF
+        e_fwd, e_bwd = self._build_exponent_arrays(species_index, n)
+        a_safe = np.maximum(a, 0.0)
+        P_bwd = float(np.prod(a_safe ** e_bwd))
+        phi = self._mass_action_rate(a, self.kf(state.T), self.kr(state.T), e_fwd, e_bwd)
+        return dlnkf * phi + self.kr(state.T) * dlnK * P_bwd
 
     def log_K_residual(
         self,
@@ -1592,6 +1689,51 @@ class ReactionModel:
                     J[dep, k] = rxn.nu[sp_name] / ck
 
         return J
+
+    def jacobian_dT(
+        self,
+        c: np.ndarray,
+        c_dot: np.ndarray,
+        T: Optional[float] = None,
+        eps: float = 1e-6,
+    ) -> np.ndarray:
+        """
+        d(residual)/dT, shape (n_species,).
+
+        Kinetic row i:   dr_i/dT = -sum_j nu_ij * dphi_j/dT
+        Equilibrium dep: dr_dep/dT = -d(ln K_j)/dT
+
+        Analytic where available; falls back to finite differences per reaction.
+        """
+        state = self.make_state(c, T)
+        n_s = len(self.species)
+        drdT = np.zeros(n_s)
+
+        equil_counter = 0
+        for j, rxn in enumerate(self.reactions):
+            if self.kinetic_mask[j]:
+                if hasattr(rxn, "net_rate_dT"):
+                    dvdT = rxn.net_rate_dT(state, self.species_index, self.charges, eps)
+                else:
+                    v0 = rxn.net_rate(state, self.species_index, self.charges)
+                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I)
+                    dvdT = (
+                        rxn.net_rate(s_pert, self.species_index, self.charges) - v0
+                    ) / eps
+                drdT -= self.nu[:, j] * dvdT
+            else:
+                dep = self.equil_dep[equil_counter]
+                equil_counter += 1
+                dlnK = rxn.equilibrium_constant.dlnK_dT(state.T)
+                if dlnK is None:
+                    r0 = rxn.log_K_residual(state, self.species_index, self.charges)
+                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I)
+                    r1 = rxn.log_K_residual(s_pert, self.species_index, self.charges)
+                    drdT[dep] = (r1 - r0) / eps
+                else:
+                    drdT[dep] = -dlnK
+
+        return drdT
 
     def check_conservation(
         self,
