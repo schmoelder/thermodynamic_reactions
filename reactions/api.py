@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Optional, Union
 
 import numpy as np
@@ -63,6 +63,7 @@ class PhysicalState:
     c: np.ndarray
     T: float
     I: float = 0.0
+    x_solvent: dict = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -973,7 +974,7 @@ class ReactionBase(ABC):
         for i in range(n):
             c_pert = state.c.copy()
             c_pert[i] += eps
-            s_pert = PhysicalState(c=c_pert, T=state.T, I=state.I)
+            s_pert = PhysicalState(c=c_pert, T=state.T, I=state.I, x_solvent=state.x_solvent)
             J[:, i] = (self.residual(s_pert, species_index) - res0) / eps
         return J
 
@@ -1269,7 +1270,7 @@ class ThermodynamicReaction(ReactionBase):
 
         if dlnkf is None or dlnK is None:
             phi0 = self.net_rate(state, species_index, charges)
-            s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I)
+            s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, x_solvent=state.x_solvent)
             return (self.net_rate(s_pert, species_index, charges) - phi0) / eps
 
         gamma = self.activity_coefficient.activity(state, charges)
@@ -1658,7 +1659,10 @@ class ReactionModel:
         return nu, kinetic_mask, equil_dep
 
     def make_state(
-        self, c: np.ndarray, T: Optional[float] = None
+        self,
+        c: np.ndarray,
+        T: Optional[float] = None,
+        x_solvent: Optional[dict] = None,
     ) -> PhysicalState:
         """
         Build a PhysicalState. Ionic strength computed from charges
@@ -1666,13 +1670,14 @@ class ReactionModel:
         """
         T_val = T if T is not None else self.T
         I = self.ionic_strength.evaluate(c, self.charges)
-        return PhysicalState(c=c, T=T_val, I=I)
+        return PhysicalState(c=c, T=T_val, I=I, x_solvent=x_solvent or {})
 
     def residual(
         self,
         c: np.ndarray,
         c_dot: np.ndarray,
         T: Optional[float] = None,
+        x_solvent: Optional[dict] = None,
     ) -> np.ndarray:
         """
         DAE residual vector, shape (n_dynamic_species,).
@@ -1696,7 +1701,7 @@ class ReactionModel:
         T : float, optional
             Temperature [K]. Uses model default if not provided.
         """
-        state = self.make_state(c, T)
+        state = self.make_state(c, T, x_solvent=x_solvent)
         nu = self.nu
         kinetic_mask = self.kinetic_mask
         equil_dep = self.equil_dep
@@ -1728,6 +1733,7 @@ class ReactionModel:
         c_dot: np.ndarray,
         T: Optional[float] = None,
         eps: float = 1e-6,
+        x_solvent: Optional[dict] = None,
     ) -> np.ndarray:
         """
         Jacobian d(residual)/d(c), shape (n_species, n_species).
@@ -1752,7 +1758,7 @@ class ReactionModel:
         The alpha * I term (d(residual)/d(c_dot)) is identity for kinetic rows,
         zero for equilibrium rows — handled by the DAE solver externally.
         """
-        state = self.make_state(c, T)
+        state = self.make_state(c, T, x_solvent=x_solvent)
         T_val = state.T
         nu = self.nu
         n_s = len(self.species)
@@ -1773,7 +1779,7 @@ class ReactionModel:
                     for k in range(n_s):
                         c_pert = c.copy()
                         c_pert[k] += eps
-                        s_pert = PhysicalState(c=c_pert, T=state.T, I=state.I)
+                        s_pert = PhysicalState(c=c_pert, T=state.T, I=state.I, x_solvent=state.x_solvent)
                         v_pert = rxn.net_rate(s_pert, self.species_index, self.charges)
                         J[:, k] -= nu[:, j] * (v_pert - v0) / eps
 
@@ -1854,6 +1860,7 @@ class ReactionModel:
         c_dot: np.ndarray,
         T: Optional[float] = None,
         eps: float = 1e-6,
+        x_solvent: Optional[dict] = None,
     ) -> np.ndarray:
         """
         d(residual)/dT, shape (n_species,).
@@ -1863,7 +1870,7 @@ class ReactionModel:
 
         Analytic where available; falls back to finite differences per reaction.
         """
-        state = self.make_state(c, T)
+        state = self.make_state(c, T, x_solvent=x_solvent)
         n_s = len(self.species)
         drdT = np.zeros(n_s)
 
@@ -1874,7 +1881,7 @@ class ReactionModel:
                     dvdT = rxn.net_rate_dT(state, self.species_index, self.charges, eps)
                 else:
                     v0 = rxn.net_rate(state, self.species_index, self.charges)
-                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I)
+                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, x_solvent=state.x_solvent)
                     dvdT = (
                         rxn.net_rate(s_pert, self.species_index, self.charges) - v0
                     ) / eps
@@ -1885,7 +1892,7 @@ class ReactionModel:
                 dlnK = rxn.equilibrium_constant.dlnK_dT(state.T)
                 if dlnK is None:
                     r0 = rxn.log_K_residual(state, self.species_index, self.charges)
-                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I)
+                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, x_solvent=state.x_solvent)
                     r1 = rxn.log_K_residual(s_pert, self.species_index, self.charges)
                     drdT[dep] = (r1 - r0) / eps
                 else:

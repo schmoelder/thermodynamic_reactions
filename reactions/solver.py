@@ -174,9 +174,10 @@ def simulate(
         def rhs_coupled(t: float, y: np.ndarray) -> np.ndarray:
             c = y[:n]
             T_cur = float(y[n])
-            dc_dt = -model.residual(c, np.zeros(n), T_cur)
-            rho_cp = model.volumetric_heat_capacity(_x_k(t))
-            state = model.make_state(c, T_cur)
+            x_k_cur = _x_k(t)
+            dc_dt = -model.residual(c, np.zeros(n), T_cur, x_solvent=x_k_cur)
+            rho_cp = model.volumetric_heat_capacity(x_k_cur)
+            state = model.make_state(c, T_cur, x_solvent=x_k_cur)
             Q_dot = 0.0
             for j, rxn in enumerate(model.reactions):
                 if not model.kinetic_mask[j]:
@@ -191,11 +192,12 @@ def simulate(
         def jac_coupled(t: float, y: np.ndarray) -> np.ndarray:
             c = y[:n]
             T_cur = float(y[n])
-            state = model.make_state(c, T_cur)
-            rho_cp = model.volumetric_heat_capacity(_x_k(t))
+            x_k_cur = _x_k(t)
+            state = model.make_state(c, T_cur, x_solvent=x_k_cur)
+            rho_cp = model.volumetric_heat_capacity(x_k_cur)
             J = np.zeros((n + 1, n + 1))
-            J[:n, :n] = -model.jacobian(c, np.zeros(n), T_cur)
-            J[:n, n] = -model.jacobian_dT(c, np.zeros(n), T_cur)
+            J[:n, :n] = -model.jacobian(c, np.zeros(n), T_cur, x_solvent=x_k_cur)
+            J[:n, n] = -model.jacobian_dT(c, np.zeros(n), T_cur, x_solvent=x_k_cur)
             # Analytic energy-balance row:
             #   ∂rhs_T/∂c_k = -Σ_j [ΔH_j / ρCp] · ∂φ_j/∂c_k
             #   ∂rhs_T/∂T   = -Σ_j [ΔH_j · ∂φ_j/∂T + φ_j · d(ΔH_j)/dT] / ρCp

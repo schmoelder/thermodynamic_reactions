@@ -10,6 +10,7 @@ import pytest
 
 from reactions.api import (
     C_REF,
+    ActivityCoefficientCustom,
     ActivityCoefficientDavies,
     Component,
     EquilibriumConstant,
@@ -20,6 +21,7 @@ from reactions.api import (
     EquilibriumConstantVantHoffCp,
     IonicStrengthBackground,
     IonicStrengthFixed,
+    IonicStrengthIdeal,
     MassActionReaction,
     PhysicalState,
     R_GAS,
@@ -1372,3 +1374,120 @@ def test_energy_balance_jac_analytic_vanthoffcp():
     jac_T_fd = (_eb_rhs_T(model, c, T + eps, rho_cp) - rhs0) / eps
     _, jac_T = _eb_jac_analytic(model, c, T, rho_cp)
     np.testing.assert_allclose(jac_T, jac_T_fd, rtol=1e-5)
+
+
+# ---------------------------------------------------------------------------
+# Bundle C: x_solvent in PhysicalState
+# ---------------------------------------------------------------------------
+
+
+def test_x_solvent_in_make_state():
+    """make_state stores x_solvent on the returned PhysicalState."""
+    model = ReactionModel(
+        components=[Component("A"), Component("B")],
+        reactions=[MassActionReaction("A <-> B", kf=1.0)],
+    )
+    x = {"H2O": 0.7, "MeCN": 0.3}
+    state = model.make_state(np.array([100.0, 50.0]), T=300.0, x_solvent=x)
+    assert state.x_solvent == x
+
+
+def test_x_solvent_default_empty():
+    """PhysicalState.x_solvent defaults to an empty dict."""
+    model = ReactionModel(
+        components=[Component("A"), Component("B")],
+        reactions=[MassActionReaction("A <-> B", kf=1.0)],
+    )
+    state = model.make_state(np.array([100.0, 50.0]))
+    assert state.x_solvent == {}
+
+
+def test_x_solvent_accessible_in_custom_ac():
+    """ActivityCoefficientCustom receives populated x_solvent during residual evaluation."""
+    captured_x = []
+
+    def custom_ac(state, charges):
+        captured_x.append(dict(state.x_solvent))
+        return np.ones(len(state.c))
+
+    model = ReactionModel(
+        components=[Component("A"), Component("B"), Component("water", [_WATER])],
+        reactions=[ThermodynamicReaction(
+            "A <-> B",
+            mode="kinetic",
+            equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
+            rate_constant=RateConstantFixed(1000.0),
+            activity_coefficient=ActivityCoefficientCustom(fn=custom_ac),
+        )],
+    )
+    simulate(
+        model,
+        c0={"A": 1000.0},
+        t_span=(0, 0.05),
+        T=298.15,
+        solvent_composition=_WATER_X,
+        n_points=10,
+    )
+    assert len(captured_x) > 0
+    assert all(d.get("H2O") == pytest.approx(1.0) for d in captured_x)
+
+
+def test_x_solvent_gradient_programme():
+    """x_solvent reflects callable solvent composition during gradient simulation."""
+    captured_x = []
+
+    def custom_ac(state, charges):
+        captured_x.append(dict(state.x_solvent))
+        return np.ones(len(state.c))
+
+    # Linear ramp: H2O goes from 1.0 at t=0 to 0.5 at t=1.0
+    def x_water(t):
+        return 1.0 - 0.5 * t
+
+    model = ReactionModel(
+        components=[Component("A"), Component("B"), Component("water", [_WATER])],
+        reactions=[ThermodynamicReaction(
+            "A <-> B",
+            mode="kinetic",
+            equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
+            rate_constant=RateConstantFixed(1000.0),
+            activity_coefficient=ActivityCoefficientCustom(fn=custom_ac),
+        )],
+    )
+    simulate(
+        model,
+        c0={"A": 1000.0},
+        t_span=(0, 1.0),
+        T=298.15,
+        solvent_composition={"H2O": x_water},
+        n_points=10,
+    )
+    # x_solvent should vary: not all values should be 1.0
+    assert any(d.get("H2O", 1.0) < 0.99 for d in captured_x)
+
+
+def test_builtin_ac_unaffected_by_x_solvent():
+    """Davies activity coefficient gives identical results with and without x_solvent set."""
+    comp_h = Component("H+", [Species("H+", charge=1)])
+    comp_oh = Component("OH-", [Species("OH-", charge=-1)])
+    comp_w = Component("water", [Species(
+        "H2O", is_solvent=True, molar_mass=0.018, density=1000.0, heat_capacity=75.3,
+    )])
+    rxn = ThermodynamicReaction(
+        "H2O <-> H+ + OH-",
+        mode="equil",
+        equilibrium_constant=pKa(14.0),
+        activity_coefficient=ActivityCoefficientDavies(),
+    )
+    model = ReactionModel(
+        components=[comp_h, comp_oh, comp_w],
+        reactions=[rxn],
+        ionic_strength=IonicStrengthIdeal(),
+    )
+    c = np.array([1e-4, 1e-4])  # rough pH 4 guess
+
+    # Without x_solvent
+    r_no_x = model.residual(c, np.zeros(2), T=298.15)
+    # With x_solvent populated
+    r_with_x = model.residual(c, np.zeros(2), T=298.15, x_solvent={"H2O": 1.0})
+    np.testing.assert_array_equal(r_no_x, r_with_x)
