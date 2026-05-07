@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Thermodynamic and kinetic reaction models for CADET"
 readme = "README.md"
 requires-python = ">=3.9"
+license = {text = "GPL-3.0-or-later"}
 dependencies = [
     "numpy",
     "scipy",
