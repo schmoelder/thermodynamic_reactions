@@ -12,7 +12,8 @@ Molar mass     : kg / mol
 Density        : kg / m³
 
 Equilibrium constants are dimensionless (activities, not concentrations).
-Concentrations are divided by C_REF = 1000 mol/m³ when computing activities.
+Activities are a_i = γ_i · c_i / c_ref_i where c_ref_i is per-species (Species.c_ref,
+default 1000 mol/m³). C_REF is retained as a deprecated module-level alias.
 
 Formatting: ruff-compatible (line length 88, double quotes).
 """
@@ -33,7 +34,7 @@ import numpy as np
 R_GAS: float = 8.314462        # J / (mol K)
 KB: float = 1.380649e-23       # J / K
 H_PLANCK: float = 6.626070e-34 # J s
-C_REF: float = 1000.0          # mol/m³  (standard state, 1 mol/L)
+C_REF: float = 1000.0          # mol/m³  — deprecated; use Species.c_ref instead
 
 
 # ---------------------------------------------------------------------------
@@ -64,6 +65,7 @@ class PhysicalState:
     T: float
     I: float = 0.0
     x_solvent: dict = field(default_factory=dict)
+    c_ref: np.ndarray = field(default_factory=lambda: np.array([]))
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +127,7 @@ class Species:
     name: str
     charge: int = 0
     is_solvent: bool = False
+    c_ref: float = 1000.0          # mol/m³ standard-state concentration
     molar_mass: Optional[float] = None
     density: Optional[float] = None
     heat_capacity: Optional[float] = None  # molar Cp [J/(mol·K)]
@@ -974,7 +977,7 @@ class ReactionBase(ABC):
         for i in range(n):
             c_pert = state.c.copy()
             c_pert[i] += eps
-            s_pert = PhysicalState(c=c_pert, T=state.T, I=state.I, x_solvent=state.x_solvent)
+            s_pert = PhysicalState(c=c_pert, T=state.T, I=state.I, x_solvent=state.x_solvent, c_ref=state.c_ref)
             J[:, i] = (self.residual(s_pert, species_index) - res0) / eps
         return J
 
@@ -1198,12 +1201,9 @@ class ThermodynamicReaction(ReactionBase):
         Exponents default to stoichiometric convention (CADET eq. 25).
         """
         gamma = self.activity_coefficient.activity(state, charges)
-        # Build activity array: a_i = gamma_i * c_i / C_REF
-        # Solvent species (not in species_index) get activity 1.0
+        # Build activity array: a_i = gamma_i * c_i / c_ref_i
         n = len(state.c)
-        a = np.ones(n)
-        for i in range(n):
-            a[i] = gamma[i] * state.c[i] / C_REF
+        a = gamma * state.c / state.c_ref
 
         e_fwd, e_bwd = self._build_exponent_arrays(species_index, n)
         return self._mass_action_rate(
@@ -1222,11 +1222,11 @@ class ThermodynamicReaction(ReactionBase):
     ) -> np.ndarray:
         """
         Analytic dv/dc, shape (n_species,).
-        Chain rule: dv/dc_k = dv/da_k * da_k/dc_k = dv/da_k * gamma_k/C_REF.
+        Chain rule: dv/dc_k = dv/da_k * da_k/dc_k = dv/da_k * gamma_k/c_ref_k.
         """
         gamma = self.activity_coefficient.activity(state, charges)
         n = len(state.c)
-        a = gamma * state.c / C_REF
+        a = gamma * state.c / state.c_ref
         e_fwd, e_bwd = self._build_exponent_arrays(species_index, n)
         dv_da = self._mass_action_rate_jac(
             a,
@@ -1235,8 +1235,8 @@ class ThermodynamicReaction(ReactionBase):
             e_fwd,
             e_bwd,
         )
-        # chain rule: dv/dc_k = dv/da_k * gamma_k / C_REF
-        return dv_da * gamma / C_REF
+        # chain rule: dv/dc_k = dv/da_k * gamma_k / c_ref_k
+        return dv_da * gamma / state.c_ref
 
     def net_rate_dT(
         self,
@@ -1270,12 +1270,12 @@ class ThermodynamicReaction(ReactionBase):
 
         if dlnkf is None or dlnK is None:
             phi0 = self.net_rate(state, species_index, charges)
-            s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, x_solvent=state.x_solvent)
+            s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, x_solvent=state.x_solvent, c_ref=state.c_ref)
             return (self.net_rate(s_pert, species_index, charges) - phi0) / eps
 
         gamma = self.activity_coefficient.activity(state, charges)
         n = len(state.c)
-        a = gamma * state.c / C_REF
+        a = gamma * state.c / state.c_ref
         e_fwd, e_bwd = self._build_exponent_arrays(species_index, n)
         a_safe = np.maximum(a, 0.0)
         P_bwd = float(np.prod(a_safe ** e_bwd))
@@ -1297,7 +1297,8 @@ class ThermodynamicReaction(ReactionBase):
         def _a(name: str) -> float:
             if name not in species_index:
                 return 1.0
-            return float(gamma[species_index[name]] * state.c[species_index[name]] / C_REF)
+            i = species_index[name]
+            return float(gamma[i] * state.c[i] / state.c_ref[i])
 
         ln_Q = sum(
             coeff * np.log(max(_a(name), 1e-300))
@@ -1670,7 +1671,8 @@ class ReactionModel:
         """
         T_val = T if T is not None else self.T
         I = self.ionic_strength.evaluate(c, self.charges)
-        return PhysicalState(c=c, T=T_val, I=I, x_solvent=x_solvent or {})
+        c_ref = np.array([sp.c_ref for sp in self.species])
+        return PhysicalState(c=c, T=T_val, I=I, x_solvent=x_solvent or {}, c_ref=c_ref)
 
     def residual(
         self,
@@ -1779,7 +1781,7 @@ class ReactionModel:
                     for k in range(n_s):
                         c_pert = c.copy()
                         c_pert[k] += eps
-                        s_pert = PhysicalState(c=c_pert, T=state.T, I=state.I, x_solvent=state.x_solvent)
+                        s_pert = PhysicalState(c=c_pert, T=state.T, I=state.I, x_solvent=state.x_solvent, c_ref=state.c_ref)
                         v_pert = rxn.net_rate(s_pert, self.species_index, self.charges)
                         J[:, k] -= nu[:, j] * (v_pert - v0) / eps
 
@@ -1881,7 +1883,7 @@ class ReactionModel:
                     dvdT = rxn.net_rate_dT(state, self.species_index, self.charges, eps)
                 else:
                     v0 = rxn.net_rate(state, self.species_index, self.charges)
-                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, x_solvent=state.x_solvent)
+                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, x_solvent=state.x_solvent, c_ref=state.c_ref)
                     dvdT = (
                         rxn.net_rate(s_pert, self.species_index, self.charges) - v0
                     ) / eps
@@ -1892,7 +1894,7 @@ class ReactionModel:
                 dlnK = rxn.equilibrium_constant.dlnK_dT(state.T)
                 if dlnK is None:
                     r0 = rxn.log_K_residual(state, self.species_index, self.charges)
-                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, x_solvent=state.x_solvent)
+                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, x_solvent=state.x_solvent, c_ref=state.c_ref)
                     r1 = rxn.log_K_residual(s_pert, self.species_index, self.charges)
                     drdT[dep] = (r1 - r0) / eps
                 else:
