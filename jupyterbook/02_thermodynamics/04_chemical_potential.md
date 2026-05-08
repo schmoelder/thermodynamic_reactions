@@ -317,4 +317,4 @@ Phase transitions are also exploited in refrigeration and heat pumps: evaporatio
 
 ---
 
-The next chapter introduces corrections for non-ideal behaviour: at high concentration, molecules interact and the simple $RT\ln(c/c^\circ)$ expression no longer holds.
+The next chapter introduces the first source of non-ideal behaviour: departures from the ideal equation of state and the fugacity correction that makes the chemical potential exact for real gases.

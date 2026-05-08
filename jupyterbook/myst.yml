@@ -27,6 +27,7 @@ project:
         - file: 02_thermodynamics/03_thermodynamic_potentials.md
         - file: 02_thermodynamics/04_chemical_potential.md
         - file: 02_thermodynamics/05_nonidealities.md
+        - file: 02_thermodynamics/06_mixing.md
     - file: 03_reactions/00_index.md
       children:
         - file: 03_reactions/01_reaction_coordinates.md

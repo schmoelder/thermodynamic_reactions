@@ -5,13 +5,16 @@ kernelspec:
 ---
 
 (nonidealities)=
-# Non-idealities
+# Pure-Fluid Non-Ideality: Equations of State and Fugacity
 
-The ideal gas law and the ideal chemical potential are useful starting points, but they rest on a single assumption: molecules do not interact.
-For gases at low pressure and solutions at low concentration this is a reasonable approximation.
-At high pressure or high concentration it breaks down, and the thermodynamic framework needs corrections.
-This chapter introduces those corrections: **fugacity** for gases and **activity** for solutions, then covers the models used in practice.
-Readers primarily interested in aqueous electrolyte systems can skip directly to the activity and Debye-Hückel sections.
+Non-ideality has two conceptually distinct origins.
+Even a pure fluid can deviate from ideal behaviour because intermolecular interactions alter the equation of state; this is captured by **fugacity**, which replaces pressure in the chemical potential.
+Mixtures introduce a second, independent layer: the interactions between unlike species can differ from those in the pure components, producing excess mixing properties and activity coefficients.
+Fugacity handles non-ideal state behaviour; activity coefficients handle non-ideal mixing behaviour.
+The two corrections are independent: a mixture of ideal gases has fugacity coefficients of unity but can still have non-unity activity coefficients, and a pure non-ideal fluid has a fugacity correction but no mixing non-ideality.
+
+This chapter addresses the first source: pure-fluid departures from the ideal equation of state.
+Mixture non-idealities and excess Gibbs energy are developed in @mixing.
 
 
 ## Equations of state
@@ -34,8 +37,181 @@ The correction $nb$ subtracts the volume actually occupied by the molecules them
 The term $an^2/V^2$ corrects for attractive interactions: molecules pulling on each other reduce the force they exert on the walls, lowering the effective pressure.
 The constants $a$ and $b$ are specific to each gas and must be measured; when $a = b = 0$ the ideal gas law is recovered.
 
+An **isotherm** traces the $P$–$V_m$ relationship at a single fixed temperature; plotting several isotherms together reveals how the phase structure of a fluid changes with temperature.
+The term reappears in separation science, where the adsorption isotherm plays the same role in the loading–concentration plane at fixed $T$.
+
+
+```{code-cell} ipython3
+:tags: [remove-cell]
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import brentq
+from scipy.integrate import quad
+
+R = 0.08206   # L·atm/(mol·K)
+a = 3.640     # CO₂, L²·atm/mol²
+b = 0.04267   # CO₂, L/mol
+
+Tc = 8*a / (27*R*b)
+Pc = a / (27*b**2)
+Vc = 3*b
+
+def P_vdw(Vm, T):
+    return R*T / (Vm - b) - a / Vm**2
+
+def coexistence(T):
+    def dPdV(Vm):
+        return -R*T / (Vm - b)**2 + 2*a / Vm**3
+    Vm_s1 = brentq(dPdV, b*1.001, Vc*0.9999)
+    Vm_s2 = brentq(dPdV, Vc*1.0001, 20.0)
+    P_min = P_vdw(Vm_s1, T)   # local pressure minimum (liquid spinodal)
+    P_max = P_vdw(Vm_s2, T)   # local pressure maximum (vapor spinodal)
+    V_hi  = 500.0
+    # P_coex lies in (P_min, P_max); P_min can be negative so clamp from below
+    # by P_vdw(V_hi) so that the vapor-root search always has a sign change
+    P_lo = max(P_min, P_vdw(V_hi, T)) + 1e-6
+    P_hi = P_max - 1e-6
+    def area(P_star):
+        Vl = brentq(lambda V: P_vdw(V, T) - P_star, b*1.001, Vm_s1)
+        Vv = brentq(lambda V: P_vdw(V, T) - P_star, Vm_s2, V_hi)
+        return quad(lambda V: P_vdw(V, T) - P_star, Vl, Vv)[0]
+    Pc_co = brentq(area, P_lo, P_hi)
+    Vl = brentq(lambda V: P_vdw(V, T) - Pc_co, b*1.001, Vm_s1)
+    Vv = brentq(lambda V: P_vdw(V, T) - Pc_co, Vm_s2, V_hi)
+    return Pc_co, Vl, Vv
+
+def isotherm_start(T):
+    """Return Vm start, skipping the unphysical negative-P liquid branch when present."""
+    def dPdV(Vm): return -R*T / (Vm - b)**2 + 2*a / Vm**3
+    try:
+        Vm_s1 = brentq(dPdV, b*1.001, Vc*0.9999)
+    except ValueError:
+        return b * 1.005   # supercritical: no spinodal
+    if P_vdw(Vm_s1, T) < 0:
+        Vm_s2 = brentq(dPdV, Vc*1.0001, 20.0)
+        return brentq(lambda V: P_vdw(V, T), Vm_s1, Vm_s2)
+    return b * 1.005
+
+XLIM1 = 0.8
+# Restrict saturation curve to T where Vv ≤ XLIM1 so dome outline closes at plot edge
+T_cross = brentq(lambda T: coexistence(T)[2] - XLIM1, 0.70*Tc, 0.80*Tc)
+T_coex1 = np.linspace(T_cross * 0.999, 0.998*Tc, 80)
+coex1   = [coexistence(T) for T in T_coex1]
+Pc_1    = [c[0] for c in coex1]
+Vl_1    = [c[1] for c in coex1]
+Vv_1    = [c[2] for c in coex1]
+
+def draw_fills(ax, Pc_arr, Vl_arr, Vv_arr, xlim):
+    # Gas: right of vapor branch down to dome bottom only (avoids linear artifact)
+    ax.fill_betweenx(
+        [Pc] + list(reversed(Pc_arr)),
+        [Vc] + list(reversed(Vv_arr)),
+        xlim,
+        color="#fdae61", alpha=0.18,
+    )
+    # Two-phase dome
+    ax.fill(
+        Vl_arr + [Vc] + list(reversed(Vv_arr)) + [Vv_arr[0], Vl_arr[0]],
+        Pc_arr + [Pc] + list(reversed(Pc_arr)) + [0.0, 0.0],
+        color="#888888", alpha=0.12,
+    )
+    # Liquid: left of liquid branch, extend to axis
+    ax.fill_betweenx(
+        [0.0] + Pc_arr + [Pc],
+        0,
+        [Vl_arr[0]] + Vl_arr + [Vc],
+        color="#4393c3", alpha=0.18,
+    )
+    # Saturation curve outline
+    ax.plot(
+        Vl_arr + [Vc] + list(reversed(Vv_arr)),
+        Pc_arr + [Pc] + list(reversed(Pc_arr)),
+        color="#888888", lw=1.4, ls="--", label="saturation curve",
+    )
+```
+
+
+Below $T_c$, the van der Waals equation predicts two stable roots at a given pressure: a small-volume root (the **liquid**) and a large-volume root (the **vapour**).
+The liquid is a dense, condensed phase in which attractive interactions hold molecules close together; the vapour is a dilute, disordered phase in which they are negligible.
+At the **critical point** $(T_c, P_c, V_c)$ the distinction vanishes; above $T_c$ only a single fluid phase exists.
+Every substance with attractive intermolecular interactions has a critical point; the van der Waals equation locates it from $a$ and $b$ alone: $T_c = 8a/27Rb$, $P_c = a/27b^2$, $V_c = 3b$.
+
+
+```{code-cell} ipython3
+:tags: [remove-cell]
+:label: cell-vdw-isotherms
+
+import matplotlib.cm as cm
+
+T_show = [0.80, 0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15]
+# Subcritical: dark→light blue as T→Tc; Tc: black; supercritical: light→dark red
+_n_sub = sum(1 for Tr in T_show if Tr < 1.0)
+_n_sup = sum(1 for Tr in T_show if Tr > 1.0)
+_sub_v = np.linspace(0.85, 0.45, _n_sub)
+_sup_v = np.linspace(0.45, 0.85, _n_sup)
+_si = _ri = 0
+colors = []
+for Tr in T_show:
+    if   Tr < 1.0: colors.append(cm.Blues(_sub_v[_si])); _si += 1
+    elif Tr > 1.0: colors.append(cm.Reds(_sup_v[_ri]));  _ri += 1
+    else:          colors.append("black")
+
+fig, ax = plt.subplots(figsize=(5.5, 4.5))
+draw_fills(ax, Pc_1, Vl_1, Vv_1, XLIM1)
+
+Vm_base = np.linspace(b*1.005, XLIM1 + 0.2, 6000)
+for Tr, col in zip(T_show, colors):
+    Vm_s = isotherm_start(Tr * Tc)
+    Vm   = Vm_base[Vm_base >= Vm_s]
+    P    = P_vdw(Vm, Tr * Tc)
+    lbl  = r"$T = T_c$" if Tr == 1.00 else rf"$T = {Tr:.2f}\,T_c$"
+    ax.plot(Vm, np.where(P < 0, np.nan, P), color=col, lw=2.2 if Tr == 1.00 else 1.8, label=lbl)
+    if Tr < 1.0:
+        Pc_co, Vl_co, Vv_co = coexistence(Tr * Tc)
+        ax.plot([Vl_co, Vv_co], [Pc_co, Pc_co], color=col, ls="--", lw=1.0, zorder=4)
+        ax.plot([Vl_co, Vv_co], [Pc_co, Pc_co], "o", color=col, ms=4, zorder=5)
+
+ax.plot(Vc, Pc, "ko", ms=6, zorder=5)
+ax.annotate(
+    "critical\npoint", xy=(Vc, Pc), xytext=(Vc + 0.02, Pc + 2),
+    fontsize=8, ha="center",
+)
+
+ax.text(0.025, 42, "liquid", fontsize=8, color="#2166ac",
+        va="center", ha="center", rotation=90)
+ax.text(0.3, 10, "two-phase\nregion", fontsize=9, color="#555555",
+        va="center", ha="center")
+ax.text(0.50, 60, "gas", fontsize=9, color="#d6604d", va="center")
+
+ax.axhline(Pc, color="#888888", lw=0.7, ls=":", alpha=0.7)
+ax.text(0.4, 90, "supercritical fluid",
+        fontsize=8, color="#888888", va="top", ha="center")
+
+ax.set_xlim(0, XLIM1)
+ax.set_ylim(0, 100)
+ax.set_xlabel(r"$V_m$ / (L mol$^{-1}$)")
+ax.set_ylabel(r"$P$ / atm")
+ax.legend(fontsize=8, loc="upper right")
+fig.tight_layout()
+```
+
+```{figure} #cell-vdw-isotherms
+:name: fig-vdw-isotherms
+
+Van der Waals isotherms for $\ce{CO2}$ ($a = 3.640\ \mathrm{L^2\,atm\,mol^{-2}}$, $b = 0.04267\ \mathrm{L\,mol^{-1}}$) spanning subcritical, critical, and supercritical temperatures.
+The saturation curve (dashed grey) is the region of liquid–vapour coexistence and separates the liquid, gas, and two-phase regions.
+Below $T_c$, each van der Waals isotherm develops a pressure loop; the physical coexistence pressure is found by the Maxwell equal-area construction, and the dashed tie-line connects the saturated liquid ($V_l$) and saturated vapour ($V_v$), with phase fractions determined by the lever rule.
+As $T \to T_c$, the coexistence region contracts and the loop collapses to an inflection point at the critical point $(T_c, P_c, V_c)$.
+Above $P_c$ (dotted line) the liquid–gas distinction disappears and the substance becomes a supercritical fluid.
+Each isotherm is shown only where $P \geq 0$; the negative-pressure branch corresponds to metastable tension states.
+```
+
 
 ## Fugacity: the effective pressure
+
+Fugacity plays for gases the same role that activity plays for solutions: both replace the ideal composition variable with an effective thermodynamic quantity derived from the real chemical potential.
+The two corrections are therefore parallel in structure, though they address different physical origins.
 
 The ideal chemical potential for a gas, $\mu = \mu^\circ + RT\ln(P/P^\circ)$, was derived assuming $PV = nRT$.
 For a real gas this expression is no longer exact.
@@ -52,193 +228,16 @@ By construction, $\varphi \to 1$ as $P \to 0$ (all gases become ideal at low pre
 For the van der Waals gas, the fugacity coefficient can be derived analytically.
 At moderate pressures, $\ln\varphi \approx (b - a/RT) \cdot P/RT$: repulsion ($b > 0$) increases $f$ above $P$; attraction ($a > 0$) decreases it.
 
-
-## Real solutions: activity
-
-In solution, the role of pressure is played by concentration, and the same logic applies.
-The ideal chemical potential $\mu_i = \mu_i^\circ + RT\ln(c_i/c^\circ)$ assumes no interactions between solute molecules.
-The **activity** $a_i$ replaces the dimensionless concentration $c_i/c^\circ$ with a corrected quantity that accounts for interactions:
-
-$$
-\mu_i = \mu_i^\circ(T) + RT\ln a_i
-$$
-
-The activity is written as:
-
-$$
-a_i = \gamma_i \frac{c_i}{c^\circ}
-$$
-
-where $\gamma_i$ is the **activity coefficient**.
-In the dilute limit, molecules are far apart and interactions are negligible, so $\gamma_i \to 1$ and $a_i \to c_i/c^\circ$.
-At higher concentrations, $\gamma_i$ deviates from 1: attractive interactions give $\gamma_i < 1$; repulsive or excluded-volume interactions give $\gamma_i > 1$.
-
-
-## Phase equilibrium and activity: Raoult's and Henry's laws
-
-Activity coefficients connect the chemical potential formalism to liquid and vapour phase equilibrium for mixtures.
-At equilibrium between liquid and vapour phases, $\mu_i(\text{liquid}) = \mu_i(\text{vapour})$ (see @chemical-potential).
-For an ideal vapour phase (valid at low pressure) this gives $P_i \propto x_i \gamma_i$.
-Two limiting laws follow, corresponding to different choices of the activity coefficient model.
-
-**Raoult's law** applies when components are chemically similar (e.g., water + ethanol).
-It assumes ideal mixing in the liquid: $\gamma_i = 1$, giving:
-
-$$P_i = x_i P_i^*$$
-
-The vapour pressure of each component is proportional to its mole fraction, with proportionality constant $P_i^*$ (the vapour pressure of the pure component).
-Raoult's law is exact for ideal solutions and provides a symmetric reference state: $\gamma_i \to 1$ as $x_i \to 1$.
-
-**Henry's law** applies at infinite dilution when the solute is chemically unlike the solvent (e.g., O$_2$ or CO$_2$ in water).
-It uses an asymmetric reference state: $\gamma_i \to 1$ as $x_i \to 0$.
-At low solute concentration, the vapour pressure follows:
-
-$$P_i = K_{H,i}\, x_i$$
-
-where $K_{H,i}$ is the **Henry's law constant**.
-Henry's law is the appropriate limit for trace components in a mixture where the solvent dominates.
-
-Both Raoult's and Henry's laws are special cases of $\mu_i(\text{liq}) = \mu_i(\text{vap})$ with different activity coefficient models.
-In practice, the choice between them depends on the system and the composition range of interest.
-
-
-## The Gibbs-Duhem constraint on activity coefficients
-
-The Gibbs-Duhem equation from @laws-of-thermodynamics states that the intensive variables $T$, $P$, and $\{\mu_i\}$ cannot all vary independently:
-
-$$
-S\,dT - V\,dP + \sum_i n_i\,d\mu_i = 0
-$$
-
-At constant $T$ and $P$ this reduces to $\sum_i n_i\,d\mu_i = 0$.
-Substituting $\mu_i = \mu_i^\circ + RT\ln a_i$:
-
-$$
-\sum_i n_i\,d\ln a_i = 0
-$$
-
-This means the activity coefficients of different species in the same solution are linked: the activity coefficients cannot be chosen independently for each species.
-If the activity coefficient of the solute increases with concentration, the activity coefficient of the solvent must respond accordingly.
-In practice this constrains how activity coefficient models are constructed and tested.
-The underlying thermodynamic potential is the **excess Gibbs energy** $G^E = \Delta G^\text{mix} - \Delta G^\text{mix,ideal}$: activity coefficients arise as its partial molar derivatives, $RT\ln\gamma_i = (\partial G^E/\partial n_i)_{T,P,n_{j\neq i}}$, in exact analogy with $\mu_i = (\partial G/\partial n_i)_{T,P,n_{j\neq i}}$.
-Models such as NRTL or UNIQUAC (for non-electrolyte mixtures) and Pitzer (for concentrated electrolytes) are built by specifying $G^E$ and deriving $\gamma_i$ from it; the Debye-Hückel and Davies models used in this book bypass $G^E$ and specify $\gamma_i$ directly from the physics of the ionic atmosphere.
-
-
-## Debye-Hückel theory for electrolyte solutions
-
-For ionic solutions, the dominant source of non-ideality is long-range electrostatic interactions between ions.
-Debye and Hückel (1923) computed these analytically by considering the **ionic atmosphere**: each ion is surrounded by a diffuse cloud of oppositely charged ions that partially screens its charge.
-
-The starting point is the linearised Poisson-Boltzmann equation, which relates the electric potential $\psi$ around a central ion to the charge distribution of the surrounding ions.
-Its solution shows that $\psi$ decays as $e^{-\kappa r}/r$, where $\kappa$ is the inverse **Debye length**:
-
-$$
-\kappa^2 = \frac{2N_A e^2 I}{\varepsilon_0 \varepsilon_r RT}
-$$
-
-Here $e$ is the elementary charge, $\varepsilon_r$ is the relative permittivity of the solvent, and $I$ is the **ionic strength**:
-
-$$
-I = \frac{1}{2}\sum_i z_i^2 \frac{c_i}{c^\circ}
-$$
-
-where $z_i$ is the charge number of ion $i$ and $c^\circ = 1\ \mathrm{mol/L}$ is the standard concentration, making $I$ dimensionless but numerically equal to the ionic strength in mol/L.
-
-The excess free energy from the ionic atmosphere gives the **Debye-Hückel limiting law** for a single ionic species $i$ with charge $z_i$:
-
-$$
-\log_{10} \gamma_i = -A z_i^2 \sqrt{I},
-$$
-
-where $A \approx 0.509\ \mathrm{mol^{-1/2}\,L^{1/2}}$ at 25 °C.
-The law is exact as $I \to 0$ and accurate to $I \approx 0.1$.
-
-At higher ionic strengths the point-charge approximation breaks down.
-The **Davies equation** adds an empirical linear correction that extends the useful range to $I \approx 0.5$:
-
-$$
-\log_{10} \gamma_i = -A z_i^2 \left(\frac{\sqrt{I}}{1 + \sqrt{I}} - 0.3\,I\right).
-$$
-
-The electrochemistry convention uses $c^\circ = 1\ \mathrm{mol/L}$, so $I$ above is numerically equal to the molar ionic strength.
-CADET and this library use SI units throughout: concentrations in mol/m³, so $1\ \mathrm{mol/L} = 10^3\ \mathrm{mol/m}^3$.
-The activity coefficient models convert internally; the figure below uses mol/m³ on the horizontal axis, where $1\ \mathrm{mol/m}^3 = 1\ \mathrm{mM}$.
-
-Both expressions scale as $z_i^2$: a divalent ion at the same ionic strength has a correction four times larger than a monovalent one (@fig-activity).
-
 ```{admonition} Intuition
 :class: tip
 
-In solution, each ion is surrounded by a diffuse cloud of oppositely charged ions.
-This cloud partially cancels the ion's electric field at larger distances, so other ions interact with a weakened effective charge.
-As salt concentration increases, these clouds become denser and screening becomes stronger, leading to $\gamma_i < 1$.
-At higher ionic strengths the simple dilute-solution picture begins to break down, which is why more detailed activity models such as Davies introduce empirical corrections.
-```
-
-```{code-cell} ipython3
-:tags: [remove-cell]
-:label: cell-activity
-
-import numpy as np
-import matplotlib.pyplot as plt
-from reactions.api import (
-    ActivityCoefficientDebyeHuckel,
-    ActivityCoefficientDavies,
-    PhysicalState,
-)
-
-dh  = ActivityCoefficientDebyeHuckel()
-dav = ActivityCoefficientDavies()
-
-I_dh  = np.linspace(1, 100, 200)    # mol/m³, DH valid range (~0–100 mM)
-I_dav = np.linspace(1, 500, 400)    # mol/m³, Davies valid range (~0–500 mM)
-
-def gamma_series(model, I_values, z):
-    return np.array([
-        model.activity(
-            PhysicalState(c=np.array([1.0]), T=298.15, I=float(I)),
-            np.array([float(z)]),
-        )[0]
-        for I in I_values
-    ])
-
-fig, axes = plt.subplots(1, 2, figsize=(9, 3.8), sharey=True)
-
-for ax, z, title in [
-    (axes[0], 1, r"$|z| = 1$  (monovalent)"),
-    (axes[1], 2, r"$|z| = 2$  (divalent)"),
-]:
-    ax.plot(I_dh,  gamma_series(dh,  I_dh,  z), color="C0", label="Debye-Hückel")
-    ax.plot(I_dav, gamma_series(dav, I_dav, z), color="C1", label="Davies")
-    ax.axvline(100, color="gray", lw=0.7, ls=":", label="DH valid limit")
-    ax.set_xlabel(r"$I$  [mol/m³]")
-    ax.set_xlim(0, 550)
-    ax.set_title(title)
-    ax.legend(fontsize=8)
-
-axes[0].set_ylabel(r"$\gamma_i$")
-fig.tight_layout()
-```
-
-```{figure} #cell-activity
-:name: fig-activity
-
-Activity coefficient $\gamma_i$ vs ionic strength at 25 °C for monovalent (left) and divalent (right) species.
-Concentrations are in mol/m³ (SI); $1\ \mathrm{mol/m}^3 = 1\ \mathrm{mM}$.
-Debye-Hückel is accurate below $\approx 100\ \mathrm{mol/m}^3$ (dotted line); Davies extends the range to $\approx 500\ \mathrm{mol/m}^3$.
-Divalent species experience markedly stronger suppression because both models scale as $z_i^2$.
+Attractions reduce a molecule's tendency to escape or react: the gas behaves as if at lower pressure than it actually is, so $f < P$ and $\varphi < 1$.
+At very high pressure, hard-core repulsion dominates and $f > P$.
+The limit $\varphi \to 1$ as $P \to 0$ reflects that all gases become ideal at low density.
 ```
 
 ---
 
-## From thermodynamics to reactions
-
-The framework developed in Parts 1 and 2 is now complete.
-Statistical mechanics provided the microscopic foundation: microstates, entropy, the Boltzmann factor, and the ideal gas law.
-Thermodynamics built on that foundation: the laws, the fundamental relation, the potentials, and the chemical potential.
-Non-ideality corrections via activity coefficients complete the toolkit for real solutions.
-
-Part 3 puts this machinery to work.
-The central quantity is the **reaction Gibbs energy** $\Delta_r G = \sum_i \nu_i \mu_i$: the slope of $G$ as the reaction progresses.
-Setting $\Delta_r G = 0$ defines the equilibrium constant $K$, and $\Delta_r G^\circ = -RT \ln K$ connects it to tabulated thermodynamic data.
-Activities appear throughout: the equilibrium constant and all subsequent results are written in terms of $a_i = \gamma_i c_i / c^\circ$, inheriting the corrections introduced above.
+The equation-of-state correction developed here applies to pure fluids and to mixture components individually.
+Mixing these non-ideal components introduces an additional source of departure: the Gibbs energy of mixing deviates from the ideal baseline when unlike interactions differ from pure-component ones.
+The next chapter develops that second layer, derives activity coefficients as partial molar derivatives of the excess Gibbs energy, and introduces the electrolyte models used throughout Parts 3 and 4.

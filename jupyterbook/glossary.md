@@ -32,12 +32,23 @@ Adsorption equilibrium constant
 Activity
 : The thermodynamic quantity $a_i = \gamma_i c_i / c^\circ$ that replaces the dimensionless concentration in the chemical potential of a real solution: $\mu_i = \mu_i^\circ + RT\ln a_i$.
   In the dilute limit $\gamma_i \to 1$ and $a_i \to c_i/c^\circ$.
-  Introduced in @nonidealities.
+  Introduced in @mixing.
 
 Activity coefficient
-: The factor $\gamma_i$ that corrects the ideal concentration term for intermolecular interactions: $a_i = \gamma_i c_i/c^\circ$.
-  Activity coefficients quantify deviations from ideal solution behaviour and are constrained collectively by the Gibbs-Duhem equation.
-  Introduced in @nonidealities.
+: The factor $\gamma_i$ that captures deviations from ideal mixing: $RT\ln\gamma_i = (\partial nG^E/\partial n_i)_{T,P,n_{j\neq i}}$.
+  In concentration convention, $a_i = \gamma_i c_i/c^\circ$; in mole-fraction convention, $a_i = \gamma_i x_i$.
+  Constrained collectively by the Gibbs-Duhem equation.
+  Introduced in @mixing.
+
+Excess Gibbs energy
+: $G^E = \Delta_\text{mix}G - \Delta_\text{mix}G^\text{id}$: the departure of the actual Gibbs energy of mixing from the ideal baseline.
+  Acts as a generating function for all excess mixture properties: $V^E$, $H^E$, $S^E$, $C_p^E$, and $\gamma_i$ follow as derivatives.
+  Introduced in @mixing.
+
+Gibbs energy of mixing
+: $\Delta_\text{mix}G = G_\text{mixture} - \sum_i n_i\mu_i^*$: the change in Gibbs energy upon forming a mixture from pure components at the same $T$ and $P$.
+  For an ideal mixture, $\Delta_\text{mix}G^\text{id} = nRT\sum_i x_i\ln x_i < 0$: always negative and purely entropic.
+  Introduced in @mixing.
 
 Apparent pKa
 : $\text{p}K_a^\text{app}$: the negative logarithm of the effective acid dissociation constant that includes activity coefficient corrections.
@@ -117,6 +128,12 @@ Donnan potential
 Davies equation
 : An empirical extension of Debye-Hückel for ionic strengths up to $I \approx 0.5\ \mathrm{mol/L}$:
   $\log_{10}\gamma_i = -Az_i^2\!\left(\sqrt{I}/(1+\sqrt{I}) - 0.3\,I\right)$, where $I$ is in mol/L.
+  Introduced in @mixing.
+
+Critical point
+: The state $(T_c, P_c, V_c)$ at which the liquid and vapour phases become indistinguishable and the phase boundary terminates.
+  For a van der Waals gas, $T_c = 8a/27Rb$, $P_c = a/27b^2$, $V_c = 3b$.
+  Above $T_c$ only a single fluid phase exists regardless of pressure.
   Introduced in @nonidealities.
 
 Dalton's law
@@ -127,12 +144,12 @@ Dalton's law
 Debye-Hückel theory
 : A theory for electrolyte solutions that accounts for long-range electrostatic interactions via the ionic atmosphere concept.
   In the limiting law, $\log_{10}\gamma_i = -Az_i^2\sqrt{I}$, exact as $I \to 0$.
-  Introduced in @nonidealities.
+  Introduced in @mixing.
 
 Debye length
 : $\kappa^{-1}$: the characteristic decay length of the electrostatic potential around an ion in solution, set by the ionic strength and the permittivity of the solvent.
   Shorter Debye lengths indicate stronger screening of ionic interactions.
-  Introduced in @nonidealities.
+  Introduced in @mixing.
 
 Entropy (statistical)
 : $H = \ln W$: the logarithm of the number of microstates compatible with a given macrostate.
@@ -239,9 +256,9 @@ Ionic capacity
   Introduced in @multicomponent.
 
 Henry's law
-: For a dilute solute in equilibrium with its vapor, the partial pressure is proportional to mole fraction: $P_i = K_{H,i} x_i$.
-  A asymmetric activity model for the dilute limit, contrasted with Raoult's law for the pure-component reference.
-  Introduced in @nonidealities.
+: For a dilute solute in equilibrium with its vapour, the partial pressure is proportional to mole fraction: $P_i = K_{H,i} x_i$ where $K_{H,i} = \gamma_i^\infty P_i^*$.
+  The asymmetric reference state ($\gamma_i \to 1$ as $x_i \to 0$); the dilute-concentration limit of the $G^E$ framework.
+  Introduced in @mixing.
 
 Heat capacity
 : $C_p = (\partial H/\partial T)_{P,n}$: the heat required to raise the temperature of a system by one kelvin at constant pressure.
@@ -267,7 +284,7 @@ Internal energy
 Ionic strength
 : $I = \frac{1}{2}\sum_i z_i^2\,c_i/c^\circ$: a measure of the total ion concentration weighted by the square of the charge number.
   Controls the strength of electrostatic interactions and the Debye length.
-  Introduced in @nonidealities.
+  Introduced in @mixing.
 
 Kirchhoff relations
 : Equations giving the temperature dependence of $\Delta_r H^\circ$ and $\Delta_r S^\circ$:
@@ -299,6 +316,11 @@ Henry coefficient
 : $H = q_\text{max}\,K_\text{ads}$: the slope of the adsorption isotherm in the dilute limit, where $q \approx H c$.
   In the Henry region ($K_\text{ads}c \ll 1$) the Langmuir isotherm is linear; $H$ determines the retention factor in linear chromatography.
   Introduced in @adsorption.
+
+Liquid
+: The dense, condensed phase of a substance in which attractive intermolecular interactions hold molecules in close proximity while still allowing flow.
+  Predicted by the van der Waals equation as the small-volume root of a sub-critical isotherm; distinct from vapour below the critical temperature $T_c$.
+  Introduced in @nonidealities.
 
 Langmuir isotherm
 : $q = q_\text{max}\, K_\text{ads}\, c / (1 + K_\text{ads}\, c)$: adsorption isotherm for a finite number of binding sites.
@@ -446,9 +468,9 @@ Reaction source term
   Introduced in @implementation-source-term.
 
 Raoult's law
-: For an ideal mixture, the partial pressure of each component equals its mole fraction times the vapor pressure of the pure component: $P_i = x_i P_i^*$.
-  A symmetric activity model for the pure-component reference; $\gamma_i \to 1$ as $x_i \to 1$.
-  Introduced in @nonidealities.
+: For an ideal mixture, the partial pressure of each component equals its mole fraction times the vapour pressure of the pure component: $P_i = x_i P_i^*$.
+  The $G^E = 0$ limit; defines the symmetric reference state $\gamma_i \to 1$ as $x_i \to 1$.
+  Introduced in @mixing.
 
 Separation factor
 : $\alpha_{ij} = K_i / K_j$: the ratio of adsorption equilibrium constants for two species competing for the same stationary phase.
@@ -465,6 +487,20 @@ Second law of thermodynamics
 : The entropy of an isolated system never decreases: $dS \geq 0$.
   Spontaneous processes increase entropy because macrostates with more microstates are overwhelmingly more probable.
   Introduced in @laws-of-thermodynamics.
+
+Solution
+: A liquid mixture in which one component — the solvent — is present in large excess and sets the physical environment; all other components are solutes.
+  The thermodynamic treatment distinguishes solvent (Raoult reference, $\gamma \to 1$ as $x \to 1$) from solute (Henry reference, $\gamma \to \gamma^\infty$ as $x \to 0$).
+  Introduced in @mixing.
+
+Solvent
+: The component of a solution present in large excess, which sets the standard state and physical environment (dielectric constant, density).
+  In aqueous chemistry, water; in chromatography, the mobile phase.
+  Introduced in @mixing.
+
+Solute
+: A minor component dissolved in a solvent, characterised by a Henry-law reference state ($\gamma_i \to \gamma_i^\infty$ as $x_i \to 0$).
+  Introduced in @mixing.
 
 Spontaneous process
 : A process that proceeds without external driving force, characterised by $\Delta G < 0$ at constant $T$ and $P$.
