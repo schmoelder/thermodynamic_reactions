@@ -21,6 +21,7 @@ Formatting: ruff-compatible (line length 88, double quotes).
 from __future__ import annotations
 
 import re
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Callable, Optional, Union
@@ -34,7 +35,7 @@ import numpy as np
 R_GAS: float = 8.314462        # J / (mol K)
 KB: float = 1.380649e-23       # J / K
 H_PLANCK: float = 6.626070e-34 # J s
-C_REF: float = 1000.0          # mol/m³  — deprecated; use Species.c_ref instead
+# C_REF has been removed. Use Species.c_ref (default 1000.0 mol/m³) instead.
 
 
 # ---------------------------------------------------------------------------
@@ -53,18 +54,18 @@ class PhysicalState:
     Attributes
     ----------
     c : np.ndarray
-        Dynamic species concentrations [mol/m³], shape (n_species,).
-        Solvent species (is_solvent=True) are excluded.
+        Species concentrations [mol/m³], shape (n_species,).
     T : float
         Temperature [K].
     I : float
         Ionic strength [mol/m³], derived by IonicStrengthModule.
+    c_ref : np.ndarray
+        Per-species standard-state concentrations [mol/m³], shape (n_species,).
     """
 
     c: np.ndarray
     T: float
     I: float = 0.0
-    x_solvent: dict = field(default_factory=dict)
     c_ref: np.ndarray = field(default_factory=lambda: np.array([]))
 
 
@@ -115,18 +116,23 @@ class Species:
     name : str
     charge : int
         Ionic charge. Default 0.
-    is_solvent : bool
-        If True, activity is fixed at 1 and the species is excluded
-        from the dynamic state vector. Default False.
+    c_ref : float
+        Standard-state concentration [mol/m³]. Default 1000.
+        Set to ``rho/M`` for solvents (e.g. 55500 mol/m³ for water)
+        so that activity ``a = gamma * c / c_ref`` approaches 1 in
+        dilute solution.
     molar_mass : float, optional
         Molar mass [kg/mol].
     density : float, optional
         Pure-component density [kg/m³].
+    heat_capacity : float, optional
+        Molar heat capacity [J/(mol·K)].
+        Species with all three physical fields set contribute to
+        ``volumetric_heat_capacity``; others are ignored.
     """
 
     name: str
     charge: int = 0
-    is_solvent: bool = False
     c_ref: float = 1000.0          # mol/m³ standard-state concentration
     molar_mass: Optional[float] = None
     density: Optional[float] = None
@@ -146,7 +152,6 @@ class Component:
     --------
     Component("A")               # shorthand: auto-creates Species("A", charge=0)
     Component("H+", charge=+1)   # kwargs forwarded to Species
-    Component("H2O", is_solvent=True)
 
     Component("sodium", [Species("Na+", charge=+1)])
 
@@ -284,9 +289,9 @@ class ActivityCoefficientDebyeHuckel(ActivityCoefficientBase):
     Parameters
     ----------
     A : float
-        [(m³/mol)^0.5]. At 25 °C: 0.509 (L/mol)^0.5 → 0.509/√1000.
+        [(mol/m³)^(-1/2)]. Default: 25 °C water value (0.509/√1000).
     B : float
-        [(m³/mol)^0.5 / m]. At 25 °C: 3.28e9/√1000.
+        [m^(-1)·(mol/m³)^(-1/2)]. Default: 25 °C water value (3.28e9/√1000).
     a_ion : float
         Mean ion-size parameter [m]. Typical: 3e-10 m.
     """
@@ -977,7 +982,7 @@ class ReactionBase(ABC):
         for i in range(n):
             c_pert = state.c.copy()
             c_pert[i] += eps
-            s_pert = PhysicalState(c=c_pert, T=state.T, I=state.I, x_solvent=state.x_solvent, c_ref=state.c_ref)
+            s_pert = PhysicalState(c=c_pert, T=state.T, I=state.I, c_ref=state.c_ref)
             J[:, i] = (self.residual(s_pert, species_index) - res0) / eps
         return J
 
@@ -1270,7 +1275,7 @@ class ThermodynamicReaction(ReactionBase):
 
         if dlnkf is None or dlnK is None:
             phi0 = self.net_rate(state, species_index, charges)
-            s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, x_solvent=state.x_solvent, c_ref=state.c_ref)
+            s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, c_ref=state.c_ref)
             return (self.net_rate(s_pert, species_index, charges) - phi0) / eps
 
         gamma = self.activity_coefficient.activity(state, charges)
@@ -1555,7 +1560,7 @@ class ReactionModel:
     Attributes
     ----------
     species : list[Species]
-        Dynamic species only (is_solvent=False), in component order.
+        All species, in component order.
     species_index : dict[str, int]
         Maps species name to index in state.c.
     charges : np.ndarray
@@ -1574,14 +1579,10 @@ class ReactionModel:
         self.ionic_strength = ionic_strength or IonicStrengthIdeal()
         self.T = T
 
-        # All species — needed for stoichiometry validation
         self._all_species: list[Species] = [
             sp for comp in components for sp in comp.species
         ]
-        # Dynamic species only — these form state.c
-        self.species: list[Species] = [
-            sp for sp in self._all_species if not sp.is_solvent
-        ]
+        self.species: list[Species] = self._all_species
         self.species_index: dict[str, int] = {
             sp.name: i for i, sp in enumerate(self.species)
         }
@@ -1645,9 +1646,9 @@ class ReactionModel:
         # largest |nu_ij|; ties broken by preferring products (nu > 0).
         def _pick_dep(col: np.ndarray) -> int:
             abs_nu = np.abs(col)
-            max_val = abs_nu.max()
-            candidates = np.where(abs_nu == max_val)[0]
-            # prefer product among candidates
+            eligible = [i for i in range(len(col)) if abs_nu[i] > 0]
+            max_val = max(abs_nu[i] for i in eligible)
+            candidates = [i for i in eligible if abs_nu[i] == max_val]
             products = [i for i in candidates if col[i] > 0]
             return int(products[0] if products else candidates[0])
 
@@ -1663,7 +1664,6 @@ class ReactionModel:
         self,
         c: np.ndarray,
         T: Optional[float] = None,
-        x_solvent: Optional[dict] = None,
     ) -> PhysicalState:
         """
         Build a PhysicalState. Ionic strength computed from charges
@@ -1672,17 +1672,16 @@ class ReactionModel:
         T_val = T if T is not None else self.T
         I = self.ionic_strength.evaluate(c, self.charges)
         c_ref = np.array([sp.c_ref for sp in self.species])
-        return PhysicalState(c=c, T=T_val, I=I, x_solvent=x_solvent or {}, c_ref=c_ref)
+        return PhysicalState(c=c, T=T_val, I=I, c_ref=c_ref)
 
     def residual(
         self,
         c: np.ndarray,
         c_dot: np.ndarray,
         T: Optional[float] = None,
-        x_solvent: Optional[dict] = None,
     ) -> np.ndarray:
         """
-        DAE residual vector, shape (n_dynamic_species,).
+        DAE residual vector, shape (n_species,).
 
         For kinetic reactions (ODE rows):
             r_i = c_dot_i - sum_j nu_ij * v_j(c, T)
@@ -1696,14 +1695,13 @@ class ReactionModel:
         Parameters
         ----------
         c : np.ndarray
-            Dynamic species concentrations [mol/m³], shape (n_species,).
-            This is the slice already provided by the system.
+            Species concentrations [mol/m³], shape (n_species,).
         c_dot : np.ndarray
             Time derivative dc/dt [mol/(m³·s)], shape (n_species,).
         T : float, optional
             Temperature [K]. Uses model default if not provided.
         """
-        state = self.make_state(c, T, x_solvent=x_solvent)
+        state = self.make_state(c, T)
         nu = self.nu
         kinetic_mask = self.kinetic_mask
         equil_dep = self.equil_dep
@@ -1735,7 +1733,6 @@ class ReactionModel:
         c_dot: np.ndarray,
         T: Optional[float] = None,
         eps: float = 1e-6,
-        x_solvent: Optional[dict] = None,
     ) -> np.ndarray:
         """
         Jacobian d(residual)/d(c), shape (n_species, n_species).
@@ -1760,7 +1757,7 @@ class ReactionModel:
         The alpha * I term (d(residual)/d(c_dot)) is identity for kinetic rows,
         zero for equilibrium rows — handled by the DAE solver externally.
         """
-        state = self.make_state(c, T, x_solvent=x_solvent)
+        state = self.make_state(c, T)
         T_val = state.T
         nu = self.nu
         n_s = len(self.species)
@@ -1781,7 +1778,7 @@ class ReactionModel:
                     for k in range(n_s):
                         c_pert = c.copy()
                         c_pert[k] += eps
-                        s_pert = PhysicalState(c=c_pert, T=state.T, I=state.I, x_solvent=state.x_solvent, c_ref=state.c_ref)
+                        s_pert = PhysicalState(c=c_pert, T=state.T, I=state.I, c_ref=state.c_ref)
                         v_pert = rxn.net_rate(s_pert, self.species_index, self.charges)
                         J[:, k] -= nu[:, j] * (v_pert - v0) / eps
 
@@ -1806,7 +1803,7 @@ class ReactionModel:
 
     def volumetric_heat_capacity(
         self,
-        x_k: Optional[dict[str, float]] = None,
+        c: np.ndarray,
     ) -> float:
         """
         Volumetric heat capacity ρCp [J/(m³·K)] from solvent species.
@@ -1814,45 +1811,36 @@ class ReactionModel:
         Under the dilute approximation (zero molar volume for solutes):
             ρCp = Σ_k x_k · (ρ_k / M_k) · Cp_k
 
+        Solvent mole fractions are derived from the current concentration
+        vector: x_k = c_k / Σ_j c_j (sum over solvent species only).
+
         Parameters
         ----------
-        x_k : dict[str, float], optional
-            Solvent mole fractions {species_name: x_k}.
-            Required when more than one solvent species is present.
-            Defaults to {sole_solvent: 1.0} for single-solvent models.
+        c : np.ndarray
+            Species concentrations [mol/m³], shape (n_species,).
 
         Raises
         ------
         ValueError
-            If no solvent species are defined, required fields are missing,
-            or x_k is not provided for a multi-solvent model.
+            If no solvent species are defined or required fields are missing.
         """
-        solvents = [sp for sp in self._all_species if sp.is_solvent]
-        if not solvents:
+        thermal = [
+            (i, sp) for i, sp in enumerate(self.species)
+            if None not in (sp.molar_mass, sp.density, sp.heat_capacity)
+        ]
+        if not thermal:
             raise ValueError(
-                "No solvent species (is_solvent=True) found. "
-                "Energy balance requires at least one solvent with "
-                "molar_mass, density, and heat_capacity set."
+                "No species with molar_mass, density, and heat_capacity set. "
+                "Energy balance requires at least one such species."
             )
-        if x_k is None:
-            if len(solvents) == 1:
-                x_k = {solvents[0].name: 1.0}
-            else:
-                raise ValueError(
-                    "solvent_composition required when more than one "
-                    "solvent species is present."
-                )
+        c_total = sum(c[i] for i, _ in thermal)
+        if c_total == 0.0:
+            raise ValueError("All thermal-species concentrations are zero.")
         rho_cp = 0.0
-        for sp in solvents:
-            x = x_k.get(sp.name, 0.0)
+        for i, sp in thermal:
+            x = c[i] / c_total
             if x == 0.0:
                 continue
-            for field in ("molar_mass", "density", "heat_capacity"):
-                if getattr(sp, field) is None:
-                    raise ValueError(
-                        f"Solvent '{sp.name}' missing '{field}' — "
-                        "required for energy balance."
-                    )
             rho_cp += x * (sp.density / sp.molar_mass) * sp.heat_capacity
         return rho_cp
 
@@ -1862,7 +1850,6 @@ class ReactionModel:
         c_dot: np.ndarray,
         T: Optional[float] = None,
         eps: float = 1e-6,
-        x_solvent: Optional[dict] = None,
     ) -> np.ndarray:
         """
         d(residual)/dT, shape (n_species,).
@@ -1872,7 +1859,7 @@ class ReactionModel:
 
         Analytic where available; falls back to finite differences per reaction.
         """
-        state = self.make_state(c, T, x_solvent=x_solvent)
+        state = self.make_state(c, T)
         n_s = len(self.species)
         drdT = np.zeros(n_s)
 
@@ -1883,7 +1870,7 @@ class ReactionModel:
                     dvdT = rxn.net_rate_dT(state, self.species_index, self.charges, eps)
                 else:
                     v0 = rxn.net_rate(state, self.species_index, self.charges)
-                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, x_solvent=state.x_solvent, c_ref=state.c_ref)
+                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, c_ref=state.c_ref)
                     dvdT = (
                         rxn.net_rate(s_pert, self.species_index, self.charges) - v0
                     ) / eps
@@ -1894,7 +1881,7 @@ class ReactionModel:
                 dlnK = rxn.equilibrium_constant.dlnK_dT(state.T)
                 if dlnK is None:
                     r0 = rxn.log_K_residual(state, self.species_index, self.charges)
-                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, x_solvent=state.x_solvent, c_ref=state.c_ref)
+                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, c_ref=state.c_ref)
                     r1 = rxn.log_K_residual(s_pert, self.species_index, self.charges)
                     drdT[dep] = (r1 - r0) / eps
                 else:
@@ -1958,7 +1945,7 @@ class ReactionModel:
         for comp in self.components:
             dyn = [
                 sp for sp in comp.species
-                if not sp.is_solvent and sp.name in self.species_index
+                if sp.prescribed is None and sp.name in self.species_index
             ]
             if len(dyn) <= 1:
                 continue
@@ -2027,3 +2014,17 @@ class ReactionModel:
             f"{len(self.species)} dynamic species)"
         )
 
+
+# ---------------------------------------------------------------------------
+# Module-level __getattr__ — catches removed names at import time
+# ---------------------------------------------------------------------------
+
+
+def __getattr__(name: str):
+    if name == "C_REF":
+        raise AttributeError(
+            "'C_REF' has been removed from reactions.api. "
+            "Use Species.c_ref (default 1000.0 mol/m³) for per-species "
+            "standard-state concentrations, or write 1000.0 directly."
+        )
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

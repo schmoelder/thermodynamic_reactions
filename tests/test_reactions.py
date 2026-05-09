@@ -5,13 +5,17 @@ Run with: pytest tests/ -v
 Requires: pip install -e .
 """
 
+import warnings
+
 import numpy as np
 import pytest
 
+C_REF: float = 1000.0  # mol/m³ — standard-state concentration
+
 from reactions.api import (
-    C_REF,
     ActivityCoefficientCustom,
     ActivityCoefficientDavies,
+    ActivityCoefficientDebyeHuckel,
     Component,
     EquilibriumConstant,
     EquilibriumConstantCustom,
@@ -126,7 +130,7 @@ def test_acid_base_henderson_hasselbalch():
     acetate = Component("acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)])
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-    water = Component("water", [Species("H2O", charge=0, is_solvent=True)])
+    water = Component("water", [Species("H2O", charge=0)])
 
     model = ReactionModel(
         components=[acetate, proton, hydroxide, water],
@@ -157,7 +161,7 @@ def test_acid_base_henderson_hasselbalch():
             "H+": H,
             "OH-": OH,
         }
-        c_eq = solve_equilibrium(model, c0, T=T)
+        c_eq = solve_equilibrium(model, c0, T=T, prescribed={"H2O": C_REF})
         errors.append(abs(c_eq["AcOH"] - AcOH_HH))
 
     assert max(errors) < 1e-6
@@ -358,7 +362,7 @@ def test_jacobian_thermodynamic_equil_acetic():
     acetate = Component("acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)])
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-    water = Component("water", [Species("H2O", charge=0, is_solvent=True)])
+    water = Component("water", [Species("H2O", charge=0)])
     model = ReactionModel(
         components=[acetate, proton, hydroxide, water],
         reactions=[
@@ -378,7 +382,7 @@ def test_jacobian_thermodynamic_equil_acetic():
     # Use concentrations from the implementation notebook (pH ~ 5.15, above pKa):
     # [AcOH]=10, [AcO-]=90, [H+]=6.3e-5 mol/m3, [OH-]=1.6e-4 mol/m3
     # These give moderate Jacobian entries suitable for finite-difference comparison.
-    c = np.array([10.0, 90.0, 6.3e-5, 1.6e-4])
+    c = np.array([10.0, 90.0, 6.3e-5, 1.6e-4, 1000.0])
     err = _check_jacobian(model, c)
     assert err < 1e-4, f"Acetic acid equil Jacobian relative error {err:.2e} exceeds 1e-4"
 
@@ -415,7 +419,7 @@ def test_davies_ph_shift_direction():
     acetate = Component("acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)])
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-    water = Component("water", [Species("H2O", charge=0, is_solvent=True)])
+    water = Component("water", [Species("H2O", charge=0)])
 
     def make_model(I_fixed):
         return ReactionModel(
@@ -454,13 +458,13 @@ def test_davies_ph_shift_direction():
 
     # Ideal model (I=0): H+ at equilibrium should equal Ka * C_REF
     model_ideal = make_model(I_fixed=0.0)
-    c_eq_ideal = solve_equilibrium(model_ideal, c0, T=T)
+    c_eq_ideal = solve_equilibrium(model_ideal, c0, T=T, prescribed={"H2O": C_REF})
     pH_ideal = -np.log10(c_eq_ideal["H+"] / C_REF)
 
     # Davies model (I=100 mol/m3 = 0.1 mol/L)
     I_bg = 100.0   # mol/m3
     model_ionic = make_model(I_fixed=I_bg)
-    c_eq_davies = solve_equilibrium(model_ionic, c0, T=T)
+    c_eq_davies = solve_equilibrium(model_ionic, c0, T=T, prescribed={"H2O": C_REF})
     pH_davies = -np.log10(c_eq_davies["H+"] / C_REF)
 
     # Analytical prediction: pKa_app = pKa - 2*A*f(I)
@@ -517,7 +521,7 @@ def test_phosphate_bjerrum_fractions_ph72():
     ])
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-    water = Component("water", [Species("H2O", charge=0, is_solvent=True)])
+    water = Component("water", [Species("H2O", charge=0)])
 
     model_phos = ReactionModel(
         components=[phosphate, proton, hydroxide, water],
@@ -564,7 +568,7 @@ def test_phosphate_bjerrum_fractions_ph72():
         "H+": H,
         "OH-": OH,
     }
-    c_eq = solve_equilibrium(model_phos, c0, T=T)
+    c_eq = solve_equilibrium(model_phos, c0, T=T, prescribed={"H2O": C_REF})
 
     tol = 1e-4  # mol/m3
     for sp, alpha in [
@@ -628,7 +632,7 @@ def test_extreme_ph_acid_ph1():
     acetate = Component("acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)])
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-    water = Component("water", [Species("H2O", charge=0, is_solvent=True)])
+    water = Component("water", [Species("H2O", charge=0)])
 
     model = ReactionModel(
         components=[acetate, proton, hydroxide, water],
@@ -658,7 +662,7 @@ def test_extreme_ph_acid_ph1():
         "H+": H,
         "OH-": OH,
     }
-    c_eq = solve_equilibrium(model, c0, T=T)
+    c_eq = solve_equilibrium(model, c0, T=T, prescribed={"H2O": C_REF})
 
     # At pH 1, [AcO-]/c_tot should be tiny (fraction ~ 10^(1-4.76) ~ 1.7e-4)
     frac_deprotonated = c_eq["AcO-"] / c_tot
@@ -678,7 +682,7 @@ def test_extreme_ph_acid_ph13():
     acetate = Component("acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)])
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-    water = Component("water", [Species("H2O", charge=0, is_solvent=True)])
+    water = Component("water", [Species("H2O", charge=0)])
 
     model = ReactionModel(
         components=[acetate, proton, hydroxide, water],
@@ -708,7 +712,7 @@ def test_extreme_ph_acid_ph13():
         "H+": H,
         "OH-": OH,
     }
-    c_eq = solve_equilibrium(model, c0, T=T)
+    c_eq = solve_equilibrium(model, c0, T=T, prescribed={"H2O": C_REF})
 
     # At pH 13, essentially all acetate deprotonated
     frac_protonated = c_eq["AcOH"] / c_tot
@@ -914,7 +918,7 @@ def test_jacobian_dc_vanthoff_arrhenius(T):
 
 # Water: rho=997 kg/m³, M=0.018 kg/mol, Cp=75.3 J/(mol·K)
 # -> rho_cp = (997/0.018)*75.3 ≈ 4.175e6 J/(m³·K)
-_WATER = Species("H2O", charge=0, is_solvent=True,
+_WATER = Species("H2O", charge=0,
                  molar_mass=0.018, density=997.0, heat_capacity=75.3)
 _WATER_COMPONENT = Component("water", [_WATER])
 _WATER_X = {"H2O": 1.0}
@@ -934,12 +938,14 @@ def test_volumetric_heat_capacity_single_solvent():
             ),
         ],
     )
-    rho_cp = model.volumetric_heat_capacity(_WATER_X)
+    # A(idx 0) = 0, H2O(idx 1) = c_ref  →  x_H2O = 1.0
+    c = np.array([0.0, _WATER.c_ref])
+    rho_cp = model.volumetric_heat_capacity(c)
     np.testing.assert_allclose(rho_cp, _RHO_CP_WATER, rtol=1e-10)
 
 
-def test_volumetric_heat_capacity_defaults_single_solvent():
-    """volumetric_heat_capacity defaults x_k=1 when only one solvent present."""
+def test_volumetric_heat_capacity_independent_of_solute():
+    """volumetric_heat_capacity is unaffected by solute concentration."""
     model = ReactionModel(
         components=[Component("A"), _WATER_COMPONENT],
         reactions=[
@@ -951,13 +957,15 @@ def test_volumetric_heat_capacity_defaults_single_solvent():
             ),
         ],
     )
-    assert model.volumetric_heat_capacity() == model.volumetric_heat_capacity(_WATER_X)
+    c_no_solute = np.array([0.0, _WATER.c_ref])
+    c_with_solute = np.array([500.0, _WATER.c_ref])
+    assert model.volumetric_heat_capacity(c_no_solute) == model.volumetric_heat_capacity(c_with_solute)
 
 
 def test_volumetric_heat_capacity_mixture():
     """volumetric_heat_capacity weighted sum for two-solvent mixture."""
-    water = Species("H2O",  is_solvent=True, molar_mass=0.018, density=997.0, heat_capacity=75.3)
-    mecn  = Species("MeCN", is_solvent=True, molar_mass=0.041, density=786.0, heat_capacity=91.4)
+    water = Species("H2O",  molar_mass=0.018, density=997.0, heat_capacity=75.3)
+    mecn  = Species("MeCN", molar_mass=0.041, density=786.0, heat_capacity=91.4)
     model = ReactionModel(
         components=[
             Component("A"),
@@ -973,9 +981,10 @@ def test_volumetric_heat_capacity_mixture():
             ),
         ],
     )
-    x = {"H2O": 0.7, "MeCN": 0.3}
+    # H2O at 0.7 * c_ref, MeCN at 0.3 * c_ref  →  x_H2O = 0.7, x_MeCN = 0.3
+    c = np.array([0.0, 0.7 * water.c_ref, 0.3 * mecn.c_ref])
     expected = 0.7 * (997.0 / 0.018) * 75.3 + 0.3 * (786.0 / 0.041) * 91.4
-    np.testing.assert_allclose(model.volumetric_heat_capacity(x), expected, rtol=1e-10)
+    np.testing.assert_allclose(model.volumetric_heat_capacity(c), expected, rtol=1e-10)
 
 
 def _make_ab_model_with_water(K, kf):
@@ -1069,8 +1078,8 @@ def test_coupled_callable_T_raises():
 def test_coupled_callable_solvent_composition():
     """Callable solvent_composition (gradient) is evaluated at each time step."""
     # 30% MeCN ramp over 10 s — ρCp decreases as water is replaced
-    water = Species("H2O",  is_solvent=True, molar_mass=0.018, density=997.0, heat_capacity=75.3)
-    mecn  = Species("MeCN", is_solvent=True, molar_mass=0.041, density=786.0, heat_capacity=91.4)
+    water = Species("H2O",  molar_mass=0.018, density=997.0, heat_capacity=75.3)
+    mecn  = Species("MeCN", molar_mass=0.041, density=786.0, heat_capacity=91.4)
     model = ReactionModel(
         components=[
             Component("A"), Component("B"),
@@ -1320,7 +1329,7 @@ def _eb_jac_analytic(model, c, T, rho_cp):
 def test_energy_balance_jac_analytic_vanthoff_arrhenius():
     """Analytic J[n, :n] and J[n, n] match FD for VantHoff K + Arrhenius kf."""
     water = Species(
-        "H2O", is_solvent=True, molar_mass=0.018, density=1000.0, heat_capacity=75.3
+        "H2O", molar_mass=0.018, density=1000.0, heat_capacity=75.3
     )
     model = ReactionModel(
         components=[Component("A"), Component("B"), Component("water", [water])],
@@ -1331,8 +1340,9 @@ def test_energy_balance_jac_analytic_vanthoff_arrhenius():
             rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
         )],
     )
-    rho_cp = model.volumetric_heat_capacity({"H2O": 1.0})
-    c = np.array([800.0, 200.0])
+    # A(0), B(1), H2O(2) — include H2O at c_ref in c
+    c = np.array([800.0, 200.0, 1000.0])
+    rho_cp = model.volumetric_heat_capacity(c)
     T = 310.0
     eps = 1e-5
 
@@ -1352,7 +1362,7 @@ def test_energy_balance_jac_analytic_vanthoffcp():
     """With VantHoffCp, dΔH/dT = dCp contributes non-trivially to J[n, n]."""
     dCp = 150.0
     water = Species(
-        "H2O", is_solvent=True, molar_mass=0.018, density=1000.0, heat_capacity=75.3
+        "H2O", molar_mass=0.018, density=1000.0, heat_capacity=75.3
     )
     model = ReactionModel(
         components=[Component("A"), Component("B"), Component("water", [water])],
@@ -1365,8 +1375,9 @@ def test_energy_balance_jac_analytic_vanthoffcp():
             rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
         )],
     )
-    rho_cp = model.volumetric_heat_capacity({"H2O": 1.0})
-    c = np.array([600.0, 400.0])
+    # A(0), B(1), H2O(2) — include H2O at c_ref in c
+    c = np.array([600.0, 400.0, 1000.0])
+    rho_cp = model.volumetric_heat_capacity(c)
     T = 305.0
     eps = 1e-5
 
@@ -1377,37 +1388,41 @@ def test_energy_balance_jac_analytic_vanthoffcp():
 
 
 # ---------------------------------------------------------------------------
-# Bundle C: x_solvent in PhysicalState
+# Solvent species in state.c (E/P3)
 # ---------------------------------------------------------------------------
 
 
-def test_x_solvent_in_make_state():
-    """make_state stores x_solvent on the returned PhysicalState."""
+def test_prescribed_at_call_site_holds_constant():
+    """prescribed kwarg in simulate holds a species constant at the given value."""
     model = ReactionModel(
-        components=[Component("A"), Component("B")],
-        reactions=[MassActionReaction("A <-> B", kf=1.0)],
+        components=[Component("A"), Component("water", [Species("H2O")])],
+        reactions=[MassActionReaction("A <-> A", kf=1.0)],
     )
-    x = {"H2O": 0.7, "MeCN": 0.3}
-    state = model.make_state(np.array([100.0, 50.0]), T=300.0, x_solvent=x)
-    assert state.x_solvent == x
+    result = simulate(model, {"A": 100.0}, (0.0, 1.0), prescribed={"H2O": C_REF})
+    np.testing.assert_allclose(result["H2O"], C_REF, rtol=1e-10)
 
 
-def test_x_solvent_default_empty():
-    """PhysicalState.x_solvent defaults to an empty dict."""
+def test_solvent_included_in_state_c():
+    """make_state includes all species, including solvents, in state.c."""
+    water = Component("water", [Species("H2O")])
     model = ReactionModel(
-        components=[Component("A"), Component("B")],
-        reactions=[MassActionReaction("A <-> B", kf=1.0)],
+        components=[Component("A"), water],
+        reactions=[MassActionReaction("A <-> A", kf=1.0)],
     )
-    state = model.make_state(np.array([100.0, 50.0]))
-    assert state.x_solvent == {}
+    c = np.array([100.0, 1000.0])  # A, H2O
+    state = model.make_state(c, T=300.0)
+    assert len(state.c) == 2
+    np.testing.assert_array_equal(state.c, c)
 
 
-def test_x_solvent_accessible_in_custom_ac():
-    """ActivityCoefficientCustom receives populated x_solvent during residual evaluation."""
-    captured_x = []
+def test_custom_ac_sees_solvent_in_state_c():
+    """Custom activity coefficient receives solvent concentration in state.c."""
+    captured_c_h2o = []
+    h2o_idx_ref = [None]
 
     def custom_ac(state, charges):
-        captured_x.append(dict(state.x_solvent))
+        if h2o_idx_ref[0] is not None:
+            captured_c_h2o.append(float(state.c[h2o_idx_ref[0]]))
         return np.ones(len(state.c))
 
     model = ReactionModel(
@@ -1420,6 +1435,7 @@ def test_x_solvent_accessible_in_custom_ac():
             activity_coefficient=ActivityCoefficientCustom(fn=custom_ac),
         )],
     )
+    h2o_idx_ref[0] = model.species_index["H2O"]
     simulate(
         model,
         c0={"A": 1000.0},
@@ -1428,19 +1444,20 @@ def test_x_solvent_accessible_in_custom_ac():
         solvent_composition=_WATER_X,
         n_points=10,
     )
-    assert len(captured_x) > 0
-    assert all(d.get("H2O") == pytest.approx(1.0) for d in captured_x)
+    assert len(captured_c_h2o) > 0
+    np.testing.assert_allclose(captured_c_h2o, _WATER.c_ref, rtol=1e-6)
 
 
-def test_x_solvent_gradient_programme():
-    """x_solvent reflects callable solvent composition during gradient simulation."""
-    captured_x = []
+def test_gradient_solvent_varies_in_state_c():
+    """Callable solvent_composition causes c[H2O] to vary in state.c during simulation."""
+    captured_c_h2o = []
+    h2o_idx_ref = [None]
 
     def custom_ac(state, charges):
-        captured_x.append(dict(state.x_solvent))
+        if h2o_idx_ref[0] is not None:
+            captured_c_h2o.append(float(state.c[h2o_idx_ref[0]]))
         return np.ones(len(state.c))
 
-    # Linear ramp: H2O goes from 1.0 at t=0 to 0.5 at t=1.0
     def x_water(t):
         return 1.0 - 0.5 * t
 
@@ -1454,6 +1471,7 @@ def test_x_solvent_gradient_programme():
             activity_coefficient=ActivityCoefficientCustom(fn=custom_ac),
         )],
     )
+    h2o_idx_ref[0] = model.species_index["H2O"]
     simulate(
         model,
         c0={"A": 1000.0},
@@ -1462,32 +1480,84 @@ def test_x_solvent_gradient_programme():
         solvent_composition={"H2O": x_water},
         n_points=10,
     )
-    # x_solvent should vary: not all values should be 1.0
-    assert any(d.get("H2O", 1.0) < 0.99 for d in captured_x)
+    # H2O decreases from c_ref toward 0.5 * c_ref over the simulation
+    assert any(c < 0.99 * _WATER.c_ref for c in captured_c_h2o)
 
 
-def test_builtin_ac_unaffected_by_x_solvent():
-    """Davies activity coefficient gives identical results with and without x_solvent set."""
-    comp_h = Component("H+", [Species("H+", charge=1)])
-    comp_oh = Component("OH-", [Species("OH-", charge=-1)])
-    comp_w = Component("water", [Species(
-        "H2O", is_solvent=True, molar_mass=0.018, density=1000.0, heat_capacity=75.3,
-    )])
-    rxn = ThermodynamicReaction(
-        "H2O <-> H+ + OH-",
-        mode="equil",
-        equilibrium_constant=pKa(14.0),
-        activity_coefficient=ActivityCoefficientDavies(),
-    )
+def test_davies_ac_ignores_solvent_concentration():
+    """Davies AC for ionic species is independent of solvent concentration (z=0 → gamma=1)."""
+    dav = ActivityCoefficientDavies()
+    charges = np.array([1.0, -1.0, 0.0])  # H+, OH-, H2O
+    I = 50.0  # fixed ionic strength
+
+    state_low = PhysicalState(c=np.array([1e-4, 1e-4, 100.0]), T=298.15, I=I)
+    state_high = PhysicalState(c=np.array([1e-4, 1e-4, 1000.0]), T=298.15, I=I)
+
+    gamma_low = dav.activity(state_low, charges)
+    gamma_high = dav.activity(state_high, charges)
+
+    # Davies uses only charges and ionic strength, not concentrations directly
+    np.testing.assert_array_equal(gamma_low, gamma_high)
+
+
+# ---------------------------------------------------------------------------
+# Prescribed species (E/P2)
+# ---------------------------------------------------------------------------
+
+
+def test_prescribed_species_constant():
+    """Prescribed constant species: value is fixed, ODE species responds correctly."""
+    k = 0.1
+    A0 = 1000.0
+
+    comp = Component("ab", [Species("A"), Species("B")])
     model = ReactionModel(
-        components=[comp_h, comp_oh, comp_w],
-        reactions=[rxn],
-        ionic_strength=IonicStrengthIdeal(),
+        components=[comp],
+        reactions=[MassActionReaction("A -> B", kf=k, kr=0.0)],
     )
-    c = np.array([1e-4, 1e-4])  # rough pH 4 guess
 
-    # Without x_solvent
-    r_no_x = model.residual(c, np.zeros(2), T=298.15)
-    # With x_solvent populated
-    r_with_x = model.residual(c, np.zeros(2), T=298.15, x_solvent={"H2O": 1.0})
-    np.testing.assert_array_equal(r_no_x, r_with_x)
+    result = simulate(
+        model,
+        {"B": 0.0},
+        (0.0, 5.0),
+        prescribed={"A": lambda t: A0},
+        n_points=200,
+    )
+    assert result.success
+
+    # A holds its prescribed value throughout
+    np.testing.assert_allclose(result["A"], A0, rtol=1e-6)
+
+    # dB/dt = k * A0  =>  B(t) = k * A0 * t
+    B_ana = k * A0 * result.t
+    np.testing.assert_allclose(result["B"], B_ana, rtol=1e-4)
+
+
+def test_prescribed_species_ramp():
+    """Prescribed ramp species: A(t) = A0 - r*t drives B accumulation."""
+    k = 0.1
+    A0, r = 1000.0, 50.0
+
+    comp = Component("ab", [Species("A"), Species("B")])
+    model = ReactionModel(
+        components=[comp],
+        reactions=[MassActionReaction("A -> B", kf=k, kr=0.0)],
+    )
+
+    t_end = 4.0
+    result = simulate(
+        model,
+        {"B": 0.0},
+        (0.0, t_end),
+        prescribed={"A": lambda t: A0 - r * t},
+        n_points=200,
+    )
+    assert result.success
+
+    # A follows its ramp
+    np.testing.assert_allclose(result["A"], A0 - r * result.t, rtol=1e-6)
+
+    # dB/dt = k*(A0 - r*t)  =>  B(t) = k*(A0*t - r*t²/2)
+    B_ana = k * (A0 * result.t - 0.5 * r * result.t**2)
+    np.testing.assert_allclose(result["B"], B_ana, rtol=1e-4)
+

@@ -110,7 +110,7 @@ model_td = ReactionModel(
 acetate   = Component("acetate",   [Species("AcOH", charge=0),  Species("AcO-", charge=-1)])
 proton    = Component("proton",    [Species("H+", charge=+1)])
 hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-water     = Component("water",     [Species("H2O", charge=0, is_solvent=True)])
+water     = Component("water",     [Species("H2O", charge=0)])
 model_ac  = ReactionModel(
     components=[acetate, proton, hydroxide, water],
     reactions=[

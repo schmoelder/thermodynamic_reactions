@@ -15,7 +15,6 @@ The `pKa` factory, water autoionisation, and Davies activity corrections each in
 import numpy as np
 
 from reactions.api import (
-    C_REF,
     Species, Component,
     ActivityCoefficientDavies,
     EquilibriumConstant, EquilibriumConstantVantHoff,
@@ -25,9 +24,11 @@ from reactions.api import (
 )
 from reactions.solver import solve_equilibrium
 
+C_REF = 1000.0  # mol/m³
+
 proton    = Component("proton",    [Species("H+",   charge=+1)])
 hydroxide = Component("hydroxide", [Species("OH-",  charge=-1)])
-water     = Component("water",     [Species("H2O",  charge=0, is_solvent=True)])
+water     = Component("water",     [Species("H2O",  charge=0)])
 ```
 
 
@@ -80,7 +81,7 @@ model_acetic = ReactionModel(
 
 c_tot = 100.0   # mol/m³ = 100 mM total acetate
 c0    = {"HAc": c_tot, "Ac-": 1e-6, "H+": 1e-4, "OH-": 1e-10 * C_REF}
-c_eq  = solve_equilibrium(model_acetic, c0, T=298.15)
+c_eq  = solve_equilibrium(model_acetic, c0, T=298.15, prescribed={"H2O": C_REF})
 
 pH    = -np.log10(c_eq["H+"] / C_REF)
 pKa_v = -np.log10(k_acetic.K(298.15))
@@ -158,7 +159,7 @@ for pH in [4.0, 7.2, 10.0]:
         "PO4-3":  max(a3*c_tot_phosphate, 1e-10),
         "H+": H, "OH-": OH,
     }
-    c_eq = solve_equilibrium(model_phosphate_ideal, c0, T=298.15)
+    c_eq = solve_equilibrium(model_phosphate_ideal, c0, T=298.15, prescribed={"H2O": C_REF})
     ana  = a0 * c_tot_phosphate
     print(f"{pH:>6.1f}  {ana:>12.4f}  {c_eq['H3PO4']:>12.4f}  {abs(c_eq['H3PO4']-ana):>10.2e}")
 ```
@@ -205,8 +206,8 @@ c0  = {
     "PO4-3":  max(a3*c_tot_phosphate, 1e-10),
     "H+": H, "OH-": OH,
 }
-eq_ideal  = solve_equilibrium(model_phosphate_ideal,        c0, T=298.15)
-eq_davies = solve_equilibrium(model_phosphate_davies, c0, T=298.15)
+eq_ideal  = solve_equilibrium(model_phosphate_ideal,  c0, T=298.15, prescribed={"H2O": C_REF})
+eq_davies = solve_equilibrium(model_phosphate_davies, c0, T=298.15, prescribed={"H2O": C_REF})
 
 print(f"At pH 7.2, I = 150 mol/m³ vs ideal (mol/m³):")
 print(f"{'Species':>10}  {'ideal':>10}  {'Davies':>10}  {'shift':>10}")

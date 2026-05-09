@@ -82,14 +82,14 @@ Three objects cover all cases.
 
 **`Component`** is the primary abstraction for model construction.
 It represents a named chemical entity and groups the species that entity can exist as, such as different protonation or charge states.
-Keyword arguments are forwarded to the underlying `Species`, so charge and solvent status can be set directly:
+Keyword arguments are forwarded to the underlying `Species`, so the charge can be set directly:
 
 ```{code-cell} ipython3
 from reactions.api import Component, Species
 
-a      = Component("A")                   # shorthand: one species, charge 0
-proton = Component("H+",  charge=+1)
-water  = Component("H2O", is_solvent=True)
+a      = Component("A")              # shorthand: one species, charge 0
+proton = Component("H+", charge=+1)  # kwargs forwarded to Species
+water  = Component("H2O")
 ```
 
 An explicit species list is needed when a component spans multiple charge states:

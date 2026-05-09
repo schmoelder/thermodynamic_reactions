@@ -143,8 +143,8 @@ The energy-balance row (bottom) is evaluated by finite differences; $\rho C_p$ a
 ## Specifying solvent properties
 
 The energy balance requires $\rho C_p$ computed from the solvent species.
-Solvent species are declared with `is_solvent=True` and three physical fields: `molar_mass` [kg/mol], `density` [kg/m³], and `heat_capacity` [J/(mol·K)].
-All three must be provided; the library raises `ValueError` if any are missing.
+A species participates in the heat-capacity calculation when all three physical fields are set: `molar_mass` [kg/mol], `density` [kg/m³], and `heat_capacity` [J/(mol·K)].
+All three must be provided on at least one species; the library raises `ValueError` if none are.
 
 ```{code-cell} ipython3
 import numpy as np
@@ -160,7 +160,6 @@ from reactions.solver import simulate
 
 WATER = Species(
     name="water",
-    is_solvent=True,
     molar_mass=0.018,    # kg/mol
     density=1000.0,      # kg/m³
     heat_capacity=75.3,  # J/(mol·K)
@@ -328,7 +327,6 @@ Each callable is evaluated at the current integration time $t$:
 ```{code-cell} ipython3
 MECN = Species(
     name="MeCN",
-    is_solvent=True,
     molar_mass=0.041,    # kg/mol
     density=786.0,       # kg/m³
     heat_capacity=91.5,  # J/(mol·K)

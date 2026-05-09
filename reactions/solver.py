@@ -87,21 +87,14 @@ def simulate(
     t_span: tuple[float, float],
     T: Union[float, Callable[[float], float], None] = None,
     solvent_composition: Optional[dict] = None,
+    prescribed: Optional[dict] = None,
     n_points: int = 500,
     rtol: float = 1e-8,
     atol: float = 1e-10,
+    method: str = "radau",
 ) -> SimulationResult:
     """
-    Integrate a ReactionModel forward in time using scipy Radau.
-
-    Radau is an implicit solver suited for stiff systems.  The analytic
-    Jacobian from ReactionModel.jacobian() is used automatically.
-
-    For systems with equilibrium reactions, the algebraic constraints are
-    satisfied at each step via the residual structure — equil rows replace
-    ODE rows for the dependent species, so the system remains determined.
-    A proper DAE solver (SUNDIALS IDA) would handle the index more
-    rigorously; this is a good approximation for prototyping.
+    Integrate a ReactionModel forward in time.
 
     Parameters
     ----------
@@ -126,21 +119,132 @@ def simulate(
 
         ρCp is computed at each step via model.volumetric_heat_capacity().
         Cannot be combined with a callable T.
+    prescribed : dict, optional
+        Species held at a fixed or time-varying concentration
+        {species_name: float | callable(t) -> float}.
+        Prescribed species are excluded from the ODE and held at their
+        specified value throughout the integration.
     n_points : int
         Number of output time points.
     rtol, atol : float
         Relative and absolute tolerances.
+    method : {'radau', 'ida'}
+        ODE/DAE solver backend.  'radau' uses scipy Radau (default);
+        'ida' uses SUNDIALS IDA via scikits.odes.  The IDA backend treats
+        prescribed species and equilibrium constraints as true algebraic
+        rows rather than using injection.  Requires scikits.odes to be
+        installed.  Not yet supported with solvent_composition.
 
     Returns
     -------
     SimulationResult
-        result.T_profile is populated when T is callable or heat_capacity
-        is given; None otherwise.
+        result.T_profile is populated when T is callable or
+        solvent_composition is given; None otherwise.
     """
     species_names = [sp.name for sp in model.species]
     c_init = np.array([c0.get(name, 0.0) for name in species_names])
     n = len(c_init)
     t_eval = np.linspace(t_span[0], t_span[1], n_points)
+
+    # --- prescribed species: inject c[i] = fn(t) before every RHS call ---
+    _prescribed = prescribed or {}
+    _prescribed_fns: dict[str, Callable[[float], float]] = {}
+    for _pname, _pval in _prescribed.items():
+        if callable(_pval):
+            _prescribed_fns[_pname] = _pval
+        else:
+            _v = float(_pval)
+            _prescribed_fns[_pname] = lambda t, v=_v: v
+    prescribed_mask = np.array([sp.name in _prescribed_fns for sp in model.species])
+    has_prescribed = bool(prescribed_mask.any())
+    dynamic_idx = np.where(~prescribed_mask)[0]
+    prescribed_idx = np.where(prescribed_mask)[0]
+    prescribed_fns = [_prescribed_fns[model.species[i].name] for i in prescribed_idx]
+    if has_prescribed:
+        # Initialise prescribed species from their function at t0
+        for i, fn in zip(prescribed_idx, prescribed_fns):
+            c_init[i] = fn(t_span[0])
+
+    # --- IDA path (scikits.odes) ---
+    if method == "ida":
+        try:
+            from scikits.odes.dae import dae as ida_dae
+        except ImportError:
+            raise ImportError(
+                "scikits.odes is required for method='ida'. "
+                "Install with: pip install scikits.odes"
+            )
+        if solvent_composition is not None:
+            raise NotImplementedError(
+                "method='ida' is not yet supported with solvent_composition."
+            )
+
+        T_func_ida: Callable[[float], Optional[float]]
+        if callable(T):
+            T_func_ida = T
+        else:
+            T_func_ida = lambda t: T  # noqa: E731
+
+        # Algebraic variable indices: equilibrium-dependent + prescribed (deduped)
+        algebraic_idx = list(dict.fromkeys(
+            [int(i) for i in model.equil_dep] + [int(i) for i in prescribed_idx]
+        ))
+        ode_rows = [i for i in range(n) if i not in set(algebraic_idx)]
+
+        # Consistent initial ydot: rhs for ODE rows, 0 for algebraic
+        r0 = model.residual(c_init, np.zeros(n), T_func_ida(t_span[0]))
+        ydot0 = np.zeros(n)
+        for i in ode_rows:
+            ydot0[i] = -r0[i]
+
+        def ida_residual(t, y, ydot, result):
+            c = y.copy()
+            for idx, fn in zip(prescribed_idx, prescribed_fns):
+                c[idx] = fn(t)
+            result[:] = model.residual(c, ydot, T_func_ida(t))
+            for idx, fn in zip(prescribed_idx, prescribed_fns):
+                result[idx] = y[idx] - fn(t)
+
+        def ida_jac(t, y, ydot, residual, cj, J):
+            c = y.copy()
+            for idx, fn in zip(prescribed_idx, prescribed_fns):
+                c[idx] = fn(t)
+            J[:, :] = model.jacobian(c, np.zeros(n), T_func_ida(t))
+            # Add cj·I for ODE rows (dF/dydot = I for those rows)
+            for i in ode_rows:
+                J[i, i] += cj
+            # Prescribed rows: F_i = y_i - fn(t), independent of ydot
+            for idx in prescribed_idx:
+                J[idx, :] = 0.0
+                J[idx, idx] = 1.0
+
+        solver_kwargs: dict = dict(
+            rtol=rtol,
+            atol=atol,
+            jacfn=ida_jac,
+            old_api=False,
+        )
+        if algebraic_idx:
+            solver_kwargs["algebraic_vars_idx"] = algebraic_idx
+
+        ida_solver = ida_dae("ida", ida_residual, **solver_kwargs)
+        output = ida_solver.solve(t_eval, c_init, ydot0)
+
+        c_out = output.values.y.copy()
+        for idx, fn in zip(prescribed_idx, prescribed_fns):
+            c_out[:, idx] = np.array([fn(t) for t in output.values.t])
+
+        return SimulationResult(
+            t=output.values.t,
+            c=c_out,
+            species=species_names,
+            success=output.flag >= 0,
+            message=str(output.message),
+            T_profile=(
+                np.array([T_func_ida(t) for t in output.values.t])
+                if callable(T) else None
+            ),
+        )
 
     # --- coupled energy balance ---
     if solvent_composition is not None:
@@ -150,13 +254,30 @@ def simulate(
                 "Pass T as a float (initial temperature)."
             )
         T0 = float(T if T is not None else model.T)
-        y_init = np.append(c_init, T0)
 
-        def _x_k(t: float) -> dict:
-            return {
-                name: (val(t) if callable(val) else val)
-                for name, val in solvent_composition.items()
-            }
+        # Solvent indices in the full state vector (solvents are now in c)
+        solvent_idx = {
+            name: model.species_index[name]
+            for name in solvent_composition
+            if name in model.species_index
+        }
+
+        def _inject_solvents(c: np.ndarray, t: float) -> np.ndarray:
+            """Return a copy of c with solvent concentrations set from solvent_composition."""
+            c = c.copy()
+            for name, val in solvent_composition.items():
+                if name in solvent_idx:
+                    x = val(t) if callable(val) else val
+                    c[solvent_idx[name]] = x * model.species[solvent_idx[name]].c_ref
+            return c
+
+        # Initialise solvent concentrations in c_init
+        for name, val in solvent_composition.items():
+            if name in solvent_idx:
+                x0 = val(t_span[0]) if callable(val) else val
+                c_init[solvent_idx[name]] = x0 * model.species[solvent_idx[name]].c_ref
+
+        y_init = np.append(c_init, T0)
 
         # Warn once for any reactions that cannot contribute to the energy balance.
         import warnings
@@ -172,12 +293,14 @@ def simulate(
                 )
 
         def rhs_coupled(t: float, y: np.ndarray) -> np.ndarray:
-            c = y[:n]
+            c = _inject_solvents(y[:n], t)
             T_cur = float(y[n])
-            x_k_cur = _x_k(t)
-            dc_dt = -model.residual(c, np.zeros(n), T_cur, x_solvent=x_k_cur)
-            rho_cp = model.volumetric_heat_capacity(x_k_cur)
-            state = model.make_state(c, T_cur, x_solvent=x_k_cur)
+            dc_dt = -model.residual(c, np.zeros(n), T_cur)
+            # Solvents are prescribed — zero their ODE rows
+            for i in solvent_idx.values():
+                dc_dt[i] = 0.0
+            rho_cp = model.volumetric_heat_capacity(c)
+            state = model.make_state(c, T_cur)
             Q_dot = 0.0
             for j, rxn in enumerate(model.reactions):
                 if not model.kinetic_mask[j]:
@@ -190,14 +313,16 @@ def simulate(
             return np.append(dc_dt, -Q_dot / rho_cp)
 
         def jac_coupled(t: float, y: np.ndarray) -> np.ndarray:
-            c = y[:n]
+            c = _inject_solvents(y[:n], t)
             T_cur = float(y[n])
-            x_k_cur = _x_k(t)
-            state = model.make_state(c, T_cur, x_solvent=x_k_cur)
-            rho_cp = model.volumetric_heat_capacity(x_k_cur)
+            state = model.make_state(c, T_cur)
+            rho_cp = model.volumetric_heat_capacity(c)
             J = np.zeros((n + 1, n + 1))
-            J[:n, :n] = -model.jacobian(c, np.zeros(n), T_cur, x_solvent=x_k_cur)
-            J[:n, n] = -model.jacobian_dT(c, np.zeros(n), T_cur, x_solvent=x_k_cur)
+            J[:n, :n] = -model.jacobian(c, np.zeros(n), T_cur)
+            J[:n, n] = -model.jacobian_dT(c, np.zeros(n), T_cur)
+            # Zero Jacobian rows for solvent species (prescribed, no ODE)
+            for i in solvent_idx.values():
+                J[i, :] = 0.0
             # Analytic energy-balance row:
             #   ∂rhs_T/∂c_k = -Σ_j [ΔH_j / ρCp] · ∂φ_j/∂c_k
             #   ∂rhs_T/∂T   = -Σ_j [ΔH_j · ∂φ_j/∂T + φ_j · d(ΔH_j)/dT] / ρCp
@@ -243,6 +368,52 @@ def simulate(
     else:
         T_func = lambda t: T  # noqa: E731  (scalar or None — constant)
 
+    if has_prescribed:
+        # Solve only for dynamic species; inject prescribed values before each call.
+        n_dyn = len(dynamic_idx)
+
+        def _full_c(c_dyn: np.ndarray, t: float) -> np.ndarray:
+            c_full = np.empty(n)
+            c_full[dynamic_idx] = c_dyn
+            for i, fn in zip(prescribed_idx, prescribed_fns):
+                c_full[i] = fn(t)
+            return c_full
+
+        def rhs(t: float, c_dyn: np.ndarray) -> np.ndarray:
+            c_full = _full_c(c_dyn, t)
+            return (-model.residual(c_full, np.zeros(n), T_func(t)))[dynamic_idx]
+
+        def jac(t: float, c_dyn: np.ndarray) -> np.ndarray:
+            c_full = _full_c(c_dyn, t)
+            J_full = -model.jacobian(c_full, np.zeros(n), T_func(t))
+            return J_full[np.ix_(dynamic_idx, dynamic_idx)]
+
+        sol = solve_ivp(
+            rhs,
+            t_span,
+            c_init[dynamic_idx],
+            method="Radau",
+            t_eval=t_eval,
+            jac=jac,
+            rtol=rtol,
+            atol=atol,
+            dense_output=False,
+        )
+
+        c_out = np.zeros((len(sol.t), n))
+        c_out[:, dynamic_idx] = sol.y.T
+        for i, fn in zip(prescribed_idx, prescribed_fns):
+            c_out[:, i] = np.array([fn(t) for t in sol.t])
+
+        return SimulationResult(
+            t=sol.t,
+            c=c_out,
+            species=species_names,
+            success=sol.success,
+            message=sol.message,
+            T_profile=np.array([T_func(t) for t in sol.t]) if callable(T) else None,
+        )
+
     def rhs(t: float, c: np.ndarray) -> np.ndarray:
         # residual(c, c_dot=0) = c_dot - f(c)  =>  f(c) = -residual(c, 0)
         return -model.residual(c, np.zeros_like(c), T_func(t))
@@ -283,6 +454,7 @@ def solve_equilibrium(
     model: ReactionModel,
     c0: dict[str, float],
     T: Optional[float] = None,
+    prescribed: Optional[dict] = None,
     max_iter: int = 200,
     tol: float = 1e-12,
 ) -> dict[str, float]:
@@ -308,6 +480,10 @@ def solve_equilibrium(
         Missing species default to 1e-10.
     T : float, optional
         Temperature [K].  Uses model default if not provided.
+    prescribed : dict, optional
+        Species held fixed {species_name: float | callable(t) -> float}.
+        These are excluded from the Newton iteration and held at their
+        specified value (evaluated at t=0 for callables).
     max_iter : int
         Maximum Newton iterations.
     tol : float
@@ -324,24 +500,48 @@ def solve_equilibrium(
         If the solver does not converge within max_iter iterations.
     """
     species_names = [sp.name for sp in model.species]
+    n = len(species_names)
+
+    # Prescribed species: keep fixed at the specified concentration.
+    _prescribed = prescribed or {}
+    _prescribed_fns: dict[str, Callable[[float], float]] = {}
+    for _pname, _pval in _prescribed.items():
+        if callable(_pval):
+            _prescribed_fns[_pname] = _pval
+        else:
+            _v = float(_pval)
+            _prescribed_fns[_pname] = lambda t, v=_v: v
+    prescribed_mask = np.array([sp.name in _prescribed_fns for sp in model.species])
+    dynamic_idx = np.where(~prescribed_mask)[0]
+    prescribed_idx = np.where(prescribed_mask)[0]
+    n_dyn = len(dynamic_idx)
+
     c_init = np.array([max(c0.get(name, 1e-10), 1e-10) for name in species_names])
-    y = np.log(c_init)
-    c_dot_zero = np.zeros(len(y))
+    for i in prescribed_idx:
+        c_init[i] = _prescribed_fns[model.species[i].name](0.0)
+
+    # Newton in log space, reduced to dynamic species only.
+    y = np.log(c_init[dynamic_idx])
+    c_dot_zero = np.zeros(n)
 
     for iteration in range(max_iter):
-        c = np.exp(y)
-        r = model.residual(c, c_dot_zero, T)
+        c = c_init.copy()
+        c[dynamic_idx] = np.exp(y)
+
+        r_full = model.residual(c, c_dot_zero, T)
+        r = r_full[dynamic_idx]
         r_norm = float(np.linalg.norm(r))
 
         if r_norm < tol:
             break
 
         # Jacobian in log space: dr/dy_k = dr/dc_k * c_k
-        J_c = model.jacobian(c, c_dot_zero, T)
-        J_y = J_c * c[np.newaxis, :]
+        J_c_full = model.jacobian(c, c_dot_zero, T)
+        J_c = J_c_full[np.ix_(dynamic_idx, dynamic_idx)]
+        J_y = J_c * np.exp(y)[np.newaxis, :]
 
         # Tikhonov regularisation for near-singular systems
-        J_y += np.eye(len(y)) * 1e-12
+        J_y += np.eye(n_dyn) * 1e-12
 
         try:
             dy = np.linalg.solve(J_y, -r)
@@ -352,17 +552,20 @@ def solve_equilibrium(
         alpha = 1.0
         for _ in range(20):
             y_new = y + alpha * dy
-            c_new = np.exp(y_new)
-            r_new = model.residual(c_new, c_dot_zero, T)
+            c_new = c_init.copy()
+            c_new[dynamic_idx] = np.exp(y_new)
+            r_new = model.residual(c_new, c_dot_zero, T)[dynamic_idx]
             if np.linalg.norm(r_new) < r_norm * (1.0 - 1e-4 * alpha):
                 break
             alpha *= 0.5
 
         y = y + alpha * dy
 
-    c_sol = np.exp(y)
-    r_final = model.residual(c_sol, c_dot_zero, T)
-    r_final_norm = float(np.linalg.norm(r_final))
+    c_sol = c_init.copy()
+    c_sol[dynamic_idx] = np.exp(y)
+    r_final_norm = float(np.linalg.norm(
+        model.residual(c_sol, c_dot_zero, T)[dynamic_idx]
+    ))
 
     if r_final_norm > 1e-6:
         raise RuntimeError(
