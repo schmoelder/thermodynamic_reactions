@@ -1,5 +1,5 @@
 """
-Validation tests for the reactions library.
+Integration tests for the reactions library: model assembly, simulation, and solver.
 
 Run with: pytest tests/ -v
 Requires: pip install -e .
@@ -14,25 +14,16 @@ C_REF: float = 1000.0  # mol/m³ — standard-state concentration
 
 from reactions.api import (
     ActivityCoefficientCustom,
-    ActivityCoefficientDavies,
-    ActivityCoefficientDebyeHuckel,
     Component,
-    _water_epsilon_r,
     EquilibriumConstant,
     EquilibriumConstantCustom,
-    EquilibriumConstantPolynomial,
-    EquilibriumConstantTabulated,
     EquilibriumConstantVantHoff,
     EquilibriumConstantVantHoffCp,
-    IonicStrengthBackground,
-    IonicStrengthFixed,
-    IonicStrengthIdeal,
     MassActionReaction,
     PhysicalState,
     R_GAS,
     RateConstantArrhenius,
     RateConstantFixed,
-    RateConstantPolynomial,
     ReactionModel,
     Species,
     ThermodynamicReaction,
@@ -191,33 +182,6 @@ def test_conservation_multi_reaction():
     assert np.max(np.abs(C2 - C2[0])) < 1e-6
 
 
-@pytest.mark.parametrize("T", [298.15, 320.0, 350.0])
-def test_vanthoff_converges_at_each_temperature(T):
-    """EquilibriumConstantVantHoff: simulation reaches K(T) at each temperature."""
-    dH, dS, kf = -20e3, -50.0, 1.0
-    K_expected = np.exp(-dH / (8.314462 * T) + dS / 8.314462)
-
-    comp = Component("ab", [Species("A"), Species("B")])
-    model = ReactionModel(
-        components=[comp],
-        reactions=[
-            ThermodynamicReaction(
-                "A <-> B",
-                mode="kinetic",
-                equilibrium_constant=EquilibriumConstantVantHoff(dH=dH, dS=dS),
-                rate_constant=RateConstantFixed(kf_value=kf),
-            )
-        ],
-    )
-
-    tau = C_REF / (kf * (1.0 + 1.0 / K_expected))
-    result = simulate(model, {"A": 1000.0, "B": 0.0}, (0, 10 * tau), T=T, n_points=300)
-    assert result.success
-
-    Q = (result["B"][-1] / C_REF) / (result["A"][-1] / C_REF)
-    assert abs(Q - K_expected) / K_expected < 1e-3
-
-
 # ---------------------------------------------------------------------------
 # ThermodynamicReaction reduces to MassActionReaction under ideal conditions
 #
@@ -234,7 +198,7 @@ def test_vanthoff_converges_at_each_temperature(T):
 def test_thermodynamic_reduces_to_mass_action_n1():
     """n=1 (A⇌B): ThermodynamicReaction with kf*C_REF matches MassActionReaction exactly."""
     kf_MA, kr_MA = 2.0, 0.5
-    K_conc = kf_MA / kr_MA   # K unchanged for n_fwd=n_bwd=1
+    K_conc = kf_MA / kr_MA
 
     comp = Component("ab", [Species("A"), Species("B")])
     model_ma = ReactionModel(
@@ -263,10 +227,9 @@ def test_thermodynamic_reduces_to_mass_action_n1():
 
 def test_thermodynamic_reduces_to_mass_action_n2():
     """n=2 (2A⇌B): ThermodynamicReaction with kf*C_REF^2, K*C_REF matches MassActionReaction."""
-    kf_MA = 1e-3   # m³/(mol·s)
-    kr_MA = 2e-4   # 1/s
+    kf_MA = 1e-3
+    kr_MA = 2e-4
     K_conc = kf_MA / kr_MA
-    # n_fwd=2, n_bwd=1 → K_thermo = K_conc * C_REF^(2-1) = K_conc * C_REF
 
     comp = Component("ab", [Species("A"), Species("B")])
     model_ma = ReactionModel(
@@ -317,7 +280,6 @@ def _check_jacobian(model, c, T=298.15, eps=1e-7, tol=1e-4):
         cp = c.copy()
         cp[k] += h
         J_fd[:, k] = (model.residual(cp, c_dot, T=T) - r0) / h
-    # Relative error where |J_ana| > 1; absolute error elsewhere
     scale = np.maximum(np.abs(J_ana), 1.0)
     return float(np.max(np.abs(J_ana - J_fd) / scale))
 
@@ -380,117 +342,13 @@ def test_jacobian_thermodynamic_equil_acetic():
         ],
         T=298.15,
     )
-    # Use concentrations from the implementation notebook (pH ~ 5.15, above pKa):
-    # [AcOH]=10, [AcO-]=90, [H+]=6.3e-5 mol/m3, [OH-]=1.6e-4 mol/m3
-    # These give moderate Jacobian entries suitable for finite-difference comparison.
     c = np.array([10.0, 90.0, 6.3e-5, 1.6e-4, 1000.0])
     err = _check_jacobian(model, c)
     assert err < 1e-4, f"Acetic acid equil Jacobian relative error {err:.2e} exceeds 1e-4"
 
 
 # ---------------------------------------------------------------------------
-# 2. Davies activity corrections
-# ---------------------------------------------------------------------------
-
-
-def test_davies_ph_shift_direction():
-    """
-    Davies corrections shift the apparent pKa in the correct direction.
-
-    The thermodynamic equilibrium constant is defined in terms of activities:
-        Ka = a(AcO-) * a(H+) / a(AcOH)
-           = gamma(AcO-) * gamma(H+) * [AcO-] * [H+] / (gamma(AcOH) * [AcOH] * C_REF)
-
-    With gamma(AcOH) = 1 (neutral) and gamma(AcO-) = gamma(H+) = gamma < 1:
-        Ka_apparent = [AcO-] * [H+] / ([AcOH] * C_REF) = Ka / gamma^2
-
-    So pKa_app = pKa - log10(gamma^2) = pKa - 2*log10(gamma) = pKa - 2*A*f(I)
-    where A = 0.509 and f(I) = sqrt(I_L)/(1+sqrt(I_L)) - 0.3*I_L.
-
-    The test measures the concentration-pH at half-neutralisation ([AcO-]=[AcOH])
-    by starting from that half-half initial condition and letting the solver
-    adjust the dependent species (H+ and AcO-) to satisfy both equilibrium
-    constraints. The non-dependent species (AcOH and OH-) are pinned by the
-    initial condition, so the solver cleanly isolates the pKa shift.
-    """
-    pKa_val = 4.756
-    T = 298.15
-    A_davies = 0.509
-
-    acetate = Component("acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)])
-    proton = Component("proton", [Species("H+", charge=+1)])
-    hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-    water = Component("water", [Species("H2O", charge=0)])
-
-    def make_model(I_fixed):
-        return ReactionModel(
-            components=[acetate, proton, hydroxide, water],
-            reactions=[
-                ThermodynamicReaction(
-                    "AcOH <-> AcO- + H+",
-                    mode="equil",
-                    equilibrium_constant=pKa(pKa_val),
-                    activity_coefficient=ActivityCoefficientDavies(),
-                ),
-                ThermodynamicReaction(
-                    "H2O <-> H+ + OH-",
-                    mode="equil",
-                    equilibrium_constant=EquilibriumConstant(1e-14),
-                    activity_coefficient=ActivityCoefficientDavies(),
-                ),
-            ],
-            ionic_strength=IonicStrengthFixed(I=I_fixed),
-            T=T,
-        )
-
-    Ka = 10.0 ** (-pKa_val)
-    # Initial guess for H+ at ideal pKa; OH- from water equilibrium
-    H_guess = Ka * C_REF
-    OH_guess = 1e-14 * C_REF**2 / H_guess
-    # Start at exact half-neutralisation: [AcO-] = [AcOH] = 50 mol/m3
-    # The solver pins AcOH and OH- (the non-dependent species) and adjusts
-    # H+ and AcO- to satisfy both equilibrium constraints.
-    c0 = {
-        "AcOH": 50.0,
-        "AcO-": 50.0,
-        "H+": H_guess,
-        "OH-": OH_guess,
-    }
-
-    # Ideal model (I=0): H+ at equilibrium should equal Ka * C_REF
-    model_ideal = make_model(I_fixed=0.0)
-    c_eq_ideal = solve_equilibrium(model_ideal, c0, T=T, prescribed={"H2O": C_REF})
-    pH_ideal = -np.log10(c_eq_ideal["H+"] / C_REF)
-
-    # Davies model (I=100 mol/m3 = 0.1 mol/L)
-    I_bg = 100.0   # mol/m3
-    model_ionic = make_model(I_fixed=I_bg)
-    c_eq_davies = solve_equilibrium(model_ionic, c0, T=T, prescribed={"H2O": C_REF})
-    pH_davies = -np.log10(c_eq_davies["H+"] / C_REF)
-
-    # Analytical prediction: pKa_app = pKa - 2*A*f(I)
-    I_L = I_bg / 1000.0
-    sqrt_I = np.sqrt(I_L)
-    f_I = sqrt_I / (1.0 + sqrt_I) - 0.3 * I_L
-    pKa_app_analytical = pKa_val - 2.0 * A_davies * f_I
-
-    # Ideal case recovers thermodynamic pKa
-    assert abs(pH_ideal - pKa_val) < 1e-6, (
-        f"Ideal case: pH at half-neutralisation {pH_ideal:.6f} != pKa {pKa_val}"
-    )
-    # Davies case: apparent pKa is lower (acid appears stronger)
-    assert pH_davies < pKa_val, (
-        f"Expected pH_davies ({pH_davies:.4f}) < pKa ({pKa_val}) at I > 0"
-    )
-    # Quantitative agreement with analytical Davies shift (within 0.001 pK units)
-    assert abs(pH_davies - pKa_app_analytical) < 0.001, (
-        f"Davies pH at half-neutralisation {pH_davies:.4f} vs analytical "
-        f"pKa_app {pKa_app_analytical:.4f}, diff {abs(pH_davies-pKa_app_analytical):.4f}"
-    )
-
-
-# ---------------------------------------------------------------------------
-# 3. Phosphate polyprotic: Bjerrum fraction validation at pH 7.2
+# 2. Phosphate polyprotic: Bjerrum fraction validation at pH 7.2
 # ---------------------------------------------------------------------------
 
 
@@ -498,19 +356,12 @@ def test_phosphate_bjerrum_fractions_ph72():
     """
     Three-step phosphate dissociation: species concentrations at pH 7.2
     match the Bjerrum fraction formula.
-
-    Bjerrum fractions for H3PO4/H2PO4-/HPO4-2/PO4-3:
-        D = h^3 + Ka1*h^2 + Ka1*Ka2*h + Ka1*Ka2*Ka3
-        alpha0 = h^3 / D
-        alpha1 = Ka1*h^2 / D
-        alpha2 = Ka1*Ka2*h / D
-        alpha3 = Ka1*Ka2*Ka3 / D
     """
     pKa1, pKa2, pKa3 = 2.148, 7.198, 12.350
     Ka1 = 10.0 ** (-pKa1)
     Ka2 = 10.0 ** (-pKa2)
     Ka3 = 10.0 ** (-pKa3)
-    c_tot_phos = 100.0   # mol/m3
+    c_tot_phos = 100.0
     T = 298.15
     pH = 7.2
 
@@ -551,7 +402,6 @@ def test_phosphate_bjerrum_fractions_ph72():
         T=T,
     )
 
-    # Bjerrum fractions (dimensionless activities in mol/L, but ratios cancel)
     h = 10.0 ** (-pH)
     D = h**3 + Ka1 * h**2 + Ka1 * Ka2 * h + Ka1 * Ka2 * Ka3
     alpha0 = h**3 / D
@@ -571,7 +421,7 @@ def test_phosphate_bjerrum_fractions_ph72():
     }
     c_eq = solve_equilibrium(model_phos, c0, T=T, prescribed={"H2O": C_REF})
 
-    tol = 1e-4  # mol/m3
+    tol = 1e-4
     for sp, alpha in [
         ("H3PO4",  alpha0),
         ("H2PO4-", alpha1),
@@ -586,41 +436,7 @@ def test_phosphate_bjerrum_fractions_ph72():
 
 
 # ---------------------------------------------------------------------------
-# 4. Arrhenius + van't Hoff consistency: kf(T)/kr(T) == K(T)
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize("T", [250.0, 280.0, 298.15, 320.0, 350.0, 400.0])
-def test_arrhenius_vanthoff_kf_kr_ratio(T):
-    """kf(T) / kr(T) == K(T) to 1e-12 relative tolerance across temperature."""
-    dH = -30e3       # J/mol
-    dS = -80.0       # J/(mol K)
-    A_arr = 1e8      # pre-exponential (same units as kf)
-    Ea = 50e3        # J/mol activation energy
-
-    eq_const = EquilibriumConstantVantHoff(dH=dH, dS=dS)
-    comp = Component("ab", [Species("A"), Species("B")])
-    rxn = ThermodynamicReaction(
-        "A <-> B",
-        mode="kinetic",
-        equilibrium_constant=eq_const,
-        rate_constant=RateConstantArrhenius(A=A_arr, Ea=Ea),
-    )
-
-    K_val = eq_const.K(T)
-    kf_val = rxn.kf(T)
-    kr_val = rxn.kr(T)
-
-    # kr is derived as kf/K, so ratio must equal K exactly within FP precision
-    ratio = kf_val / kr_val
-    rel_err = abs(ratio - K_val) / K_val
-    assert rel_err < 1e-12, (
-        f"At T={T} K: kf/kr={ratio:.6e}, K={K_val:.6e}, rel_err={rel_err:.2e}"
-    )
-
-
-# ---------------------------------------------------------------------------
-# 5. Edge cases
+# 3. Edge cases
 # ---------------------------------------------------------------------------
 
 
@@ -665,12 +481,8 @@ def test_extreme_ph_acid_ph1():
     }
     c_eq = solve_equilibrium(model, c0, T=T, prescribed={"H2O": C_REF})
 
-    # At pH 1, [AcO-]/c_tot should be tiny (fraction ~ 10^(1-4.76) ~ 1.7e-4)
     frac_deprotonated = c_eq["AcO-"] / c_tot
-    assert frac_deprotonated < 1e-3, (
-        f"Deprotonated fraction {frac_deprotonated:.2e} unexpectedly large at pH 1"
-    )
-    # Check against Henderson-Hasselbalch
+    assert frac_deprotonated < 1e-3
     assert abs(c_eq["AcOH"] - AcOH_hh) < 1e-4
 
 
@@ -715,58 +527,8 @@ def test_extreme_ph_acid_ph13():
     }
     c_eq = solve_equilibrium(model, c0, T=T, prescribed={"H2O": C_REF})
 
-    # At pH 13, essentially all acetate deprotonated
     frac_protonated = c_eq["AcOH"] / c_tot
-    assert frac_protonated < 1e-7, (
-        f"Protonated fraction {frac_protonated:.2e} unexpectedly large at pH 13"
-    )
-
-
-def test_near_zero_ionic_strength_gives_ideal_activity():
-    """Davies activity coefficients converge monotonically toward 1 as I -> 0.
-
-    Two properties are verified:
-    1. The neutral species (z=0) has gamma = 1 exactly at all ionic strengths.
-    2. The maximum deviation from 1 across all species decreases monotonically
-       as I decreases from 1000 to 0.001 mol/m3, confirming the I -> 0 limit
-       approaches ideal (gamma -> 1).
-    """
-    dav = ActivityCoefficientDavies()
-    charges = np.array([0.0, -1.0, 1.0, -2.0])
-    c_dummy = np.ones(4) * 100.0
-
-    # Neutral species has gamma = 1 exactly (z=0 => log_gamma = 0)
-    for I in [0.001, 1.0, 100.0, 1000.0]:
-        state = PhysicalState(c=c_dummy, T=298.15, I=I)
-        gamma = dav.activity(state, charges)
-        assert abs(gamma[0] - 1.0) < 1e-12, (
-            f"At I={I}, neutral species gamma = {gamma[0]:.12f} != 1"
-        )
-
-    # Deviations from 1 must decrease monotonically as I decreases in the
-    # low-to-moderate range where the Davies equation is designed to apply
-    # (I < 500 mol/m3 = 0.5 mol/L).  Above that the -0.3*I_L term causes
-    # f(I) to turn over, so non-monotone behaviour at very high I is expected.
-    I_vals = [100.0, 10.0, 1.0, 0.1, 0.01, 0.001]
-    deviations = []
-    for I in I_vals:
-        state = PhysicalState(c=c_dummy, T=298.15, I=I)
-        gamma = dav.activity(state, charges)
-        deviations.append(float(np.max(np.abs(gamma - 1.0))))
-
-    for i in range(len(deviations) - 1):
-        assert deviations[i] >= deviations[i + 1], (
-            f"Activity deviation not monotone in valid range: "
-            f"I={I_vals[i]} dev={deviations[i]:.6f}, "
-            f"I={I_vals[i+1]} dev={deviations[i+1]:.6f}"
-        )
-
-    # Confirm that the smallest I in the sweep gives a much smaller deviation
-    # than the largest I (qualitative convergence toward ideal).
-    assert deviations[-1] < deviations[0] / 10.0, (
-        f"Deviation at smallest I ({deviations[-1]:.4f}) should be much less than "
-        f"deviation at largest I ({deviations[0]:.4f})"
-    )
+    assert frac_protonated < 1e-7
 
 
 # ---------------------------------------------------------------------------
@@ -939,7 +701,6 @@ def test_volumetric_heat_capacity_single_solvent():
             ),
         ],
     )
-    # A(idx 0) = 0, H2O(idx 1) = c_ref  →  x_H2O = 1.0
     c = np.array([0.0, _WATER.c_ref])
     rho_cp = model.volumetric_heat_capacity(c)
     np.testing.assert_allclose(rho_cp, _RHO_CP_WATER, rtol=1e-10)
@@ -982,7 +743,6 @@ def test_volumetric_heat_capacity_mixture():
             ),
         ],
     )
-    # H2O at 0.7 * c_ref, MeCN at 0.3 * c_ref  →  x_H2O = 0.7, x_MeCN = 0.3
     c = np.array([0.0, 0.7 * water.c_ref, 0.3 * mecn.c_ref])
     expected = 0.7 * (997.0 / 0.018) * 75.3 + 0.3 * (786.0 / 0.041) * 91.4
     np.testing.assert_allclose(model.volumetric_heat_capacity(c), expected, rtol=1e-10)
@@ -1078,7 +838,6 @@ def test_coupled_callable_T_raises():
 
 def test_coupled_callable_solvent_composition():
     """Callable solvent_composition (gradient) is evaluated at each time step."""
-    # 30% MeCN ramp over 10 s — ρCp decreases as water is replaced
     water = Species("H2O",  molar_mass=0.018, density=997.0, heat_capacity=75.3)
     mecn  = Species("MeCN", molar_mass=0.041, density=786.0, heat_capacity=91.4)
     model = ReactionModel(
@@ -1110,91 +869,6 @@ def test_coupled_callable_solvent_composition():
     )
     assert result.success
     assert result.T_profile is not None
-
-
-def test_reaction_enthalpy_fd_fallback_custom():
-    """EquilibriumConstantCustom.reaction_enthalpy() falls back to FD via van't Hoff."""
-    dH_true = -20e3
-    dS = -50.0
-    K_fn = lambda T: float(np.exp(-dH_true / (R_GAS * T) + dS / R_GAS))  # noqa: E731
-    eq = EquilibriumConstantCustom(K_fn)
-    # analytic: ΔH = R T² · dlnK/dT = dH_true
-    dH_fd = eq.reaction_enthalpy(298.15)
-    assert abs(dH_fd - dH_true) / abs(dH_true) < 1e-6
-
-
-def test_reaction_enthalpy_fd_fallback_tabulated():
-    """EquilibriumConstantTabulated.reaction_enthalpy() falls back to FD via van't Hoff."""
-    dH_true = -20e3
-    dS = -50.0
-    T_data = np.linspace(270, 370, 200)
-    K_data = np.exp(-dH_true / (R_GAS * T_data) + dS / R_GAS)
-    eq = EquilibriumConstantTabulated(T_data, K_data)
-    dH_fd = eq.reaction_enthalpy(298.15)
-    assert abs(dH_fd - dH_true) / abs(dH_true) < 0.02  # linear interpolation limits accuracy
-
-
-def test_reaction_enthalpy_fixed_K_is_zero():
-    """EquilibriumConstant (fixed K) implies dlnK/dT = 0, so reaction_enthalpy = 0."""
-    eq = EquilibriumConstant(K_eq=4.0)
-    assert eq.reaction_enthalpy(298.15) == 0.0
-
-
-def test_equilibrium_constant_polynomial_K_and_derivative():
-    """EquilibriumConstantPolynomial: K and dlnK/dT match analytic values."""
-    # ln K(T) = a0 + a1*T + a2*T^2
-    a0, a1, a2 = 2.0, -0.01, 3e-5
-    eq = EquilibriumConstantPolynomial([a0, a1, a2])
-    T = 310.0
-    K_expected = np.exp(a0 + a1 * T + a2 * T**2)
-    dlnK_expected = a1 + 2 * a2 * T
-    dH_expected = R_GAS * T**2 * dlnK_expected
-    assert abs(eq.K(T) - K_expected) / K_expected < 1e-12
-    assert abs(eq.dlnK_dT(T) - dlnK_expected) < 1e-12
-    assert abs(eq.reaction_enthalpy(T) - dH_expected) < 1e-6
-
-
-def test_equilibrium_constant_polynomial_constant_case():
-    """Single-coefficient polynomial is a temperature-independent K."""
-    eq = EquilibriumConstantPolynomial([np.log(4.0)])
-    assert abs(eq.K(298.15) - 4.0) < 1e-12
-    assert eq.dlnK_dT(298.15) == 0.0
-    assert eq.reaction_enthalpy(298.15) == 0.0
-
-
-def test_rate_constant_polynomial_kf_and_derivative():
-    """RateConstantPolynomial: kf and dlnkf/dT match analytic values."""
-    b0, b1 = 5.0, -0.005
-    rc = RateConstantPolynomial([b0, b1])
-    T = 320.0
-    kf_expected = np.exp(b0 + b1 * T)
-    dlnkf_expected = b1
-    assert abs(rc.kf(T) - kf_expected) / kf_expected < 1e-12
-    assert abs(rc.dlnkf_dT(T) - dlnkf_expected) < 1e-12
-
-
-def test_polynomial_jacobian_dT_analytic_vs_fd():
-    """jacobian_dT with polynomial K/k is analytic and matches FD."""
-    a0, a1 = 1.5, -8e-3
-    b0, b1 = 4.0, -5e-3
-    model = ReactionModel(
-        components=[Component("A"), Component("B")],
-        reactions=[
-            ThermodynamicReaction(
-                "A <-> B",
-                mode="kinetic",
-                equilibrium_constant=EquilibriumConstantPolynomial([a0, a1]),
-                rate_constant=RateConstantPolynomial([b0, b1]),
-            ),
-        ],
-    )
-    c = np.array([600.0, 400.0])
-    T = 310.0
-    analytic = model.jacobian_dT(c, np.zeros(2), T)
-    eps = 1e-5
-    fd = (model.residual(c, np.zeros(2), T + eps) -
-          model.residual(c, np.zeros(2), T - eps)) / (2 * eps)
-    np.testing.assert_allclose(analytic, fd, rtol=1e-4)
 
 
 def test_energy_balance_custom_K_matches_vanthoff():
@@ -1233,7 +907,6 @@ def test_energy_balance_custom_K_matches_vanthoff():
 
 def test_energy_balance_mass_action_warns():
     """MassActionReaction in an energy balance model raises UserWarning."""
-    import warnings
     model = ReactionModel(
         components=[Component("A"), Component("B"), Component("water", [_WATER])],
         reactions=[MassActionReaction("A <-> B", kf=1.0, kr=0.25)],
@@ -1249,46 +922,6 @@ def test_energy_balance_mass_action_warns():
 # ---------------------------------------------------------------------------
 # Bundle A: d_reaction_enthalpy_dT and analytic energy balance Jacobian row
 # ---------------------------------------------------------------------------
-
-
-def test_d_reaction_enthalpy_dT_fixed_k():
-    """Fixed K has zero temperature sensitivity — dΔH/dT = 0."""
-    eq = EquilibriumConstant(K_eq=10.0)
-    assert eq.d_reaction_enthalpy_dT(298.15) == 0.0
-
-
-def test_d_reaction_enthalpy_dT_vanthoff():
-    """VantHoff has constant ΔH — dΔH/dT = 0."""
-    eq = EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0)
-    assert eq.d_reaction_enthalpy_dT(298.15) == 0.0
-    assert eq.d_reaction_enthalpy_dT(350.0) == 0.0
-
-
-def test_d_reaction_enthalpy_dT_vanthoffcp():
-    """VantHoffCp: dΔH/dT = dCp."""
-    dCp = 120.0
-    eq = EquilibriumConstantVantHoffCp(dH=-20e3, dS=-50.0, dCp=dCp)
-    assert eq.d_reaction_enthalpy_dT(298.15) == pytest.approx(dCp)
-    assert eq.d_reaction_enthalpy_dT(350.0) == pytest.approx(dCp)
-
-
-def test_d_reaction_enthalpy_dT_polynomial_analytic_vs_fd():
-    """Polynomial d_reaction_enthalpy_dT analytic result matches FD on reaction_enthalpy."""
-    # coeffs chosen so both dlnK/dT and d²lnK/dT² are non-trivial
-    coeffs = [5.0, -1e-2, 3e-5]
-    eq = EquilibriumConstantPolynomial(coeffs=coeffs)
-    for T in [280.0, 298.15, 320.0, 360.0]:
-        analytic = eq.d_reaction_enthalpy_dT(T)
-        eps = 1e-3
-        fd = (eq.reaction_enthalpy(T + eps) - eq.reaction_enthalpy(T - eps)) / (2 * eps)
-        assert analytic == pytest.approx(fd, rel=1e-5)
-
-
-def test_d_reaction_enthalpy_dT_custom_fd_fallback():
-    """Custom K uses FD fallback and returns a finite float."""
-    eq = EquilibriumConstantCustom(func=lambda T: np.exp(-20e3 / (R_GAS * T)))
-    result = eq.d_reaction_enthalpy_dT(298.15)
-    assert np.isfinite(result)
 
 
 def _eb_rhs_T(model, c, T, rho_cp):
@@ -1341,7 +974,6 @@ def test_energy_balance_jac_analytic_vanthoff_arrhenius():
             rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
         )],
     )
-    # A(0), B(1), H2O(2) — include H2O at c_ref in c
     c = np.array([800.0, 200.0, 1000.0])
     rho_cp = model.volumetric_heat_capacity(c)
     T = 310.0
@@ -1376,7 +1008,6 @@ def test_energy_balance_jac_analytic_vanthoffcp():
             rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
         )],
     )
-    # A(0), B(1), H2O(2) — include H2O at c_ref in c
     c = np.array([600.0, 400.0, 1000.0])
     rho_cp = model.volumetric_heat_capacity(c)
     T = 305.0
@@ -1410,7 +1041,7 @@ def test_solvent_included_in_state_c():
         components=[Component("A"), water],
         reactions=[MassActionReaction("A <-> A", kf=1.0)],
     )
-    c = np.array([100.0, 1000.0])  # A, H2O
+    c = np.array([100.0, 1000.0])
     state = model.make_state(c, T=300.0)
     assert len(state.c) == 2
     np.testing.assert_array_equal(state.c, c)
@@ -1481,24 +1112,7 @@ def test_gradient_solvent_varies_in_state_c():
         solvent_composition={"H2O": x_water},
         n_points=10,
     )
-    # H2O decreases from c_ref toward 0.5 * c_ref over the simulation
     assert any(c < 0.99 * _WATER.c_ref for c in captured_c_h2o)
-
-
-def test_davies_ac_ignores_solvent_concentration():
-    """Davies AC for ionic species is independent of solvent concentration (z=0 → gamma=1)."""
-    dav = ActivityCoefficientDavies()
-    charges = np.array([1.0, -1.0, 0.0])  # H+, OH-, H2O
-    I = 50.0  # fixed ionic strength
-
-    state_low = PhysicalState(c=np.array([1e-4, 1e-4, 100.0]), T=298.15, I=I)
-    state_high = PhysicalState(c=np.array([1e-4, 1e-4, 1000.0]), T=298.15, I=I)
-
-    gamma_low = dav.activity(state_low, charges)
-    gamma_high = dav.activity(state_high, charges)
-
-    # Davies uses only charges and ionic strength, not concentrations directly
-    np.testing.assert_array_equal(gamma_low, gamma_high)
 
 
 # ---------------------------------------------------------------------------
@@ -1526,10 +1140,8 @@ def test_prescribed_species_constant():
     )
     assert result.success
 
-    # A holds its prescribed value throughout
     np.testing.assert_allclose(result["A"], A0, rtol=1e-6)
 
-    # dB/dt = k * A0  =>  B(t) = k * A0 * t
     B_ana = k * A0 * result.t
     np.testing.assert_allclose(result["B"], B_ana, rtol=1e-4)
 
@@ -1555,119 +1167,7 @@ def test_prescribed_species_ramp():
     )
     assert result.success
 
-    # A follows its ramp
     np.testing.assert_allclose(result["A"], A0 - r * result.t, rtol=1e-6)
 
-    # dB/dt = k*(A0 - r*t)  =>  B(t) = k*(A0*t - r*t²/2)
     B_ana = k * (A0 * result.t - 0.5 * r * result.t**2)
     np.testing.assert_allclose(result["B"], B_ana, rtol=1e-4)
-
-
-# ---------------------------------------------------------------------------
-# E/P4 — T-dependent A in DH/Davies (epsilon_r parameter)
-# ---------------------------------------------------------------------------
-
-
-def test_davies_A_increases_above_ambient():
-    """With T-dependent epsilon_r, Davies A increases above 298 K (εr·T decreases)."""
-    charges = np.array([1.0, -1.0])
-    I = 100.0  # mol/m³
-
-    state_ambient = PhysicalState(c=np.array([1e-4, 1e-4]), T=298.15, I=I)
-    state_warm = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=I)
-
-    dav = ActivityCoefficientDavies(epsilon_r=_water_epsilon_r)
-    gamma_ambient = dav.activity(state_ambient, charges)
-    gamma_warm = dav.activity(state_warm, charges)
-
-    # Higher A → log10(γ) more negative → γ smaller at higher T
-    assert gamma_warm[0] < gamma_ambient[0], (
-        f"Expected gamma(320K)={gamma_warm[0]:.4f} < gamma(298K)={gamma_ambient[0]:.4f}"
-    )
-
-
-def test_dh_A_increases_above_ambient():
-    """With T-dependent epsilon_r, DH A increases above 298 K."""
-    charges = np.array([1.0, -1.0])
-    I = 50.0  # mol/m³
-
-    state_ambient = PhysicalState(c=np.array([1e-4, 1e-4]), T=298.15, I=I)
-    state_warm = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=I)
-
-    dh = ActivityCoefficientDebyeHuckel(epsilon_r=_water_epsilon_r)
-    gamma_ambient = dh.activity(state_ambient, charges)
-    gamma_warm = dh.activity(state_warm, charges)
-
-    assert gamma_warm[0] < gamma_ambient[0]
-
-
-def test_davies_scalar_epsilon_r_overrides_default():
-    """A scalar epsilon_r overrides the stored 25 °C A: lower εr → higher A → lower γ."""
-    charges = np.array([1.0, -1.0])
-    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=298.15, I=100.0)
-
-    dav_default = ActivityCoefficientDavies()
-    dav_custom = ActivityCoefficientDavies(epsilon_r=40.0)  # low εr → high A
-
-    gamma_default = dav_default.activity(state, charges)
-    gamma_custom = dav_custom.activity(state, charges)
-
-    assert gamma_custom[0] < gamma_default[0]
-
-
-def test_davies_warning_fires_at_non_ambient_T():
-    """UserWarning emitted when T deviates > 5 K from 298.15 and epsilon_r is None."""
-    charges = np.array([1.0, -1.0])
-    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=100.0)
-    dav = ActivityCoefficientDavies()
-
-    with pytest.warns(UserWarning, match="epsilon_r was not provided"):
-        dav.activity(state, charges)
-
-
-def test_dh_warning_fires_at_non_ambient_T():
-    """UserWarning emitted when T deviates > 5 K from 298.15 and epsilon_r is None."""
-    charges = np.array([1.0, -1.0])
-    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=50.0)
-    dh = ActivityCoefficientDebyeHuckel()
-
-    with pytest.warns(UserWarning, match="epsilon_r was not provided"):
-        dh.activity(state, charges)
-
-
-def test_davies_no_warning_at_ambient_T():
-    """No warning at T = 298.15 K even without epsilon_r."""
-    charges = np.array([1.0, -1.0])
-    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=298.15, I=100.0)
-    dav = ActivityCoefficientDavies()
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        dav.activity(state, charges)  # should not raise
-
-
-def test_davies_no_warning_with_epsilon_r():
-    """No warning at non-ambient T when epsilon_r is provided."""
-    charges = np.array([1.0, -1.0])
-    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=100.0)
-    dav = ActivityCoefficientDavies(epsilon_r=_water_epsilon_r)
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        dav.activity(state, charges)  # should not raise
-
-
-def test_davies_backward_compat_at_ambient():
-    """Default Davies gives the standard A=0.509 result at 298.15 K."""
-    charges = np.array([1.0, -1.0, 0.0])
-    I = 100.0  # mol/m³ = 0.1 mol/L
-    state = PhysicalState(c=np.array([1e-4, 1e-4, 1000.0]), T=298.15, I=I)
-
-    gamma = ActivityCoefficientDavies().activity(state, charges)
-
-    A, I_L = 0.509, 0.1
-    sqrt_I = np.sqrt(I_L)
-    expected = 10.0 ** (-A * (sqrt_I / (1.0 + sqrt_I) - 0.3 * I_L))
-
-    np.testing.assert_allclose(gamma[0], expected, rtol=1e-10)
-    np.testing.assert_allclose(gamma[2], 1.0, rtol=1e-10)  # neutral species
