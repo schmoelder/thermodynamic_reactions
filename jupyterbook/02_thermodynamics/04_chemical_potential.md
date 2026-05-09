@@ -198,6 +198,8 @@ $$
 It is the volume change when an infinitesimal amount of $i$ is added at constant $T$, $P$, and composition.
 For an ideal gas, $\bar{V}_i = V_m = RT/P$ for all components.
 For liquids, $\bar{V}_i \approx 10^{-5}\,\text{m}^3/\text{mol}$, roughly three orders of magnitude smaller and nearly independent of composition.
+The same construction applies to any extensive property: the **partial molar enthalpy** $\bar{H}_i = (\partial H/\partial n_i)_{T,P,n_{j\neq i}}$ is the enthalpy increment when an infinitesimal amount of $i$ is added at fixed $T$, $P$, and remaining composition.
+It appears in the energy balance for reacting systems (@implementation-energy-balance).
 
 
 ## From gas to solution

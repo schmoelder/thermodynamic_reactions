@@ -137,7 +137,8 @@ J =
 $$
 
 The top-left block and the top-right column are analytic, computed by `ReactionModel.jacobian()` and `ReactionModel.jacobian_dT()`.
-The energy-balance row (bottom) is evaluated by finite differences; $\rho C_p$ and the enthalpy weighting introduce additional $T$-dependencies not tracked analytically in the current implementation.
+The bottom row is also analytic for structured models: $\partial F_T/\partial c_k = \sum_j (\Delta_r H_j/\rho C_p)\,\partial\varphi_j/\partial c_k$ from `net_rate_jac`, and $\partial F_T/\partial T = -\sum_j (\Delta_r H_j\,\partial\varphi_j/\partial T + \varphi_j\,\mathrm{d}\Delta_r H_j/\mathrm{d}T)/\rho C_p$ from `net_rate_dT` and `d_reaction_enthalpy_dT`.
+`EquilibriumConstantCustom` and `EquilibriumConstantTabulated` substitute finite-difference estimates for $\Delta_r H_j$ and $\mathrm{d}\Delta_r H_j/\mathrm{d}T$; the remaining blocks stay analytic.
 
 
 ## Specifying solvent properties
