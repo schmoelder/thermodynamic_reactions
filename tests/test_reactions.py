@@ -17,6 +17,7 @@ from reactions.api import (
     ActivityCoefficientDavies,
     ActivityCoefficientDebyeHuckel,
     Component,
+    _water_epsilon_r,
     EquilibriumConstant,
     EquilibriumConstantCustom,
     EquilibriumConstantPolynomial,
@@ -1561,3 +1562,112 @@ def test_prescribed_species_ramp():
     B_ana = k * (A0 * result.t - 0.5 * r * result.t**2)
     np.testing.assert_allclose(result["B"], B_ana, rtol=1e-4)
 
+
+# ---------------------------------------------------------------------------
+# E/P4 — T-dependent A in DH/Davies (epsilon_r parameter)
+# ---------------------------------------------------------------------------
+
+
+def test_davies_A_increases_above_ambient():
+    """With T-dependent epsilon_r, Davies A increases above 298 K (εr·T decreases)."""
+    charges = np.array([1.0, -1.0])
+    I = 100.0  # mol/m³
+
+    state_ambient = PhysicalState(c=np.array([1e-4, 1e-4]), T=298.15, I=I)
+    state_warm = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=I)
+
+    dav = ActivityCoefficientDavies(epsilon_r=_water_epsilon_r)
+    gamma_ambient = dav.activity(state_ambient, charges)
+    gamma_warm = dav.activity(state_warm, charges)
+
+    # Higher A → log10(γ) more negative → γ smaller at higher T
+    assert gamma_warm[0] < gamma_ambient[0], (
+        f"Expected gamma(320K)={gamma_warm[0]:.4f} < gamma(298K)={gamma_ambient[0]:.4f}"
+    )
+
+
+def test_dh_A_increases_above_ambient():
+    """With T-dependent epsilon_r, DH A increases above 298 K."""
+    charges = np.array([1.0, -1.0])
+    I = 50.0  # mol/m³
+
+    state_ambient = PhysicalState(c=np.array([1e-4, 1e-4]), T=298.15, I=I)
+    state_warm = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=I)
+
+    dh = ActivityCoefficientDebyeHuckel(epsilon_r=_water_epsilon_r)
+    gamma_ambient = dh.activity(state_ambient, charges)
+    gamma_warm = dh.activity(state_warm, charges)
+
+    assert gamma_warm[0] < gamma_ambient[0]
+
+
+def test_davies_scalar_epsilon_r_overrides_default():
+    """A scalar epsilon_r overrides the stored 25 °C A: lower εr → higher A → lower γ."""
+    charges = np.array([1.0, -1.0])
+    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=298.15, I=100.0)
+
+    dav_default = ActivityCoefficientDavies()
+    dav_custom = ActivityCoefficientDavies(epsilon_r=40.0)  # low εr → high A
+
+    gamma_default = dav_default.activity(state, charges)
+    gamma_custom = dav_custom.activity(state, charges)
+
+    assert gamma_custom[0] < gamma_default[0]
+
+
+def test_davies_warning_fires_at_non_ambient_T():
+    """UserWarning emitted when T deviates > 5 K from 298.15 and epsilon_r is None."""
+    charges = np.array([1.0, -1.0])
+    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=100.0)
+    dav = ActivityCoefficientDavies()
+
+    with pytest.warns(UserWarning, match="epsilon_r was not provided"):
+        dav.activity(state, charges)
+
+
+def test_dh_warning_fires_at_non_ambient_T():
+    """UserWarning emitted when T deviates > 5 K from 298.15 and epsilon_r is None."""
+    charges = np.array([1.0, -1.0])
+    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=50.0)
+    dh = ActivityCoefficientDebyeHuckel()
+
+    with pytest.warns(UserWarning, match="epsilon_r was not provided"):
+        dh.activity(state, charges)
+
+
+def test_davies_no_warning_at_ambient_T():
+    """No warning at T = 298.15 K even without epsilon_r."""
+    charges = np.array([1.0, -1.0])
+    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=298.15, I=100.0)
+    dav = ActivityCoefficientDavies()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        dav.activity(state, charges)  # should not raise
+
+
+def test_davies_no_warning_with_epsilon_r():
+    """No warning at non-ambient T when epsilon_r is provided."""
+    charges = np.array([1.0, -1.0])
+    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=100.0)
+    dav = ActivityCoefficientDavies(epsilon_r=_water_epsilon_r)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        dav.activity(state, charges)  # should not raise
+
+
+def test_davies_backward_compat_at_ambient():
+    """Default Davies gives the standard A=0.509 result at 298.15 K."""
+    charges = np.array([1.0, -1.0, 0.0])
+    I = 100.0  # mol/m³ = 0.1 mol/L
+    state = PhysicalState(c=np.array([1e-4, 1e-4, 1000.0]), T=298.15, I=I)
+
+    gamma = ActivityCoefficientDavies().activity(state, charges)
+
+    A, I_L = 0.509, 0.1
+    sqrt_I = np.sqrt(I_L)
+    expected = 10.0 ** (-A * (sqrt_I / (1.0 + sqrt_I) - 0.3 * I_L))
+
+    np.testing.assert_allclose(gamma[0], expected, rtol=1e-10)
+    np.testing.assert_allclose(gamma[2], 1.0, rtol=1e-10)  # neutral species
