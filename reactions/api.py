@@ -32,7 +32,7 @@ from .activity import (
     ActivityCoefficientDebyeHuckel,
     ActivityCoefficientIdeal,
     _DH_A_CONST,
-    _DH_B_SI_CONST,
+    _DH_B_L_CONST,
     _water_epsilon_r,
 )
 from .equilibrium import (
@@ -102,7 +102,7 @@ __all__ = [
     "ActivityCoefficientDavies",
     "ActivityCoefficientCustom",
     "_DH_A_CONST",
-    "_DH_B_SI_CONST",
+    "_DH_B_L_CONST",
     "_water_epsilon_r",
     # equilibrium constants
     "EquilibriumConstantBase",

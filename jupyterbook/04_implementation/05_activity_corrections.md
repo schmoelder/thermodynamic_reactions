@@ -199,7 +199,7 @@ Both scale as $z_i^2$: a divalent ion at the same ionic strength receives a corr
 
 ## Ionic strength
 
-For the Debye-Hückel and Davies models, $\gamma_i$ depends on the ionic strength $I = \frac{1}{2}\sum_i z_i^2 c_i / c^\circ$, which must be evaluated from the current composition before $\gamma_i$ can be computed.
+For the Debye-Hückel and Davies models, $\gamma_i$ depends on the ionic strength $I = \frac{1}{2}\sum_i z_i^2 c_i$ [mol/m³], which must be evaluated from the current composition before $\gamma_i$ can be computed.
 Three strategies cover different modelling choices:
 
 **`IonicStrengthIdeal`** computes $I$ from the dynamic species in the model.
