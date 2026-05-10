@@ -13,13 +13,13 @@ CADET solves a transport equation with a reaction source term $\mathbf{r}(\mathb
 This part develops one reaction model, extended one feature at a time:
 
 $$
-\varphi(a_i, T) = k_f(T)\prod_i a_i^{e_i} - k_r(T)\prod_j a_j^{e_j},
-\quad k_r(T) = \frac{k_f(T)}{K(T)},
+\varphi(a_i, T) = k^f(T)\prod_i a_i^{e_i^f} - k^r(T)\prod_i a_i^{e_i^r},
+\quad k^r(T) = \frac{k^f(T)}{K(T)},
 \quad a_i = \frac{\gamma_i c_i}{c^\circ}.
 $$
 
 Each chapter adds one feature.
-`MassActionReaction` is the existing CADET interface and a special case of `ThermodynamicReaction` with $\gamma_i = 1$, $c^\circ = 1\ \text{M}$, and $k_r$ as a free parameter.
+`MassActionReaction` is the existing CADET interface and a special case of `ThermodynamicReaction` with $\gamma_i = 1$, $c^\circ = 1\ \text{M}$, and $k^r$ as a free parameter.
 Equilibrium (via $K(T)$) determines the admissible state; kinetics only sets how fast it is reached.
 
 ```{admonition} Install
@@ -39,10 +39,10 @@ Every chapter in this part configures one of three independent arguments:
 | Argument               | Controls                                                   | Default                      |
 | ---------------------- | ---------------------------------------------------------- | ---------------------------- |
 | `equilibrium_constant` | $K(T)$; sets the equilibrium composition                   | required                     |
-| `rate_constant`        | $k_f(T)$; sets the relaxation timescale (`mode="kinetic"`) | omit for `mode="equil"`      |
+| `rate_constant`        | $k^f(T)$; sets the relaxation timescale (`mode="kinetic"`) | omit for `mode="equil"`      |
 | `activity_coefficient` | $\gamma_i$; corrects for non-ideality                      | `ActivityCoefficientIdeal()` |
 
-`MassActionReaction` is a special case: $\gamma_i = 1$, $c^\circ = 1\ \text{M}$, and $k_r$ treated as a free parameter rather than derived from $K(T)$.
+`MassActionReaction` is a special case: $\gamma_i = 1$, $c^\circ = 1\ \text{M}$, and $k^r$ treated as a free parameter rather than derived from $K(T)$.
 
 **Kinetic source term.**
 The reaction contribution to $\partial c_i / \partial t$ is $r_i = \sum_j \nu_{ij}\, \varphi_j(\mathbf{a}, T)$, where $\varphi_j$ is evaluated in terms of activities $a_i = \gamma_i c_i / c^\circ$.
@@ -55,7 +55,7 @@ This is a timescale-separation limit (fast reactions), not a limit in the value 
 Ionic strength $I = \tfrac{1}{2}\sum_i c_i z_i^2$ is computed once per time step and passed to every activity coefficient module via `PhysicalState`.
 The ionic strength model and activity coefficient model are decoupled at the API level and can be combined consistently within their validity ranges.
 
-All reactions are evaluated as $\varphi(\mathbf{a}, T)$; the rest of the API only determines how $\mathbf{a}$, $k_f$, and $K$ are computed.
+All reactions are evaluated as $\varphi(\mathbf{a}, T)$; the rest of the API only determines how $\mathbf{a}$, $k^f$, and $K$ are computed.
 ```
 
 **Chapters in this part:**

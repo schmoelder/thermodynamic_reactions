@@ -79,7 +79,7 @@ v_lin  = (Vmax / Km) * S_vals
 fig, ax = plt.subplots()
 ax.plot(S_vals, v_mm,   label="Michaelis-Menten")
 ax.plot(S_vals, v_hill, label=r"Hill ($n = 3$)")
-ax.plot(S_vals, v_lin,  ls=":", color="gray", label=r"linear ($k_f = V_\mathrm{max}/K_m$)")
+ax.plot(S_vals, v_lin,  ls=":", color="gray", label=r"linear ($k^f = V_\mathrm{max}/K_m$)")
 ax.axhline(Vmax, color="gray", lw=0.8, ls="--", label=r"$V_\mathrm{max}$")
 ax.axvline(Km,   color="gray", lw=0.8, ls="-.", label=r"$K_m$")
 ax.set_xlabel(r"$[S]\ [\mathrm{mol/m^3}]$")

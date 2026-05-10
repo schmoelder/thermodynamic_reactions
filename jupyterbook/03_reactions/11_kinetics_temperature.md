@@ -8,7 +8,7 @@ kernelspec:
 # Temperature Dependence of Rate Constants
 
 @kinetics established how mechanism determines the form of a rate law.
-@mass-action-law showed that thermodynamic consistency requires $k_f/k_r = K$.
+@mass-action-law showed that thermodynamic consistency requires $k^f/k^r = K$.
 This chapter addresses how the rate constant $k$ itself depends on temperature, and what that implies for the barrier heights.
 
 ## Activation energy
@@ -176,18 +176,18 @@ TST explains why $E_a$ is an enthalpy, not a Gibbs energy: entropy enters separa
 
 ## Barrier heights and reaction enthalpy
 
-@mass-action-law established that thermodynamic consistency requires $k_f/k_r = K$.
-With both rate constants following Arrhenius, $k_f = A_f e^{-E_{a,f}/RT}$ and $k_r = A_r e^{-E_{a,r}/RT}$, their ratio is $\propto e^{-(E_{a,f} - E_{a,r})/RT}$.
+@mass-action-law established that thermodynamic consistency requires $k^f/k^r = K$.
+With both rate constants following Arrhenius, $k^f = A^f e^{-E_a^f/RT}$ and $k^r = A^r e^{-E_a^r/RT}$, their ratio is $\propto e^{-(E_a^f - E_a^r)/RT}$.
 The van't Hoff equation gives $K(T) \propto e^{-\Delta H^\circ_r/RT}$ when $\Delta H^\circ_r$ is constant.
 Matching the two expressions requires:
 
 $$
-E_{a,f} - E_{a,r} = \Delta H^\circ_r
+E_a^f - E_a^r = \Delta H^\circ_r
 $$
 
 The barrier heights must differ by exactly the reaction enthalpy.
 This is visible in @fig-arrhenius-barrier: the forward and reverse barriers are separated by $|\Delta_r H^\circ|$, and the exothermic direction has the lower barrier.
-How to maintain $k_f/k_r = K(T)$ automatically at every temperature is taken up in @implementation-kinetics.
+How to maintain $k^f/k^r = K(T)$ automatically at every temperature is taken up in @implementation-kinetics.
 
 ---
 

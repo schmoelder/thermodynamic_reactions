@@ -17,7 +17,7 @@ It is not required for @implementation-activity or the acid-base chapters that f
 
 The kinetic and equilibrium frameworks in @implementation-kinetics model temperature as either a fixed parameter or a prescribed function $T(t)$ supplied externally.
 Both require the temperature programme to be known before the simulation begins.
-In practice, reactions release or absorb heat that immediately changes the fluid temperature, which in turn shifts $K(T)$ and $k_f(T)$ and changes the rate.
+In practice, reactions release or absorb heat that immediately changes the fluid temperature, which in turn shifts $K(T)$ and $k^f(T)$ and changes the rate.
 Modelling this thermal feedback requires treating $T$ as a dynamic state variable governed by the energy balance.
 
 
@@ -93,22 +93,22 @@ For pure water ($\rho = 1000\ \mathrm{kg/m^3}$, $M = 0.018\ \mathrm{kg/mol}$, $C
 ## Temperature dependence of the reaction flux
 
 Appending $T$ to the concentration state vector requires the partial derivative $\partial\varphi_j/\partial T$ for each reaction.
-Splitting the flux using $k_r = k_f/K$, with the activity products $P_\text{fwd}$ and $P_\text{bwd}$ independent of $T$:
+Splitting the flux using $k^r = k^f/K$, with the activity products $P^f$ and $P^r$ independent of $T$:
 
 $$
-\varphi_j = k_f(T)\,P_\text{fwd} - k_r(T)\,P_\text{bwd}.
+\varphi_j = k^f(T)\,P^f - k^r(T)\,P^r.
 $$
 
 Differentiating with respect to $T$ and collecting terms:
 
 $$
 \frac{\partial\varphi_j}{\partial T}
-= \frac{d\ln k_f}{dT}\,\varphi_j
-+ k_r\,\frac{d\ln K}{dT}\,P_\text{bwd}.
+= \frac{d\ln k^f}{dT}\,\varphi_j
++ k^r\,\frac{d\ln K}{dT}\,P^r.
 $$ (eq-dvarphi-dT)
 
 The first term scales the current flux by the logarithmic rate sensitivity; the second is a correction from the shifting equilibrium.
-For `RateConstantArrhenius` and `EquilibriumConstantVantHoff`, both $d\ln k_f/dT = E_a/(RT^2)$ and $d\ln K/dT = \Delta_r H^\circ/(RT^2)$ are analytic (@kinetics-temperature, @equilibrium-temperature).
+For `RateConstantArrhenius` and `EquilibriumConstantVantHoff`, both $d\ln k^f/dT = E_a/(RT^2)$ and $d\ln K/dT = \Delta_r H^\circ/(RT^2)$ are analytic (@kinetics-temperature, @equilibrium-temperature).
 `EquilibriumConstantCustom` and `EquilibriumConstantTabulated` return `None` for these derivatives; the library substitutes a finite-difference estimate automatically.
 
 

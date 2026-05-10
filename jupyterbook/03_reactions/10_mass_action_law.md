@@ -15,18 +15,18 @@ The mass action law (MAL) provides a general rate expression for reversible reac
 For a reversible reaction $\sum_i \nu_i \text{A}_i = 0$, the MAL assigns exponents equal to the stoichiometric coefficients:
 
 $$
-r = k_f \prod_{\text{reactants}} c_i^{|\nu_i|} - k_r \prod_{\text{products}} c_j^{\nu_j}
+r = k^f \prod_{\text{reactants}} c_i^{|\nu_i|} - k^r \prod_{\text{products}} c_j^{\nu_j}
 $$
 
 At equilibrium $r = 0$, so:
 
 $$
-\frac{k_f}{k_r} = \frac{\prod_{\text{products}} c_j^{\nu_j}}{\prod_{\text{reactants}} c_i^{|\nu_i|}}\bigg|_\text{eq} = K
+\frac{k^f}{k^r} = \frac{\prod_{\text{products}} c_j^{\nu_j}}{\prod_{\text{reactants}} c_i^{|\nu_i|}}\bigg|_\text{eq} = K
 $$
 
 The ratio of rate constants equals the equilibrium constant.
 This **thermodynamic consistency condition** is a constraint that any kinetic model must satisfy to be consistent with @equilibrium.
-Specifying $K$ (from thermodynamics) and either $k_f$ or $k_r$ fully determines both.
+Specifying $K$ (from thermodynamics) and either $k^f$ or $k^r$ fully determines both.
 
 The MAL is exact for elementary reactions, where stoichiometric coefficients reflect the actual molecularity of the collision.
 For complex mechanisms it is an approximation, but one that is thermodynamically consistent by construction: regardless of the path, the steady state reached by MAL coincides with the thermodynamic equilibrium.
@@ -34,8 +34,8 @@ For complex mechanisms it is an approximation, but one that is thermodynamically
 ```{important}
 **MAL vs. empirical power laws.**
 Users sometimes specify reaction orders that differ from stoichiometry, for instance when fitting an observed half-order experimentally.
-The resulting power law $r = k_f \prod c_i^{n_i} - k_r \prod c_j^{m_j}$ with $n_i \neq |\nu_i|$ is no longer the mass action law.
-At equilibrium $r = 0$ gives $k_f/k_r = \prod c_j^{m_j} / \prod c_i^{n_i}$, which depends on composition and is not equal to $K$ in general.
+The resulting power law $r = k^f \prod c_i^{n_i} - k^r \prod c_j^{m_j}$ with $n_i \neq |\nu_i|$ is no longer the mass action law.
+At equilibrium $r = 0$ gives $k^f/k^r = \prod c_j^{m_j} / \prod c_i^{n_i}$, which depends on composition and is not equal to $K$ in general.
 Thermodynamic consistency is lost: the model does not guarantee the correct steady state.
 Use empirical orders when they fit data; use MAL when thermodynamic consistency matters.
 ```
@@ -45,7 +45,7 @@ Use empirical orders when they fit data; use MAL when thermodynamic consistency 
 
 $K$ is fixed by $\Delta_r G^\circ = -RT \ln K$, which depends only on the standard chemical potentials of the species, not on how the reaction proceeds.
 A catalyst, a solvent change, or a complex multi-step mechanism alters the rate at which equilibrium is reached, but not the equilibrium composition itself.
-The consistency condition $k_f/k_r = K$ is exact for elementary steps.
+The consistency condition $k^f/k^r = K$ is exact for elementary steps.
 For a complex mechanism, the apparent overall rate constants can be concentration-dependent (Michaelis-Menten is the canonical example), and their ratio need not equal $K$ globally.
 The relation holds only for each microscopic elementary step individually.
 ```
@@ -72,8 +72,8 @@ r_net = r_f - r_r
 xi_eq = K / (1 + K)
 
 fig, ax = plt.subplots(figsize=(7, 4))
-ax.plot(xi, r_f,   color="C0",     linewidth=2.0, label=r"$r_f = k_f[\mathrm{A}]$")
-ax.plot(xi, r_r,   color="C1",     linewidth=2.0, label=r"$r_r = k_r[\mathrm{B}]$")
+ax.plot(xi, r_f,   color="C0",     linewidth=2.0, label=r"$r_f = k^f[\mathrm{A}]$")
+ax.plot(xi, r_r,   color="C1",     linewidth=2.0, label=r"$r_r = k^r[\mathrm{B}]$")
 ax.plot(xi, r_net, color="#1c4f8a",linewidth=2.0, linestyle="--",
         label=r"$r_\mathrm{net}$")
 ax.axvline(xi_eq, color="gray", linestyle=":", linewidth=1.2)
@@ -91,11 +91,11 @@ fig.tight_layout()
 ```{figure} #cell-mal
 :name: fig-mal
 
-Forward rate $r_f$, reverse rate $r_r$, and net rate for $\ce{A <=> B}$ with $K = k_f/k_r = 3$.
+Forward rate $r_f$, reverse rate $r_r$, and net rate for $\ce{A <=> B}$ with $K = k^f/k^r = 3$.
 The net rate is zero at $\xi_\text{eq} = K/(1+K) = 0.75$, the equilibrium extent predicted by @equilibrium.
-Setting $k_f/k_r = K$ is what makes the kinetic model land on the correct thermodynamic equilibrium.
+Setting $k^f/k^r = K$ is what makes the kinetic model land on the correct thermodynamic equilibrium.
 ```
 
 ---
 
-The next chapter asks how the rate constant $k$ itself depends on temperature, connecting the Arrhenius equation back to the Maxwell-Boltzmann distribution and the barrier-enthalpy consequence of the consistency condition $k_f/k_r = K(T)$.
+The next chapter asks how the rate constant $k$ itself depends on temperature, connecting the Arrhenius equation back to the Maxwell-Boltzmann distribution and the barrier-enthalpy consequence of the consistency condition $k^f/k^r = K(T)$.

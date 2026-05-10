@@ -59,12 +59,12 @@ where $\mathbf{S}$ is the stoichiometric matrix and $\boldsymbol{\varphi}$ colle
 Each reaction $j$ contributes
 
 $$
-\varphi_j = k_{f,j}(T)\prod_{i \in \text{reactants}} a_i^{e_{ij}}
-           - k_{r,j}(T)\prod_{i \in \text{products}} a_i^{e_{ij}},
+\varphi_j = k_j^f(T)\prod_i a_i^{e_{ij}^f}
+           - k_j^r(T)\prod_i a_i^{e_{ij}^r},
 $$
 
-with activities $a_i = \gamma_i(\mathbf{c}, I)\, c_i / c^\circ$ and kinetic exponents $e_{ij} \geq 0$.
-In CADET, $e_{ij}$ and the stoichiometric coefficients $\nu_{ij}$ are independent parameters; they coincide for elementary reactions but may differ for empirical rate laws.
+with activities $a_i = \gamma_i(\mathbf{c}, I)\, c_i / c^\circ$ and kinetic exponents $e_{ij}^f, e_{ij}^r \geq 0$.
+In CADET, $e_{ij}^f$, $e_{ij}^r$ and the stoichiometric coefficients $\nu_{ij}$ are independent parameters; for an elementary reaction, $e_{ij}^f = |\nu_{ij}|$ for reactants (zero for products) and $e_{ij}^r = |\nu_{ij}|$ for products (zero for reactants), but they may differ for empirical rate laws.
 Thermodynamic equilibrium enters as
 
 $$
@@ -74,7 +74,7 @@ Q_j(\mathbf{a}) = K_j(T).
 $$
 
 Kinetic and equilibrium modes are two closures of the same stoichiometric structure, selected by timescale separation: kinetic mode resolves the relaxation trajectory; equilibrium mode imposes $Q(\mathbf{a}, T) = K(T)$ directly.
-Thermodynamic consistency links both through $k_{f}(T)/k_{r}(T) = K(T)$.
+Thermodynamic consistency links both through $k^f(T)/k^r(T) = K(T)$.
 
 ## Building blocks
 
@@ -119,16 +119,16 @@ It exposes `residual(c, c_dot, T)` and `jacobian(c, c_dot, T)`, which implement 
 ## `MassActionReaction` as starting point
 
 `MassActionReaction` is the existing reaction interface in CADET.
-For a reversible step it takes $k_f$ and $k_r$ as independent inputs:
+For a reversible step it takes $k^f$ and $k^r$ as independent inputs:
 
 ```python
 MassActionReaction("A <-> B", kf=2.0, kr=0.5)
 ```
 
-At fixed temperature `MassActionReaction` is exact: $k_f/k_r$ directly sets the equilibrium composition, here $c_\text{B}/c_\text{A} = k_f/k_r = 4$.
+At fixed temperature `MassActionReaction` is exact: $k^f/k^r$ directly sets the equilibrium composition, here $c_\text{B}/c_\text{A} = k^f/k^r = 4$.
 This ratio is a free parameter: nothing in the interface requires it to equal the equilibrium constant $K$ derived from $\Delta_r G^\circ = -RT \ln K$ (@equilibrium).
 When temperature changes, $K(T)$ shifts; `MassActionReaction` has no mechanism to follow it.
-`ThermodynamicReaction` addresses this by enforcing $k_r(T) = k_f(T)/K(T)$ at every evaluation, so the long-time limit always tracks the thermodynamically correct equilibrium.
+`ThermodynamicReaction` addresses this by enforcing $k^r(T) = k^f(T)/K(T)$ at every evaluation, so the long-time limit always tracks the thermodynamically correct equilibrium.
 
 ---
 

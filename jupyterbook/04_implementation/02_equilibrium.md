@@ -9,8 +9,8 @@ kernelspec:
 # Equilibrium and Thermodynamic Consistency
 
 Part 3 established the equilibrium condition $Q = K$ and its temperature dependence via the van't Hoff equation (@equilibrium, @equilibrium-temperature).
-`ThermodynamicReaction` is the physically constrained formulation: given $K(T)$, it enforces $\ln Q(\mathbf{a}, T) = \ln K(T)$ as a residual constraint, and derives $k_r(T) = k_f(T)/K(T)$ whenever a rate constant is also supplied.
-`MassActionReaction`, by contrast, treats $k_r$ as a free parameter with no thermodynamic grounding (@implementation-source-term).
+`ThermodynamicReaction` is the physically constrained formulation: given $K(T)$, it enforces $\ln Q(\mathbf{a}, T) = \ln K(T)$ as a residual constraint, and derives $k^r(T) = k^f(T)/K(T)$ whenever a rate constant is also supplied.
+`MassActionReaction`, by contrast, treats $k^r$ as a free parameter with no thermodynamic grounding (@implementation-source-term).
 This chapter works through the equilibrium mode, leaving kinetic mode for the next chapter.
 
 
@@ -95,7 +95,7 @@ At $K = 1$ both species are equally present; at the example value $K = 4$ (dotte
 
 ## Temperature dependence of $K$
 
-When temperature varies, a fixed ratio $k_f/k_r$ calibrated at one temperature diverges from the true $K(T)$; `ThermodynamicReaction` tracks it exactly at every temperature (@fig-eq-drift).
+When temperature varies, a fixed ratio $k^f/k^r$ calibrated at one temperature diverges from the true $K(T)$; `ThermodynamicReaction` tracks it exactly at every temperature (@fig-eq-drift).
 
 ```{code-cell} ipython3
 :tags: [remove-cell]
@@ -114,7 +114,7 @@ K_fixed = np.full_like(T_sweep, K_ref)
 
 fig, ax = plt.subplots()
 ax.plot(T_sweep - 273.15, K_true,  color="C0", label=r"$K(T)$ [van't Hoff]")
-ax.plot(T_sweep - 273.15, K_fixed, color="C1", ls="--", label=f"$k_f/k_r$ [fixed at {T_ref - 273.15:.0f} °C]")
+ax.plot(T_sweep - 273.15, K_fixed, color="C1", ls="--", label=f"$k^f/k^r$ [fixed at {T_ref - 273.15:.0f} °C]")
 ax.fill_between(T_sweep - 273.15, K_true, K_fixed, alpha=0.15, color="C3")
 ax.axvline(T_ref - 273.15, color="gray", lw=0.8, ls=":", label="calibration temperature")
 ax.set_xlabel(r"$T$ [°C]")
@@ -126,7 +126,7 @@ fig.tight_layout()
 ```{figure} #cell-eq-drift
 :name: fig-eq-drift
 
-Equilibrium constant $K(T)$ (van't Hoff, $\Delta H^\circ = -20\ \mathrm{kJ/mol}$) alongside the fixed ratio $k_f/k_r$ calibrated at 25 °C.
+Equilibrium constant $K(T)$ (van't Hoff, $\Delta H^\circ = -20\ \mathrm{kJ/mol}$) alongside the fixed ratio $k^f/k^r$ calibrated at 25 °C.
 The two curves coincide only at the calibration temperature; the shaded region shows how the divergence grows away from it.
 `ThermodynamicReaction` with `EquilibriumConstantVantHoff` keeps the ratio on the $K(T)$ curve at every temperature.
 ```
@@ -274,4 +274,4 @@ Both slot into `ThermodynamicReaction` identically to the van't Hoff forms.
 ---
 
 Equilibrium mode determines *where* the system ends up; it says nothing about *how fast* it gets there.
-The next chapter introduces kinetic mode, where a rate constant sets the relaxation timescale while $k_r(T) = k_f(T)/K(T)$ remains enforced throughout (@implementation-kinetics).
+The next chapter introduces kinetic mode, where a rate constant sets the relaxation timescale while $k^r(T) = k^f(T)/K(T)$ remains enforced throughout (@implementation-kinetics).

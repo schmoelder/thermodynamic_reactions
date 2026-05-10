@@ -10,12 +10,12 @@ CADET simulates chromatographic separations by solving coupled mass balances in 
 Reactions between components (protonation, complex formation, aggregation) are currently described using mass-action kinetics:
 
 $$
-r = k_f \prod_i c_i^{\nu_{f,i}} - k_r \prod_i c_i^{\nu_{b,i}},
+r = k^f \prod_i c_i^{\nu_{f,i}} - k^r \prod_i c_i^{\nu_{b,i}},
 $$
 
 where $c_i$ are species concentrations and $\nu_{f,i}$, $\nu_{b,i}$ are the kinetic orders in the forward and reverse directions.
 In the standard mass action law these equal the stoichiometric coefficients; CADET also allows them to be set independently, which matters when the apparent kinetic order differs from stoichiometry.
-The ratio $k_f/k_r$ is an empirical parameter, and non-ideal effects are absorbed into the rate constants.
+The ratio $k^f/k^r$ is an empirical parameter, and non-ideal effects are absorbed into the rate constants.
 This works well for dilute, isothermal systems. Real chromatographic conditions routinely violate both assumptions.
 
 **Ionic strength.**
@@ -48,7 +48,7 @@ For ideal and non-ideal solutions, this defines an equilibrium constant that dep
 The ratio of forward and reverse rate coefficients is not arbitrary but must satisfy
 
 $$
-\frac{k_f(T)}{k_r(T)} = K(T),
+\frac{k^f(T)}{k^r(T)} = K(T),
 $$
 
 where $K(T)$ is determined by thermodynamics.
@@ -56,10 +56,10 @@ This does not remove kinetic parameter estimation: it restricts kinetic models t
 The target rate law is
 
 $$
-r = k_f(T) \prod_i a_i^{\nu_i^f} - k_r(T) \prod_i a_i^{\nu_i^b}, \qquad \frac{k_f(T)}{k_r(T)} = K(T),
+r = k^f(T) \prod_i a_i^{e_i^f} - k^r(T) \prod_i a_i^{e_i^r}, \qquad \frac{k^f(T)}{k^r(T)} = K(T),
 $$
 
-where $a_i = \gamma_i c_i / c^\circ$ are activities, $\nu_i^f$ and $\nu_i^b$ are stoichiometric coefficients, $K(T)$ is the thermodynamic equilibrium constant, and the ratio $k_f / k_r$ is never a free parameter.
+where $a_i = \gamma_i c_i / c^\circ$ are activities, $e_i^f$ and $e_i^r$ are kinetic exponents (equal to $|\nu_i|$ for elementary reactions), $K(T)$ is the thermodynamic equilibrium constant, and the ratio $k^f / k^r$ is never a free parameter.
 pH enters not through this equation directly, but through speciation: acid-base reactions are modelled as fast-equilibrium constraints, and the activities that feed into the rate law already reflect the local protonation state.
 
 The book is structured in four parts.
@@ -80,7 +80,7 @@ The book supports multiple entry points depending on background.
 
 | Background                             | Recommended entry point                             |
 | -------------------------------------- | --------------------------------------------------- |
-| New to thermodynamics                  | Part 1                                              |
+| New to thermodynamics                  | {ref}`statistical-mechanics`                        |
 | Know ideal gas law                     | {ref}`laws-of-thermodynamics`                       |
 | Know Gibbs energy                      | {ref}`nonidealities`                                |
 | Know MAL, want thermodynamic grounding | {ref}`equilibrium` → {ref}`multicomponent` → Part 4 |

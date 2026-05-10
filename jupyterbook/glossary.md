@@ -333,8 +333,8 @@ Macrostate
   Introduced in @entropy.
 
 Mass action law
-: The kinetic rate expression $r = k_f\prod_\text{reactants} c_i^{|\nu_i|} - k_r\prod_\text{products} c_j^{\nu_j}$ that assigns reaction orders equal to stoichiometric coefficients.
-  Exact for elementary reactions; consistent with thermodynamics when $k_f/k_r = K$ is enforced.
+: The kinetic rate expression $r = k^f\prod_\text{reactants} c_i^{|\nu_i|} - k^r\prod_\text{products} c_j^{\nu_j}$ that assigns reaction orders equal to stoichiometric coefficients.
+  Exact for elementary reactions; consistent with thermodynamics when $k^f/k^r = K$ is enforced.
   Introduced in @mass-action-law.
 
 Maxwell-Boltzmann distribution
@@ -403,7 +403,7 @@ Occupancy
 
 Pseudo-first-order
 : A kinetic regime in which a reaction that is formally higher-order appears first-order because one or more reactants are in large excess.
-  For $\ce{A + B -> P}$ with $[B] \gg [A]$, the rate $r \approx k'[A]$ where $k' = k_f[B]$ is the pseudo-first-order rate constant.
+  For $\ce{A + B -> P}$ with $[B] \gg [A]$, the rate $r \approx k'[A]$ where $k' = k^f[B]$ is the pseudo-first-order rate constant.
   Introduced in @kinetics.
 
 Phase

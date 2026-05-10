@@ -9,17 +9,17 @@ kernelspec:
 # Kinetic Mode and Arrhenius Rate Constants
 
 Equilibrium mode enforces $Q = K(T)$ algebraically and determines the composition without any rate information.
-Kinetic mode adds a rate constant $k_f$ that sets the relaxation timescale: the system evolves as an ODE and converges to the same long-time equilibrium, but at a finite speed controlled by $k_f$.
-The constraint $k_r(T) = k_f(T)/K(T)$ is enforced in both modes.
+Kinetic mode adds a rate constant $k^f$ that sets the relaxation timescale: the system evolves as an ODE and converges to the same long-time equilibrium, but at a finite speed controlled by $k^f$.
+The constraint $k^r(T) = k^f(T)/K(T)$ is enforced in both modes.
 
 
 ## Kinetic mode with a fixed rate constant
 
 `ThermodynamicReaction(mode="kinetic")` requires a `rate_constant` argument.
-`RateConstantFixed` supplies a constant $k_f$ independent of temperature; the simplest choice when the rate is known at one operating condition.
+`RateConstantFixed` supplies a constant $k^f$ independent of temperature; the simplest choice when the rate is known at one operating condition.
 
 The rate constant in `ThermodynamicReaction` has units $\text{mol}/(\text{m}^3\cdot\mathrm{s})$ because the reaction flux is evaluated in terms of dimensionless activities $a_i = c_i / c^\circ$ rather than concentrations directly.
-For a first-order reaction at ideal conditions this is related to the mass-action rate constant by $k_f^\text{thermo} = k_f^\text{MA} \cdot c^\circ$ (@implementation-source-term, @mass-action-law).
+For a first-order reaction at ideal conditions this is related to the mass-action rate constant by $k^{f,\text{thermo}} = k^{f,\text{MA}} \cdot c^\circ$ (@implementation-source-term, @mass-action-law).
 
 ```{code-cell} ipython3
 import numpy as np
@@ -94,7 +94,7 @@ fig.tight_layout()
 ```{figure} #cell-kin-fixed
 :name: fig-kin-fixed
 
-Kinetic simulation of $\ce{A <=> B}$ with $K = 4$ and $k_f = 2000\ \mathrm{mol/(m^3 \cdot s)}$.
+Kinetic simulation of $\ce{A <=> B}$ with $K = 4$ and $k^f = 2000\ \mathrm{mol/(m^3 \cdot s)}$.
 Dashed lines are the equilibrium concentrations from `solve_equilibrium`; the trajectory converges to the same values.
 The rate constant sets the timescale; $K$ alone sets the endpoint.
 ```
@@ -105,15 +105,15 @@ The distinction is purely about whether the constraint is imposed algebraically 
 
 ## Arrhenius rate constant
 
-When temperature varies, $k_f$ must change with $T$ as well.
+When temperature varies, $k^f$ must change with $T$ as well.
 The Arrhenius equation (@kinetics-temperature) gives
 
 $$
-k_f(T) = A\,\exp\!\left(-\frac{E_a}{RT}\right).
+k^f(T) = A\,\exp\!\left(-\frac{E_a}{RT}\right).
 $$
 
 `RateConstantArrhenius` evaluates this at any temperature and is passed as the `rate_constant` argument of `ThermodynamicReaction`.
-With $K(T)$ from `EquilibriumConstantVantHoff`, the derived $k_r(T) = k_f(T)/K(T)$ is recomputed at every evaluation, so the ratio tracks $K(T)$ exactly across the full temperature range (@fig-impl-arrhenius).
+With $K(T)$ from `EquilibriumConstantVantHoff`, the derived $k^r(T) = k^f(T)/K(T)$ is recomputed at every evaluation, so the ratio tracks $K(T)$ exactly across the full temperature range (@fig-impl-arrhenius).
 
 ```{code-cell} ipython3
 kf_arr = RateConstantArrhenius(A=1e10, Ea=40e3)
@@ -135,11 +135,11 @@ fig, axes = plt.subplots(1, 2, figsize=(9, 3.8))
 
 axes[0].plot(1000 / T_range, np.log(kf_vals))
 axes[0].set_xlabel(r"$1000\,/\,T\ [\mathrm{K}^{-1}]$")
-axes[0].set_ylabel(r"$\ln k_f$")
+axes[0].set_ylabel(r"$\ln k^f$")
 axes[0].set_title("Arrhenius plot")
 
 axes[1].plot(T_range - 273.15, K_true,       color="C0", label=r"$K(T)$ [van't Hoff]")
-axes[1].plot(T_range - 273.15, ratio_fixed,  color="C1", ls="--", label=r"$k_f(T)\,/\,k_r$ [fixed $k_r$]")
+axes[1].plot(T_range - 273.15, ratio_fixed,  color="C1", ls="--", label=r"$k^f(T)\,/\,k^r$ [fixed $k^r$]")
 axes[1].fill_between(T_range - 273.15, K_true, ratio_fixed, alpha=0.15, color="C3")
 axes[1].axvline(298.15 - 273.15, color="gray", lw=0.8, ls=":", label="calibration T")
 axes[1].set_xlabel(r"$T$ [°C]")
@@ -153,16 +153,16 @@ fig.tight_layout()
 ```{figure} #cell-impl-arrhenius
 :name: fig-impl-arrhenius
 
-Left: Arrhenius plot ($\ln k_f$ vs $1/T$) for $A = 10^{10}\ \mathrm{s}^{-1}$, $E_a = 40\ \mathrm{kJ/mol}$.
-Right: a fixed $k_r$ (calibrated at 25 °C) keeps $k_f(T)/k_r$ on the dashed line while $K(T)$
-shifts with temperature (shaded region); `ThermodynamicReaction` recomputes $k_r = k_f(T)/K(T)$
+Left: Arrhenius plot ($\ln k^f$ vs $1/T$) for $A = 10^{10}\ \mathrm{s}^{-1}$, $E_a = 40\ \mathrm{kJ/mol}$.
+Right: a fixed $k^r$ (calibrated at 25 °C) keeps $k^f(T)/k^r$ on the dashed line while $K(T)$
+shifts with temperature (shaded region); `ThermodynamicReaction` recomputes $k^r = k^f(T)/K(T)$
 at every step, keeping the ratio on the solid $K(T)$ curve.
 ```
 
 
 ## Consistency across temperatures
 
-Pairing `RateConstantArrhenius` with `EquilibriumConstantVantHoff` inside a `ThermodynamicReaction` ensures that at every temperature the library computes $k_r(T) = k_f(T)/K(T)$, so both rate constants co-vary with $T$ and their ratio tracks $K(T)$ exactly.
+Pairing `RateConstantArrhenius` with `EquilibriumConstantVantHoff` inside a `ThermodynamicReaction` ensures that at every temperature the library computes $k^r(T) = k^f(T)/K(T)$, so both rate constants co-vary with $T$ and their ratio tracks $K(T)$ exactly.
 
 ```{code-cell} ipython3
 model = ReactionModel(
@@ -193,7 +193,7 @@ for T in T_check:
     )
 ```
 
-The table confirms that $k_f(T)/k_r(T) = K(T)$ holds to machine precision at every temperature, because $k_r(T)$ is defined as $k_f(T)/K(T)$: thermodynamic consistency is structural, not a numerical approximation.
+The table confirms that $k^f(T)/k^r(T) = K(T)$ holds to machine precision at every temperature, because $k^r(T)$ is defined as $k^f(T)/K(T)$: thermodynamic consistency is structural, not a numerical approximation.
 
 
 ## Temperature-dependent equilibrium in a kinetic simulation
@@ -255,14 +255,14 @@ with $E_a = 40\ \mathrm{kJ/mol}$, $\Delta H^\circ = -20\ \mathrm{kJ/mol}$.
 Dashed lines are the analytical equilibria $c_\text{B}^\text{eq} = c_\text{tot}\,K(T)/(1+K(T))$.
 The exothermic reaction has a smaller $K$ at higher temperature (Le Chatelier's principle),
 so less B accumulates at $320\ \text{K}$.
-Both reach equilibrium faster at $320\ \text{K}$ because $k_f$ increases with temperature.
+Both reach equilibrium faster at $320\ \text{K}$ because $k^f$ increases with temperature.
 ```
 
 ```{admonition} Limitation: elementary kinetics assumed
 :class: warning
 
 `ThermodynamicReaction(mode="kinetic")` with `RateConstantFixed` or `RateConstantArrhenius` assumes the overall rate law is elementary in activities: reaction order equals stoichiometric coefficient.
-For complex mechanisms, the apparent rate constant can depend on concentration (Michaelis-Menten is the canonical example), and the apparent macroscopic rate constants may not satisfy $k_f/k_r = K$ (@mass-action-law).
+For complex mechanisms, the apparent rate constant can depend on concentration (Michaelis-Menten is the canonical example), and the apparent macroscopic rate constants may not satisfy $k^f/k^r = K$ (@mass-action-law).
 In those cases, use `EnzymaticReaction` with a custom rate closure (@implementation-enzyme).
 Thermodynamic consistency at the overall reaction level cannot be enforced automatically; it must be verified against the microscopic mechanism.
 ```
@@ -270,7 +270,7 @@ Thermodynamic consistency at the overall reaction level cannot be enforced autom
 ## Prescribed temperature programme
 
 The two-temperature comparison runs each trajectory at a fixed temperature.
-Passing a callable `T(t)` to `simulate` lets the temperature vary continuously within a single integration: the solver evaluates $k_f(T(t))$, $K(T(t))$, and $k_r(T(t)) = k_f(T(t))/K(T(t))$ at every step, so the instantaneous equilibrium composition shifts along with the temperature.
+Passing a callable `T(t)` to `simulate` lets the temperature vary continuously within a single integration: the solver evaluates $k^f(T(t))$, $K(T(t))$, and $k^r(T(t)) = k^f(T(t))/K(T(t))$ at every step, so the instantaneous equilibrium composition shifts along with the temperature.
 
 ```{code-cell} ipython3
 T_start, T_end, t_end = 298.15, 320.0, 10.0
@@ -320,7 +320,7 @@ Right: the prescribed temperature programme stored in `result_ramp.T_profile`.
 The exothermic reaction loses product B as temperature rises, consistent with Le Chatelier's principle.
 ```
 
-The trajectory tracks the moving equilibrium closely because $k_f$ is large relative to the ramp rate.
+The trajectory tracks the moving equilibrium closely because $k^f$ is large relative to the ramp rate.
 A slower rate constant or a faster ramp would introduce a visible lag between the solid and dashed curves, showing that temperature-induced equilibrium shifts are rate-limited by kinetics, not instantaneous.
 
 ---

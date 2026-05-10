@@ -15,6 +15,7 @@ kernelspec:
 | -------------------- | ----------------------------------------------------------------------- | ---------------------------- | --------------------------- |
 | $A$                  | Helmholtz energy ($= U - TS$)                                           | J                            | @thermodynamic-potentials   |
 | $A$                  | Pre-exponential factor                                                  | same as $k$                  | @kinetics-temperature       |
+| $A^f$, $A^r$         | Forward and reverse pre-exponential factors                             | same as $k$                  | @kinetics-temperature       |
 | $a$, $b$             | Van der Waals constants                                                 | various                      | @nonidealities              |
 | $a_i$                | Activity of species $i$                                                 |                              | @mixing                     |
 | $c^\circ$            | Standard concentration $= 1$ mol/L                                      | mol/L                        | @chemical-potential         |
@@ -22,8 +23,9 @@ kernelspec:
 | $c_s$                | Counter-ion concentration in solution (SMA)                             | mol/L                        | @multicomponent             |
 | $C_p$                | Heat capacity at constant pressure                                      | J/(mol K)                    | @thermodynamic-potentials   |
 | $C_{p,k}$            | Molar heat capacity of solvent species $k$                              | J/(mol K)                    | @implementation-energy-balance |
-| $e_{ij}$             | Kinetic exponent of species $i$ in reaction $j$ (CADET)                 |                              | @implementation-source-term |
+| $e_{ij}^f$, $e_{ij}^r$ | Kinetic exponents of species $i$ in reaction $j$, forward and reverse; $e_{ij}^f = \lvert\nu_{ij}\rvert$ for reactants for elementary reactions | — | @implementation-source-term |
 | $E_a$                | Activation energy                                                       | J/mol                        | @maxwell-boltzmann          |
+| $E_a^f$, $E_a^r$    | Forward and reverse activation energies; $E_a^f - E_a^r = \Delta_r H^\circ$ | J/mol               | @kinetics-temperature       |
 | $E_\text{tot}$       | Total enzyme concentration                                              | mol/L                        | @implementation-enzyme      |
 | $F$                  | Faraday constant $= 96\,485$ C/mol                                      | C/mol                        | @multicomponent             |
 | $f$                  | Fugacity                                                                | Pa                           | @nonidealities              |
@@ -42,11 +44,11 @@ kernelspec:
 | $H$                  | Enthalpy ($= U + PV$)                                                   | J                            | @thermodynamic-potentials   |
 | $\Delta_r H^\circ$   | Standard reaction enthalpy                                              | J/mol                        | @equilibrium-temperature    |
 | $\mathcal{H}$        | Statistical entropy ($= \ln \Omega = -N\sum_i p_i \ln p_i$)             |                              | @entropy                    |
-| $I$                  | Ionic strength                                                          | mol/L                        | @mixing                     |
+| $I$                  | Ionic strength $= \tfrac{1}{2}\sum_i c_i z_i^2$                         | mol/m$^3$                    | @mixing                     |
 | $k$                  | Rate constant                                                           | mol$^{1-n}$L$^{n-1}$s$^{-1}$ | @kinetics                   |
 | $k_B$                | Boltzmann constant $= 1.380\times10^{-23}$ J/K                          | J/K                          | @entropy                    |
 | $k_\text{cat}$       | Catalytic rate constant (enzyme turnover number)                        | s$^{-1}$                     | @implementation-enzyme      |
-| $k_f$, $k_r$         | Forward and reverse rate constants                                      | same as $k$                  | @mass-action-law            |
+| $k^f$, $k^r$         | Forward and reverse rate constants; with reaction index: $k_j^f$, $k_j^r$ | same as $k$               | @mass-action-law            |
 | $K$                  | Equilibrium constant $= Q\big                                           | _\text{eq}$                  |                             | @equilibrium |
 | $K_a$                | Acid dissociation constant                                              |                              | @acid-base                  |
 | $K_\text{ads}$       | Adsorption equilibrium constant                                         |                              | @adsorption                 |
@@ -329,7 +331,7 @@ $$k = A\,e^{-E_a/RT}$$
 
 **Mass action law**
 
-$$r = k_f \prod_\text{reactants} c_i^{|\nu_i|} - k_r \prod_\text{products} c_j^{\nu_j}, \qquad \frac{k_f}{k_r} = K$$
+$$r = k^f \prod_\text{reactants} c_i^{|\nu_i|} - k^r \prod_\text{products} c_j^{\nu_j}, \qquad \frac{k^f}{k^r} = K$$
 
 **Michaelis-Menten / Monod**
 

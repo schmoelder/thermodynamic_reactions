@@ -29,12 +29,12 @@ $$\Delta_r G^\circ = -RT \ln K$$
 
 **Thermodynamic consistency.**
 Forward and reverse rate constants are not independent:
-$$\frac{k_f}{k_r} = K$$
+$$\frac{k^f}{k^r} = K$$
 
 **Temperature dependence.**
 Both equilibrium constants and rate constants shift with temperature:
 $$\frac{d \ln K}{dT} = \frac{\Delta_r H^\circ}{RT^2} \qquad k = A\,e^{-E_a/RT}$$
-Consistency requires $E_{a,f} - E_{a,r} = \Delta_r H^\circ_r$.
+Consistency requires $E_a^f - E_a^r = \Delta_r H^\circ_r$.
 
 **Saturation (finite-site constraints).**
 The same occupancy constraint governs both equilibrium and kinetic saturation:
@@ -58,6 +58,6 @@ $$q = \frac{q_\text{max}\,K_\text{ads}\,c}{1 + K_\text{ads}\,c} \qquad r = \frac
 *Stage II: Dynamics*
 
 - **@kinetics**: reaction rates, elementary steps, mechanisms, rate-determining step
-- **@mass-action-law**: mass-action rate law, thermodynamic consistency $k_f/k_r = K$
+- **@mass-action-law**: mass-action rate law, thermodynamic consistency $k^f/k^r = K$
 - **@kinetics-temperature**: Arrhenius equation, transition state theory, barrier-enthalpy relation
 - **@saturation**: Michaelis-Menten kinetics, Monod equation, connection to Langmuir
