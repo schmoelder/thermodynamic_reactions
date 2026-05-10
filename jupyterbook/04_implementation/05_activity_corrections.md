@@ -219,7 +219,7 @@ model_nacl = ReactionModel(
     T=298.15,
 )
 
-c = np.array([1e-4, 1e-4, 150.0, 150.0])   # H+, OH-, Cl-, Na+ [mol/m³]
+c = np.array([1e-4, 1e-4, 1000.0, 150.0, 150.0])   # H+, OH-, H2O, Cl-, Na+ [mol/m³]
 state = model_nacl.make_state(c)
 print(f"I = {state.I / 1000:.4f} mol/L   (expected 0.1500 for 150 mM NaCl)")
 ```
@@ -238,7 +238,7 @@ c_nacl = np.linspace(0, 300, 300)
 I_bg   = 50.0   # mol/m³
 
 def eval_I_ideal(c_salt):
-    c_vec = np.array([1e-4, 1e-4, c_salt, c_salt])
+    c_vec = np.array([1e-4, 1e-4, 1000.0, c_salt, c_salt])
     return model_nacl.make_state(c_vec).I
 
 I_ideal      = np.array([eval_I_ideal(c) for c in c_nacl])
@@ -400,6 +400,42 @@ Apparent pKa of a monovalent weak acid (thermodynamic pKa = 7) as a function of 
 At zero added salt the curve starts at the thermodynamic value; as $I$ increases, $\ce{A-}$ and $\ce{H+}$ are stabilised by the ionic atmosphere, lowering the apparent pKa.
 At 150 mM the suppression reaches $\approx 0.25$--$0.35$ units; ignoring this introduces the same error into any pH calculation that uses the thermodynamic pKa directly.
 ```
+
+
+## Temperature dependence of $A$
+
+The Debye-Hückel parameter $A$ is not a constant: it depends on the dielectric constant $\varepsilon_r$ of the solvent and temperature through (@nonidealities)
+
+$$
+A \propto (\varepsilon_r\, T)^{-3/2}.
+$$
+
+For water, $\varepsilon_r$ decreases from 88 at 0 °C to 56 at 100 °C, so $A$ grows above ambient temperature: ions interact more strongly because thermal motion weakens the dielectric screening.
+Passing `epsilon_r=None` (the default) uses the stored 25 °C value $A = 0.509$ at all temperatures and emits a `UserWarning` when $|T - 298.15| > 5\,\mathrm{K}$.
+
+The library provides `_water_epsilon_r`, a Malmberg-Maryott (1956) correlation valid from 0 to 100 °C, as a ready-made callable:
+
+```{code-cell} ipython3
+import warnings
+from reactions.api import _water_epsilon_r
+
+charges = np.array([1.0, -1.0])
+I       = 150.0  # mol/m³
+
+dav_fixed = ActivityCoefficientDavies()
+dav_Tdep  = ActivityCoefficientDavies(epsilon_r=_water_epsilon_r)
+
+for T in [298.15, 310.0, 330.0]:
+    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=T, I=I)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        g_fixed = dav_fixed.activity(state, charges)[0]
+    g_Tdep = dav_Tdep.activity(state, charges)[0]
+    print(f"T = {T:.2f} K:  γ (fixed A) = {g_fixed:.4f},  γ (T-dep A) = {g_Tdep:.4f}")
+```
+
+At 298 K the two agree by construction; above 298 K the temperature-dependent path gives lower $\gamma$ (stronger non-ideality) as $A$ grows.
+A scalar `epsilon_r` value overrides the 25 °C constant with a fixed dielectric environment, for example `epsilon_r=33.0` for methanol at 25 °C.
 
 ---
 

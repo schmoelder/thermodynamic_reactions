@@ -103,6 +103,9 @@ phosphate = Component("phosphate", [
 ])
 ```
 
+Each `Species` carries a `c_ref` attribute (default 1000 mol/m³) that sets the standard-state concentration $c^\circ_i$ in the activity $a_i = \gamma_i c_i / c^\circ_i$.
+The default corresponds to 1 mol/L, the conventional aqueous standard state; a different value is appropriate for gas-phase species or non-aqueous systems where the natural reference concentration differs.
+
 ```{admonition} Components are a library concept
 :class: note
 
