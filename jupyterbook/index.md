@@ -36,6 +36,11 @@ The current CADET implementation cannot express any of this.
 This book builds the thermodynamic foundation needed to fix it.
 Not as a patch, but as a principled extension that makes the reaction framework self-consistent.
 
+The key insight is that thermodynamics is not a collection of special-case equations.
+It is a coherent mathematical structure: a state function, its natural variables, and rules for differentiating under constraints.
+Named results — van't Hoff, Henderson-Hasselbalch, Debye-Hückel — are not independent empirical patches but consequences of differentiating the same underlying function under different conditions.
+That structure is what makes the extension principled: thermodynamic consistency follows automatically from building the framework correctly, rather than being enforced case by case.
+
 In thermodynamics, equilibrium is defined through chemical potentials, not rate constants.
 At equilibrium, reactions satisfy
 

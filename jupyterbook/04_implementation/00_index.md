@@ -10,7 +10,7 @@ kernelspec:
 Parts 1--3 built the thermodynamic and kinetic theory.
 This part translates it into working code using the `reactions` library.
 CADET solves a transport equation with a reaction source term $\mathbf{r}(\mathbf{c}, T)$ at every spatial point along the column; the flux term handles convection and dispersion, and this library provides $\mathbf{r}$.
-This part develops one reaction model, extended one feature at a time:
+This part develops a reaction model, extended one feature at a time:
 
 $$
 \varphi(a_i, T) = k^f(T)\prod_i a_i^{e_i^f} - k^r(T)\prod_i a_i^{e_i^r},

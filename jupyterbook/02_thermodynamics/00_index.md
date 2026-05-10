@@ -7,6 +7,21 @@ kernelspec:
 (thermodynamics)=
 # Part 2: Thermodynamic Fundamentals
 
+Thermodynamics is the study of energy — how it is stored, transferred as heat or mechanical work, distributed between chemical species, and constrained at equilibrium.
+Structurally, equilibrium thermodynamics reduces to constrained multivariable calculus on state functions.
+The fundamental relation
+
+$$
+dU = TdS - PdV + \sum_i \mu_i\,dn_i
+$$
+
+encodes the entire framework: most results in classical thermodynamics follow from differentiating this relation under different constraints and changes of variables.
+
+Many named thermodynamic relations are not fundamentally independent laws, but follow from differentiating the same fundamental relation under different constraints.
+The Clausius-Clapeyron equation describes the slope of a coexistence curve, van't Hoff relates the temperature dependence of equilibrium to reaction enthalpy, and Gibbs-Duhem expresses the dependency induced by the extensivity of thermodynamic potentials.
+The various thermodynamic potentials ($U$, $H$, $A$, $G$) are Legendre-transformed representations adapted to different experimental controls: enthalpy $H$ exchanges volume for pressure, Helmholtz free energy $A$ exchanges entropy for temperature, and Gibbs free energy $G$ exchanges both.
+For chemistry, where temperature and pressure are typically imposed externally, the Gibbs free energy $G$ provides the natural coordinate system and serves as the central potential developed in this part.
+
 The ideal gas law $PV = nRT$ is the empirical entry point.
 From it, the laws of thermodynamics establish the constraints on how energy flows and how equilibrium is reached.
 Combining the first and second laws yields the fundamental relation $dU = TdS - PdV + \sum_i \mu_i\, dn_i$, from which the Gibbs energy $G$ emerges as the natural potential at constant temperature and pressure: at equilibrium, $G$ is minimised.
