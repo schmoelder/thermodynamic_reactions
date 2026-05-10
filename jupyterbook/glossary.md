@@ -275,6 +275,11 @@ Ideal gas
   Obeys $PV = nRT$ exactly.
   Introduced in @ideal-gas.
 
+Ideal mixing
+: A mixture in which unlike-species interactions are identical to like-species interactions.
+  Characterised by $G^E = 0$, so $\Delta_\text{mix}H = 0$, $\Delta_\text{mix}V = 0$, and $\Delta_\text{mix}G = nRT\sum_i x_i\ln x_i < 0$ (purely entropic driving force).
+  Introduced in @mixing.
+
 Internal energy
 : $U$: the total microscopic energy of a system.
   For an ideal gas, purely kinetic; in general, includes potential energy from intermolecular interactions.

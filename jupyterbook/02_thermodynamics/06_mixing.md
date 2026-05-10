@@ -31,7 +31,7 @@ A **solution** is a liquid mixture in which one component — the **solvent** �
 All other components are **solutes**, present at lower concentration.
 In aqueous chemistry the solvent is water; in chromatography it is the mobile phase.
 The solvent/solute distinction is not merely a convention: it determines which limiting law applies.
-The solvent obeys Raoult's law ($\gamma \to 1$ as $x \to 1$, symmetric reference), while dilute solutes follow Henry's law ($\gamma \to \gamma^\infty$ as $x \to 0$, asymmetric reference) — both emerge naturally from the $G^E$ framework developed below.
+The solvent obeys Raoult's law ($\gamma \to 1$ as $x \to 1$, symmetric reference), while dilute solutes follow Henry's law ($\gamma \to \gamma^\infty$ as $x \to 0$, asymmetric reference); both emerge naturally from the $G^E$ framework developed below.
 
 
 ## Ideal mixing
@@ -60,9 +60,14 @@ $$
 \Delta_\text{mix} H^\text{id} = 0, \qquad \Delta_\text{mix} V^\text{id} = 0
 $$
 
-These identities are the physical content of ideal mixing: no intermolecular interactions, so no heat exchanged and no volume change on mixing.
-The entropy of mixing is not zero — mixing is irreversible and always increases entropy — but the *excess* entropy is zero: $S^E = 0$.
-All excess properties vanish in the ideal limit: $G^E = H^E = V^E = S^E = 0$.
+These identities are the defining feature of ideal mixing: replacing like interactions with unlike ones introduces no additional energetic or volumetric preference, so mixing produces neither heat exchange nor volume change.
+
+The entropy of mixing is nevertheless nonzero: mixing increases the number of accessible molecular arrangements and therefore increases entropy.
+What vanishes in the ideal limit is the *excess* contribution beyond this combinatorial baseline:
+
+$$
+G^E = H^E = V^E = S^E = 0
+$$
 
 
 ## Excess Gibbs energy
@@ -93,6 +98,9 @@ $$
 One function, $G^E$, determines all excess properties simultaneously and self-consistently.
 For water/ethanol, $V^E < 0$ and $H^E < 0$ from the same $G^E$: the mixture is denser than ideal and releases heat on mixing, both consequences of the water--ethanol hydrogen bond being stronger than the average of water--water and ethanol--ethanol interactions.
 
+In practice, $G^E$ models are written in intensive form.
+Define the molar excess Gibbs energy $g^E = G^E/n$; most models specify $g^E/RT$ as a dimensionless function of composition and temperature.
+
 
 ## Activity coefficient as partial molar excess Gibbs energy
 
@@ -107,10 +115,10 @@ The first two terms are the ideal expression from @chemical-potential; the third
 Since $G^E = \sum_i n_i(\mu_i - \mu_i^\text{id})$ and $RT\ln\gamma_i = \mu_i - \mu_i^\text{id}$, the activity coefficient is the partial molar excess Gibbs energy:
 
 $$
-RT\ln\gamma_i = \left(\frac{\partial\, nG^E}{\partial n_i}\right)_{T,P,n_{j\neq i}}
+RT\ln\gamma_i = \left(\frac{\partial G^E}{\partial n_i}\right)_{T,P,n_{j\neq i}}
 $$
 
-This is the central result: $\gamma_i$ is not a fudge factor appended to the ideal expression; it is the derivative of $G^E$ with respect to the moles of species $i$.
+This is the central result: $\gamma_i$ is not an empirical correction appended to the ideal expression; it is the derivative of $G^E$ with respect to the moles of species $i$.
 Any model for $G^E(x, T, P)$ yields all $\gamma_i$ by differentiation.
 
 The **activity** in mole-fraction convention is then:
@@ -125,8 +133,8 @@ The ideal limit $\gamma_i \to 1$ as $x_i \to 1$ is a consequence of the definiti
 ```{admonition} Intuition
 :class: tip
 
-$G^E$ is the correction energy of a mixture: the extra free energy released or absorbed when unlike molecules meet.
-Differentiating with respect to the amount of species $i$ gives the per-molecule version of that correction, the activity coefficient.
+$G^E$ is the extra free energy of the mixture relative to the ideal prediction: positive when unlike interactions are unfavourable, negative when they are favourable.
+Differentiating with respect to the amount of species $i$ gives the per-mole version of that correction, the activity coefficient.
 A negative $G^E$ (exothermic, contracting) gives $\gamma_i < 1$: the species prefers the mixture to the pure state, so its effective concentration is lower than its mole fraction.
 A positive $G^E$ (endothermic) gives $\gamma_i > 1$: the species would rather be with its own kind, behaving as if present at a higher effective concentration.
 ```
@@ -156,9 +164,9 @@ All $\gamma_i \to 1$, so the vapour pressure of each component is $P_i = x_i P_i
 This **symmetric reference state** ($\gamma_i \to 1$ as $x_i \to 1$) holds exactly for ideal mixtures and approximately when the species are chemically similar.
 
 **Henry's law** is the dilute limit $x_i \to 0$.
-In this regime $G^E$ is linear in $x_i$, and $\gamma_i \to \gamma_i^\infty$, the **activity coefficient at infinite dilution**.
+In this regime $\gamma_i \to \gamma_i^\infty$, the **activity coefficient at infinite dilution**.
 The vapour pressure then follows $P_i = K_{H,i}\,x_i$ where $K_{H,i} = \gamma_i^\infty P_i^*$.
-This **asymmetric reference state** ($\gamma_i \to 1$ as $x_i \to 0$, by absorbing $\gamma_i^\infty$ into the standard state) is the natural convention for dilute solutes and is the basis for the concentration-based activity used in Part 3.
+This **asymmetric reference state** defines the standard state so that $\gamma_i \to 1$ as $x_i \to 0$; it is the natural convention for dilute solutes and the basis for the concentration-based activity used in Part 3.
 
 ```{code-cell} ipython3
 :tags: [remove-cell]
@@ -198,7 +206,7 @@ fig.tight_layout()
 ```{figure} #cell-mixing
 :name: fig-mixing
 
-Left: Gibbs energy of mixing $\Delta_\text{mix}G/(nRT)$ vs mole fraction $x_1$ for the Margules one-suffix model $G^E/nRT = Ax_1x_2$.
+Left: Gibbs energy of mixing $\Delta_\text{mix}G/(nRT)$ vs mole fraction $x_1$ for the Margules one-suffix model $g^E/RT = Ax_1x_2$.
 Right: corresponding activity coefficient $\gamma_1 = \exp(Ax_2^2)$.
 The ideal case ($A = 0$) corresponds to enthalpy-neutral mixing, so the Gibbs energy of mixing is purely entropic and always negative.
 Positive $A$ represents unfavourable unlike interactions, producing $\gamma_1 > 1$ and positive deviations from ideality.
@@ -220,16 +228,14 @@ where $\gamma_i \to 1$ as $c_i \to 0$ (Henry-law reference state).
 This is the convention used throughout Part 3 and Part 4.
 In the dilute limit $a_i \to c_i/c^\circ$; at higher concentrations $\gamma_i$ deviates from unity according to the $G^E$ model appropriate for the system.
 
-Models such as NRTL and UNIQUAC (non-electrolyte mixtures) and Pitzer (concentrated electrolytes) are built by specifying a $G^E$ model and deriving $\gamma_i$ as partial molar derivatives; they are mentioned here as forward references and not used further in this book.
+Models such as NRTL and UNIQUAC (non-electrolyte mixtures) and Pitzer (concentrated electrolytes) are built by specifying a $G^E$ model and deriving $\gamma_i$ as partial molar derivatives; they are mentioned here but not developed further in this book.
 
 
 ## Debye-Hückel theory for electrolyte solutions
 
 For ionic solutions, the dominant source of $G^E$ is long-range electrostatic interactions between ions.
-Debye and Hückel (1923) computed these analytically by considering the **ionic atmosphere**: each ion is surrounded by a diffuse cloud of oppositely charged ions that partially screens its charge.
-
-The starting point is the linearised Poisson-Boltzmann equation, which relates the electric potential $\psi$ around a central ion to the charge distribution of the surrounding ions.
-Its solution shows that $\psi$ decays as $e^{-\kappa r}/r$, where $\kappa$ is the inverse **Debye length**:
+Debye and Hückel derived the electrostatic contribution to $G^E$ by modelling the **ionic atmosphere**: each ion is surrounded by a diffuse cloud of oppositely charged ions that partially screens its charge.
+Solving the linearised Poisson-Boltzmann equation gives an electrostatic potential that decays as $e^{-\kappa r}/r$, where $\kappa^{-1}$ is the **Debye length**:
 
 $$
 \kappa^2 = \frac{2N_A e^2 I}{\varepsilon_0 \varepsilon_r RT}
@@ -259,8 +265,13 @@ $$
 $$
 
 Both expressions scale as $z_i^2$: a divalent ion has a correction four times larger than a monovalent one at the same ionic strength.
-CADET and this library use SI concentrations throughout (mol/m³); the activity coefficient models convert internally.
-The figure below uses mol/m³ on the horizontal axis, where $1\ \mathrm{mol/m}^3 = 1\ \mathrm{mM}$.
+
+```{admonition} Implementation note
+:class: note
+
+The activity coefficient models in this library use mol/m³ as the internal unit for ionic strength; $1\ \mathrm{mol/m}^3 = 1\ \mathrm{mM}$.
+The horizontal axis of @fig-activity uses this unit convention.
+```
 
 ```{admonition} Intuition
 :class: tip
@@ -326,8 +337,6 @@ Debye-Hückel is accurate below $\approx 100\ \mathrm{mol/m}^3$ (dotted line); D
 ```
 
 ---
-
-## From thermodynamics to reactions
 
 The framework developed in Parts 1 and 2 is now complete.
 Statistical mechanics provided the microscopic foundation: microstates, entropy, the Boltzmann factor, and the ideal gas law.

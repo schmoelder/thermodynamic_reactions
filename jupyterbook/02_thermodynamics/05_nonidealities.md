@@ -17,16 +17,11 @@ This chapter addresses the first source: pure-fluid departures from the ideal eq
 Mixture non-idealities and excess Gibbs energy are developed in @mixing.
 
 
-## Equations of state
+## Real gases: the van der Waals equation
 
 An **equation of state** is a relation between the macroscopic state variables $P$, $V$, $T$, and $n$ of a substance.
 The ideal gas law $PV = nRT$ is the simplest; it works well at low pressure where molecules are far apart and interactions are negligible.
-When those interactions matter, a more realistic equation of state is needed.
-
-
-## Real gases: the van der Waals equation
-
-The ideal gas law fails because it ignores two effects: molecules have finite size (they cannot overlap), and they attract each other at short range.
+It fails at higher pressures because it ignores two effects: molecules have finite size (they cannot overlap), and they attract each other at short range.
 The simplest equation of state that accounts for both is the **van der Waals equation** (1873):
 
 $$
@@ -38,14 +33,28 @@ The term $an^2/V^2$ corrects for attractive interactions: molecules pulling on e
 The constants $a$ and $b$ are specific to each gas and must be measured; when $a = b = 0$ the ideal gas law is recovered.
 
 An **isotherm** traces the $P$–$V_m$ relationship at a single fixed temperature; plotting several isotherms together reveals how the phase structure of a fluid changes with temperature.
-The term reappears in separation science, where the adsorption isotherm plays the same role in the loading–concentration plane at fixed $T$.
+
+Below $T_c$, the van der Waals equation predicts an S-shaped isotherm with multiple mathematical roots at a given pressure: a small-volume root (**liquid**) and a large-volume root (**vapour**), separated by an intermediate region.
+This intermediate branch is not physically realised: the mechanical stability condition $(\partial P/\partial V)_T < 0$ is violated there, making the system unstable against infinitesimal fluctuations in volume.
+Instead of following this branch, the system lowers its Gibbs free energy by separating into two phases at a single pressure, replacing the unstable region by a horizontal coexistence plateau — the macroscopic manifestation of global Gibbs minimisation.
+
+The liquid is a dense, condensed phase in which attractive interactions hold molecules close together; the vapour is a dilute, disordered phase in which they are negligible.
+At the **critical point** $(T_c, P_c, V_c)$ the distinction vanishes; above $T_c$ only a single fluid phase exists.
+Every substance with attractive intermolecular interactions has a critical point.
+The van der Waals equation locates it from $a$ and $b$ alone:
+
+$$
+T_c = \frac{8a}{27Rb}, \qquad P_c = \frac{a}{27b^2}, \qquad V_c = 3b.
+$$
 
 
 ```{code-cell} ipython3
 :tags: [remove-cell]
+:label: cell-vdw-isotherms
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from scipy.optimize import brentq
 from scipy.integrate import quad
 
@@ -129,20 +138,6 @@ def draw_fills(ax, Pc_arr, Vl_arr, Vv_arr, xlim):
         Pc_arr + [Pc] + list(reversed(Pc_arr)),
         color="#888888", lw=1.4, ls="--", label="saturation curve",
     )
-```
-
-
-Below $T_c$, the van der Waals equation predicts two stable roots at a given pressure: a small-volume root (the **liquid**) and a large-volume root (the **vapour**).
-The liquid is a dense, condensed phase in which attractive interactions hold molecules close together; the vapour is a dilute, disordered phase in which they are negligible.
-At the **critical point** $(T_c, P_c, V_c)$ the distinction vanishes; above $T_c$ only a single fluid phase exists.
-Every substance with attractive intermolecular interactions has a critical point; the van der Waals equation locates it from $a$ and $b$ alone: $T_c = 8a/27Rb$, $P_c = a/27b^2$, $V_c = 3b$.
-
-
-```{code-cell} ipython3
-:tags: [remove-cell]
-:label: cell-vdw-isotherms
-
-import matplotlib.cm as cm
 
 T_show = [0.80, 0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15]
 # Subcritical: dark→light blue as T→Tc; Tc: black; supercritical: light→dark red
@@ -209,9 +204,6 @@ Each isotherm is shown only where $P \geq 0$; the negative-pressure branch corre
 
 
 ## Fugacity: the effective pressure
-
-Fugacity plays for gases the same role that activity plays for solutions: both replace the ideal composition variable with an effective thermodynamic quantity derived from the real chemical potential.
-The two corrections are therefore parallel in structure, though they address different physical origins.
 
 The ideal chemical potential for a gas, $\mu = \mu^\circ + RT\ln(P/P^\circ)$, was derived assuming $PV = nRT$.
 For a real gas this expression is no longer exact.

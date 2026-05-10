@@ -23,6 +23,7 @@ kernelspec:
 | $c_s$                   | Counter-ion concentration in solution (SMA)                                                                                                     | mol/L                        | @multicomponent                |
 | $C_p$                   | Heat capacity at constant pressure                                                                                                              | J/(mol K)                    | @thermodynamic-potentials      |
 | $C_{p,k}$               | Molar heat capacity of solvent species $k$                                                                                                      | J/(mol K)                    | @implementation-energy-balance |
+| $e$                     | Elementary charge $= 1.602\times10^{-19}$ C                                                                                                     | C                            | @mixing                        |
 | $e_{ij}^f$, $e_{ij}^r$  | Kinetic exponents of species $i$ in reaction $j$, forward and reverse; $e_{ij}^f = \lvert\nu_{ij}\rvert$ for reactants for elementary reactions | —                            | @implementation-source-term    |
 | $E_a$                   | Activation energy                                                                                                                               | J/mol                        | @maxwell-boltzmann             |
 | $E_a^f$, $E_a^r$        | Forward and reverse activation energies; $E_a^f - E_a^r = \Delta_r H^\circ$                                                                     | J/mol                        | @kinetics-temperature          |
@@ -33,6 +34,7 @@ kernelspec:
 | $f_{\text{react},i}$    | Net production rate of species $i$ $= \sum_j \nu_{ij}\,\varphi_j$                                                                               | mol/(L$\cdot$s)              | @implementation-source-term    |
 | $G$                     | Gibbs free energy ($= U - TS + PV$)                                                                                                             | J                            | @thermodynamic-potentials      |
 | $G^E$                   | Excess Gibbs energy $= \Delta_\text{mix}G - \Delta_\text{mix}G^\text{id}$                                                                       | J                            | @mixing                        |
+| $g^E$                   | Molar excess Gibbs energy $= G^E/n$; models typically specify $g^E/RT$ as a function of composition                                             | J/mol                        | @mixing                        |
 | $\Delta_\text{mix}G$    | Gibbs energy of mixing                                                                                                                          | J                            | @mixing                        |
 | $H^E$                   | Excess enthalpy $= G^E - T(\partial G^E/\partial T)_{P,n}$                                                                                      | J                            | @mixing                        |
 | $S^E$                   | Excess entropy $= -(\partial G^E/\partial T)_{P,n}$                                                                                             | J/K                          | @mixing                        |
@@ -52,6 +54,7 @@ kernelspec:
 | $k^f$, $k^r$            | Forward and reverse rate constants; with reaction index: $k_j^f$, $k_j^r$                                                                       | same as $k$                  | @mass-action-law               |
 | $K$                     | Equilibrium constant $= Q\big                                                                                                                   | _\text{eq}$                  |                                | @equilibrium |
 | $K_a$                   | Acid dissociation constant                                                                                                                      |                              | @acid-base                     |
+| $K_{H,i}$               | Henry's law constant for species $i$; $P_i = K_{H,i}\,x_i$ in the dilute limit                                                                 | Pa                           | @mixing                        |
 | $K_\text{ads}$          | Adsorption equilibrium constant                                                                                                                 |                              | @adsorption                    |
 | $K_m$                   | Michaelis constant                                                                                                                              | mol/L                        | @saturation                    |
 | $K_w$                   | Water autoionization constant $= [\ce{H+}][\ce{OH-}]$                                                                                           |                              | @acid-base                     |
@@ -103,10 +106,14 @@ kernelspec:
 | $\beta$              | Inverse temperature $= 1/k_BT$                                                                   | J$^{-1}$        | @maxwell-boltzmann             |
 | $\beta$              | Buffer capacity $= dc_b/d(\text{pH})$                                                            | mol/L           | @speciation-buffers            |
 | $\gamma_i$           | Activity coefficient of species $i$                                                              |                 | @mixing                        |
+| $\gamma_i^\infty$    | Activity coefficient at infinite dilution                                                        |                 | @mixing                        |
 | $\varepsilon$        | Particle energy                                                                                  | J               | @particles                     |
+| $\varepsilon_0$      | Permittivity of free space $= 8.854\times10^{-12}$ F/m                                          | F/m             | @mixing                        |
+| $\varepsilon_r$      | Relative permittivity (dielectric constant) of the solvent                                       |                 | @mixing                        |
 | $\kappa^{-1}$        | Debye length                                                                                     | m               | @mixing                        |
 | $\Lambda$            | Ionic capacity of ion-exchange resin (total chargeable sites)                                    | mol/m$^3$       | @multicomponent                |
 | $\mu_i$              | Chemical potential of species $i$                                                                | J/mol           | @laws-of-thermodynamics        |
+| $\mu_i^*$            | Pure-component chemical potential (mole-fraction reference state)                                | J/mol           | @mixing                        |
 | $\mu_i^\circ$        | Standard chemical potential                                                                      | J/mol           | @chemical-potential            |
 | $\mu_g$              | Specific growth rate (Monod)                                                                     | s$^{-1}$        | @saturation                    |
 | $\mu_{g,\text{max}}$ | Maximum specific growth rate                                                                     | s$^{-1}$        | @saturation                    |
