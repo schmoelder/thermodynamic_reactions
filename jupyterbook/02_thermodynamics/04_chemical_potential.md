@@ -185,10 +185,9 @@ The logarithm is a direct consequence of integrating $1/P$, which in turn comes 
 Higher pressure raises $\mu$: molecules at higher pressure have a stronger driving force to expand or react.
 For real gases, $V_m \neq RT/P$ and the integral gives the fugacity $f$ rather than $P$, taken up in @nonidealities.
 
-
 ## Partial molar volume
 
-The same pattern extends to mixtures.
+The size of $\bar{V}_i$ determines whether pressure or concentration is the natural composition variable.
 The **partial molar volume** of species $i$ is:
 
 $$
@@ -283,39 +282,6 @@ At $c = c^\circ$ the chemical potential equals $\mu^\circ$ by definition.
 The slope $RT$ grows with temperature: the same concentration difference drives a larger free energy difference at higher $T$.
 As $c \to 0$, $\mu \to -\infty$: an infinitely dilute species has an infinitely strong tendency to draw in more of itself, which is why even trace concentrations always carry a thermodynamic driving force.
 ```
-
-(phase-equilibrium)=
-## Phase and phase equilibrium
-
-A **phase** is a homogeneous region of matter that is uniform in chemical composition and physical state, separated from other regions by a phase boundary.
-Examples include liquid water, water vapor, ice, or a crystal of a pure substance; mixtures can also form distinct phases (e.g., oil and water).
-
-At equilibrium between two phases $\alpha$ and $\beta$ with no chemical reaction, matter can transfer across the boundary.
-The equilibrium condition follows from $dG = 0$:
-
-$$\mu_i(\alpha) = \mu_i(\beta) \quad \text{for all } i$$
-
-This is the fundamental **phase equilibrium** criterion: the chemical potential of each species must be equal in all phases at equilibrium.
-When $\mu_i(\alpha) > \mu_i(\beta)$, species $i$ has a thermodynamic driving force to move from phase $\alpha$ to phase $\beta$; the system evolves until the potentials equalise.
-
-**Clausius-Clapeyron equation.**
-Differentiating the equality $\mu_i(\alpha) = \mu_i(\beta)$ along the coexistence curve gives:
-
-$$\frac{dP}{dT} = \frac{\Delta H_\text{trans}}{T \cdot \Delta V}$$
-
-where $\Delta H_\text{trans}$ is the enthalpy change of the transition and $\Delta V$ is the volume change.
-This equation predicts how the pressure of phase coexistence changes with temperature.
-For liquid-vapor transitions, $\Delta V \approx V_\text{gas} = RT/P$ (since $V_\text{liquid} \ll V_\text{gas}$), and integrating gives the familiar vapor-pressure dependence on temperature.
-
-```{admonition} Intuition
-:class: tip
-$\Delta H_\text{trans}$ links a phase transition to its energy cost.
-Vaporising 1 L of water at 100 °C requires about 2260 kJ, roughly five times more than heating the same water from 0 °C to 100 °C.
-The Clausius-Clapeyron equation converts this enthalpy into a slope along the coexistence curve: a large $\Delta H_\text{trans}$ means the boiling point shifts strongly with pressure.
-Water boils near 70 °C at high altitude (low pressure) for exactly this reason; a pressure cooker raises the boiling point above 100 °C for the same reason.
-Phase transitions are also exploited in refrigeration and heat pumps: evaporation absorbs a large amount of heat at constant temperature, condensation releases it, and the asymmetry between the two sides drives efficient heat transfer.
-```
-
 
 ---
 

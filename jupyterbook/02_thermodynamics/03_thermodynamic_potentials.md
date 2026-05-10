@@ -141,7 +141,8 @@ $$
 
 Note that $\mu_i$ appears with the same coefficient $dn_i$ in all four differentials: chemical potential does not depend on which potential describes the system.
 
-The enthalpy differential is particularly useful at constant pressure and fixed composition, where $dH = \delta Q$: enthalpy equals the heat exchanged.
+The differentials make abstract potentials measurable.
+At constant pressure and fixed composition, $dH = \delta Q$: enthalpy equals the heat exchanged.
 The **heat capacity at constant pressure**,
 
 $$
@@ -158,6 +159,39 @@ Heating 1 L of water from room temperature to near boiling requires about 335 kJ
 The same integral, $\int C_p\,dT$, determines how reaction enthalpies change with temperature.
 This is exactly what the Kirchhoff relations in @equilibrium-temperature compute.
 ```
+
+
+(phase-equilibrium)=
+## Phase and phase equilibrium
+
+A **phase** is a homogeneous region of matter that is uniform in chemical composition and physical state, separated from other regions by a phase boundary.
+Examples include liquid water, water vapour, ice, or a crystal of a pure substance; mixtures can also form distinct phases (e.g., oil and water).
+
+At equilibrium between two phases $\alpha$ and $\beta$ with no chemical reaction, matter can transfer across the boundary.
+The equilibrium condition follows from $dG = 0$:
+
+$$\mu_i(\alpha) = \mu_i(\beta) \quad \text{for all } i$$
+
+This is the fundamental **phase equilibrium** criterion: the chemical potential of each species must be equal in all phases at equilibrium.
+When $\mu_i(\alpha) > \mu_i(\beta)$, species $i$ has a thermodynamic driving force to move from phase $\alpha$ to phase $\beta$; the system evolves until the potentials equalise.
+
+**Clausius-Clapeyron equation.**
+Differentiating the equality $\mu_i(\alpha) = \mu_i(\beta)$ along the coexistence curve, using $dG = -S\,dT + V\,dP$ from the preceding section, gives:
+
+$$\frac{dP}{dT} = \frac{\Delta H_\text{trans}}{T \cdot \Delta V}$$
+
+where $\Delta H_\text{trans}$ is the enthalpy absorbed at constant pressure when crossing the phase boundary (the latent heat) and $\Delta V$ is the volume change.
+This equation predicts how the pressure of phase coexistence changes with temperature.
+For liquid-vapour transitions, $\Delta V \approx V_\text{gas} = RT/P$ (since $V_\text{liquid} \ll V_\text{gas}$), and integrating gives the familiar vapour-pressure dependence on temperature.
+
+```{admonition} Intuition
+:class: tip
+$\Delta H_\text{trans}$ links a phase transition to its energy cost.
+Vaporising 1 L of water at 100 °C requires about 2260 kJ, roughly five times more than heating the same water from 0 °C to 100 °C (about 335 kJ from the $C_p$ integral).
+The Clausius-Clapeyron equation converts this enthalpy into a slope along the coexistence curve: a large $\Delta H_\text{trans}$ means the boiling point shifts strongly with pressure.
+Water boils near 70 °C at high altitude (low pressure) for exactly this reason; a pressure cooker raises the boiling point above 100 °C for the same reason.
+```
+
 
 The integrated form also applies to each potential.
 For the Gibbs free energy the $TS$ and $PV$ terms cancel entirely:
@@ -182,7 +216,6 @@ $$
 
 The Gibbs-Duhem equation (derived above) identifies the second sum: $\sum_i n_i\,d\mu_i = -S\,dT + V\,dP$.
 Substituting recovers $dG = -S\,dT + V\,dP + \sum_i \mu_i\,dn_i$, consistent with the definition route.
-Both apparent contradictions resolve through Gibbs-Duhem: $G$ depends on $T$ and $P$ through $\mu_i$, and $dG$ contains $-S\,dT + V\,dP$ for exactly that reason. This is why the Gibbs-Duhem equation is useful.
 ```
 
 ---
