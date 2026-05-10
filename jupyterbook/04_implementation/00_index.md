@@ -10,8 +10,7 @@ kernelspec:
 Parts 1--3 built the thermodynamic and kinetic theory.
 This part translates it into working code using the `reactions` library.
 CADET solves a transport equation with a reaction source term $\mathbf{r}(\mathbf{c}, T)$ at every spatial point along the column; the flux term handles convection and dispersion, and this library provides $\mathbf{r}$.
-
-The part develops one reaction model, extended one feature at a time:
+This part develops one reaction model, extended one feature at a time:
 
 $$
 \varphi(a_i, T) = k_f(T)\prod_i a_i^{e_i} - k_r(T)\prod_j a_j^{e_j},
@@ -65,7 +64,7 @@ All reactions are evaluated as $\varphi(\mathbf{a}, T)$; the rest of the API onl
 - @implementation-equilibrium: `ThermodynamicReaction` in equilibrium mode; $K(T)$ via van't Hoff, Kirchhoff correction, and custom forms.
 - @implementation-kinetics: kinetic mode, `RateConstantFixed` and `RateConstantArrhenius`; thermodynamic consistency across temperatures.
 - @implementation-energy-balance: coupled energy balance; temperature as a dynamic state; analytic $\partial\varphi/\partial T$ Jacobian. *(optional)*
-- @implementation-activity: activity corrections ($a_i = \gamma_i c_i/c^\circ$), ionic strength models, Debye-Hückel and Davies, and the apparent pKa shift.
+- @implementation-activity: activity corrections ($a_i = \gamma_i c_i/c^\circ$), ionic strength models, Debye-Hückel and Davies, temperature-dependent $A$ via $\varepsilon_r(T)$, and the apparent pKa shift.
 - @implementation-acid-base: pH, the `pKa` factory, water autoionisation, and Davies corrections.
 - @implementation-buffer: buffer capacity, mixed buffers, and ionic strength effects on $\beta$.
 - @implementation-enzyme: saturation kinetics (`MichaelisMenten`, `HillRate`) as the finite-site constraint expressed as a kinetic rate law.
