@@ -11,116 +11,117 @@ kernelspec:
 
 ### Latin
 
-| Symbol               | Meaning                                                                 | Unit                         | First use                   |
-| -------------------- | ----------------------------------------------------------------------- | ---------------------------- | --------------------------- |
-| $A$                  | Helmholtz energy ($= U - TS$)                                           | J                            | @thermodynamic-potentials   |
-| $A$                  | Pre-exponential factor                                                  | same as $k$                  | @kinetics-temperature       |
-| $A^f$, $A^r$         | Forward and reverse pre-exponential factors                             | same as $k$                  | @kinetics-temperature       |
-| $a$, $b$             | Van der Waals constants                                                 | various                      | @nonidealities              |
-| $a_i$                | Activity of species $i$                                                 |                              | @mixing                     |
-| $c^\circ$            | Standard concentration $= 1$ mol/L                                      | mol/L                        | @chemical-potential         |
-| $c_i$                | Molar concentration of species $i$ $= n_i/V$                            | mol/L                        | @ideal-gas                  |
-| $c_s$                | Counter-ion concentration in solution (SMA)                             | mol/L                        | @multicomponent             |
-| $C_p$                | Heat capacity at constant pressure                                      | J/(mol K)                    | @thermodynamic-potentials   |
-| $C_{p,k}$            | Molar heat capacity of solvent species $k$                              | J/(mol K)                    | @implementation-energy-balance |
-| $e_{ij}^f$, $e_{ij}^r$ | Kinetic exponents of species $i$ in reaction $j$, forward and reverse; $e_{ij}^f = \lvert\nu_{ij}\rvert$ for reactants for elementary reactions | — | @implementation-source-term |
-| $E_a$                | Activation energy                                                       | J/mol                        | @maxwell-boltzmann          |
-| $E_a^f$, $E_a^r$    | Forward and reverse activation energies; $E_a^f - E_a^r = \Delta_r H^\circ$ | J/mol               | @kinetics-temperature       |
-| $E_\text{tot}$       | Total enzyme concentration                                              | mol/L                        | @implementation-enzyme      |
-| $F$                  | Faraday constant $= 96\,485$ C/mol                                      | C/mol                        | @multicomponent             |
-| $f$                  | Fugacity                                                                | Pa                           | @nonidealities              |
-| $f_i$                | Speciation fraction of species $i$ at given pH                          |                              | @speciation-buffers         |
-| $f_{\text{react},i}$ | Net production rate of species $i$ $= \sum_j \nu_{ij}\,\varphi_j$       | mol/(L$\cdot$s)              | @implementation-source-term |
-| $G$                  | Gibbs free energy ($= U - TS + PV$)                                     | J                            | @thermodynamic-potentials   |
-| $G^E$                | Excess Gibbs energy $= \Delta_\text{mix}G - \Delta_\text{mix}G^\text{id}$ | J                          | @mixing                     |
-| $\Delta_\text{mix}G$ | Gibbs energy of mixing                                                  | J                            | @mixing                     |
-| $H^E$                | Excess enthalpy $= G^E - T(\partial G^E/\partial T)_{P,n}$              | J                            | @mixing                     |
-| $S^E$                | Excess entropy $= -(\partial G^E/\partial T)_{P,n}$                     | J/K                          | @mixing                     |
-| $C_p^E$              | Excess heat capacity $= -T(\partial^2 G^E/\partial T^2)_{P,n}$          | J/K                          | @mixing                     |
-| $V^E$                | Excess molar volume $= (\partial G^E/\partial P)_{T,n}$                 | m$^3$                        | @mixing                     |
-| $\Delta G^\ddagger$  | Activation Gibbs energy                                                 | J/mol                        | @kinetics-temperature       |
-| $\Delta_r G$         | Reaction Gibbs energy $= dG/d\xi = \sum_i \nu_i \mu_i$                  | J/mol                        | @reaction-gibbs-energy      |
-| $\Delta_r G^\circ$   | Standard reaction Gibbs energy                                          | J/mol                        | @equilibrium                |
-| $H$                  | Enthalpy ($= U + PV$)                                                   | J                            | @thermodynamic-potentials   |
-| $\Delta_r H^\circ$   | Standard reaction enthalpy                                              | J/mol                        | @equilibrium-temperature    |
-| $\mathcal{H}$        | Statistical entropy ($= \ln \Omega = -N\sum_i p_i \ln p_i$)             |                              | @entropy                    |
-| $I$                  | Ionic strength $= \tfrac{1}{2}\sum_i c_i z_i^2$                         | mol/m$^3$                    | @mixing                     |
-| $k$                  | Rate constant                                                           | mol$^{1-n}$L$^{n-1}$s$^{-1}$ | @kinetics                   |
-| $k_B$                | Boltzmann constant $= 1.380\times10^{-23}$ J/K                          | J/K                          | @entropy                    |
-| $k_\text{cat}$       | Catalytic rate constant (enzyme turnover number)                        | s$^{-1}$                     | @implementation-enzyme      |
-| $k^f$, $k^r$         | Forward and reverse rate constants; with reaction index: $k_j^f$, $k_j^r$ | same as $k$               | @mass-action-law            |
-| $K$                  | Equilibrium constant $= Q\big                                           | _\text{eq}$                  |                             | @equilibrium |
-| $K_a$                | Acid dissociation constant                                              |                              | @acid-base                  |
-| $K_\text{ads}$       | Adsorption equilibrium constant                                         |                              | @adsorption                 |
-| $K_m$                | Michaelis constant                                                      | mol/L                        | @saturation                 |
-| $K_w$                | Water autoionization constant $= [\ce{H+}][\ce{OH-}]$                   |                              | @acid-base                  |
-| $m$                  | Particle mass                                                           | kg                           | @particles                  |
-| $M_i$                | Molar mass of species $i$                                               | kg/mol                       | @ideal-gas                  |
-| $n$                  | Amount of substance                                                     | mol                          | @pressure                   |
-| $N$                  | Number of particles                                                     |                              | @particles                  |
-| $N_A$                | Avogadro's number $= 6.022\times10^{23}$ mol$^{-1}$                     | mol$^{-1}$                   | @pressure                   |
-| $p_i$                | Occupation fraction of energy bin $i$ ($= n_i/N$)                       |                              | @entropy                    |
-| $P$                  | Pressure                                                                | Pa                           | @pressure                   |
-| $P^\circ$            | Standard pressure $= 1$ bar                                             | Pa                           | @chemical-potential         |
-| $P_c$                | Critical pressure                                                       | Pa                           | @nonidealities              |
-| $P_i$                | Partial pressure of species $i$ $= x_i P$                               | Pa                           | @ideal-gas                  |
-| pH                   | Negative log proton activity $= -\log_{10} a_{\ce{H+}}$                 |                              | @acid-base                  |
-| $\text{p}K_a$        | Negative log acid dissociation constant $= -\log_{10} K_a$              |                              | @acid-base                  |
-| $q$                  | Adsorbed amount per volume                                              | mol/m$^3$                    | @adsorption                 |
-| $\bar{q}_0$          | Free binding sites in SMA resin $= \Lambda - \sum_j(\nu_j+\sigma_j)q_j$ | mol/m$^3$                    | @multicomponent             |
-| $q_\text{max}$       | Maximum adsorption capacity                                             | mol/m$^3$                    | @adsorption                 |
-| $q_s$                | Counter-ion loading in resin phase (SMA)                                | mol/m$^3$                    | @multicomponent             |
-| $\delta Q$           | Infinitesimal heat                                                      | J                            | @laws-of-thermodynamics     |
-| $Q$                  | Reaction quotient $= \prod_i a_i^{\nu_i}$                               |                              | @reaction-gibbs-energy      |
-| $r$                  | Reaction rate                                                           | mol/(L$\cdot$s)              | @kinetics                   |
-| $R$                  | Gas constant $= 8.314$ J/(mol K)                                        | J/(mol K)                    | @pressure                   |
-| $S$                  | Thermodynamic entropy ($= k_B \ln W$)                                   | J/K                          | @entropy                    |
-| $\mathbf{S}$         | Stoichiometric matrix $(S_{ij} = \nu_{ij})$                             |                              | @multicomponent             |
-| $T$                  | Temperature                                                             | K                            | @entropy                    |
-| $T_c$                | Critical temperature                                                    | K                            | @nonidealities              |
-| $U$                  | Internal energy                                                         | J                            | @particles                  |
-| $v$, $\mathbf{v}$    | Particle velocity / speed                                               | m/s                          | @particles                  |
-| $v_p$                | Most probable speed                                                     | m/s                          | @maxwell-boltzmann          |
-| $\langle v \rangle$  | Mean speed                                                              | m/s                          | @maxwell-boltzmann          |
-| $v_\text{rms}$       | Root-mean-square speed                                                  | m/s                          | @maxwell-boltzmann          |
-| $V$                  | Volume                                                                  | m$^3$                        | @pressure                   |
-| $\bar{V}_i$          | Partial molar volume $= (\partial V/\partial n_i)_{T,P,n_{j\neq i}}$    | m$^3$/mol                    | @chemical-potential         |
-| $V_c$                | Critical molar volume $= 3b$ (van der Waals)                            | m$^3$/mol                    | @nonidealities              |
-| $V_m$                | Molar volume $= V/n$                                                    | m$^3$/mol                    | @ideal-gas                  |
-| $V_\text{max}$       | Maximum reaction rate (Michaelis-Menten)                                | mol/(L$\cdot$s)              | @saturation                 |
-| $\delta W$           | Infinitesimal work                                                      | J                            | @laws-of-thermodynamics     |
-| $x_i$                | Mole fraction of species $i$ $= n_i/\sum_j n_j$                         |                              | @ideal-gas                  |
-| $z_i$                | Charge number of ion $i$                                                |                              | @mixing                     |
+| Symbol                  | Meaning                                                                                                                                         | Unit                         | First use                      |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ------------------------------ |
+| $A$                     | Helmholtz energy ($= U - TS$)                                                                                                                   | J                            | @thermodynamic-potentials      |
+| $A$                     | Pre-exponential factor                                                                                                                          | same as $k$                  | @kinetics-temperature          |
+| $A^f$, $A^r$            | Forward and reverse pre-exponential factors                                                                                                     | same as $k$                  | @kinetics-temperature          |
+| $a$, $b$                | Van der Waals constants                                                                                                                         | various                      | @nonidealities                 |
+| $a_i$                   | Activity of species $i$                                                                                                                         |                              | @mixing                        |
+| $c^\circ$               | Standard concentration $= 1$ mol/L                                                                                                              | mol/L                        | @chemical-potential            |
+| $c_i$                   | Molar concentration of species $i$ $= n_i/V$                                                                                                    | mol/L                        | @ideal-gas                     |
+| $c_s$                   | Counter-ion concentration in solution (SMA)                                                                                                     | mol/L                        | @multicomponent                |
+| $C_p$                   | Heat capacity at constant pressure                                                                                                              | J/(mol K)                    | @thermodynamic-potentials      |
+| $C_{p,k}$               | Molar heat capacity of solvent species $k$                                                                                                      | J/(mol K)                    | @implementation-energy-balance |
+| $e_{ij}^f$, $e_{ij}^r$  | Kinetic exponents of species $i$ in reaction $j$, forward and reverse; $e_{ij}^f = \lvert\nu_{ij}\rvert$ for reactants for elementary reactions | —                            | @implementation-source-term    |
+| $E_a$                   | Activation energy                                                                                                                               | J/mol                        | @maxwell-boltzmann             |
+| $E_a^f$, $E_a^r$        | Forward and reverse activation energies; $E_a^f - E_a^r = \Delta_r H^\circ$                                                                     | J/mol                        | @kinetics-temperature          |
+| $E_\text{tot}$          | Total enzyme concentration                                                                                                                      | mol/L                        | @implementation-enzyme         |
+| $F$                     | Faraday constant $= 96\,485$ C/mol                                                                                                              | C/mol                        | @multicomponent                |
+| $f$                     | Fugacity                                                                                                                                        | Pa                           | @nonidealities                 |
+| $f_i$                   | Speciation fraction of species $i$ at given pH                                                                                                  |                              | @speciation-buffers            |
+| $f_{\text{react},i}$    | Net production rate of species $i$ $= \sum_j \nu_{ij}\,\varphi_j$                                                                               | mol/(L$\cdot$s)              | @implementation-source-term    |
+| $G$                     | Gibbs free energy ($= U - TS + PV$)                                                                                                             | J                            | @thermodynamic-potentials      |
+| $G^E$                   | Excess Gibbs energy $= \Delta_\text{mix}G - \Delta_\text{mix}G^\text{id}$                                                                       | J                            | @mixing                        |
+| $\Delta_\text{mix}G$    | Gibbs energy of mixing                                                                                                                          | J                            | @mixing                        |
+| $H^E$                   | Excess enthalpy $= G^E - T(\partial G^E/\partial T)_{P,n}$                                                                                      | J                            | @mixing                        |
+| $S^E$                   | Excess entropy $= -(\partial G^E/\partial T)_{P,n}$                                                                                             | J/K                          | @mixing                        |
+| $C_p^E$                 | Excess heat capacity $= -T(\partial^2 G^E/\partial T^2)_{P,n}$                                                                                  | J/K                          | @mixing                        |
+| $V^E$                   | Excess molar volume $= (\partial G^E/\partial P)_{T,n}$                                                                                         | m$^3$                        | @mixing                        |
+| $\Delta G^\ddagger$     | Activation Gibbs energy                                                                                                                         | J/mol                        | @kinetics-temperature          |
+| $\Delta_r G$            | Reaction Gibbs energy $= dG/d\xi = \sum_i \nu_i \mu_i$                                                                                          | J/mol                        | @reaction-gibbs-energy         |
+| $\Delta_r G^\circ$      | Standard reaction Gibbs energy                                                                                                                  | J/mol                        | @equilibrium                   |
+| $H$                     | Enthalpy ($= U + PV$)                                                                                                                           | J                            | @thermodynamic-potentials      |
+| $\Delta H_\text{trans}$ | Latent heat: enthalpy absorbed at constant pressure during a phase transition                                                                   | J/mol                        | @thermodynamic-potentials      |
+| $\Delta_r H^\circ$      | Standard reaction enthalpy                                                                                                                      | J/mol                        | @equilibrium-temperature       |
+| $\mathcal{H}$           | Statistical entropy ($= \ln \Omega = -N\sum_i p_i \ln p_i$)                                                                                     |                              | @entropy                       |
+| $I$                     | Ionic strength $= \tfrac{1}{2}\sum_i c_i z_i^2$                                                                                                 | mol/m$^3$                    | @mixing                        |
+| $k$                     | Rate constant                                                                                                                                   | mol$^{1-n}$L$^{n-1}$s$^{-1}$ | @kinetics                      |
+| $k_B$                   | Boltzmann constant $= 1.380\times10^{-23}$ J/K                                                                                                  | J/K                          | @entropy                       |
+| $k_\text{cat}$          | Catalytic rate constant (enzyme turnover number)                                                                                                | s$^{-1}$                     | @implementation-enzyme         |
+| $k^f$, $k^r$            | Forward and reverse rate constants; with reaction index: $k_j^f$, $k_j^r$                                                                       | same as $k$                  | @mass-action-law               |
+| $K$                     | Equilibrium constant $= Q\big                                                                                                                   | _\text{eq}$                  |                                | @equilibrium |
+| $K_a$                   | Acid dissociation constant                                                                                                                      |                              | @acid-base                     |
+| $K_\text{ads}$          | Adsorption equilibrium constant                                                                                                                 |                              | @adsorption                    |
+| $K_m$                   | Michaelis constant                                                                                                                              | mol/L                        | @saturation                    |
+| $K_w$                   | Water autoionization constant $= [\ce{H+}][\ce{OH-}]$                                                                                           |                              | @acid-base                     |
+| $m$                     | Particle mass                                                                                                                                   | kg                           | @particles                     |
+| $M_i$                   | Molar mass of species $i$                                                                                                                       | kg/mol                       | @ideal-gas                     |
+| $n$                     | Amount of substance                                                                                                                             | mol                          | @pressure                      |
+| $N$                     | Number of particles                                                                                                                             |                              | @particles                     |
+| $N_A$                   | Avogadro's number $= 6.022\times10^{23}$ mol$^{-1}$                                                                                             | mol$^{-1}$                   | @pressure                      |
+| $p_i$                   | Occupation fraction of energy bin $i$ ($= n_i/N$)                                                                                               |                              | @entropy                       |
+| $P$                     | Pressure                                                                                                                                        | Pa                           | @pressure                      |
+| $P^\circ$               | Standard pressure $= 1$ bar                                                                                                                     | Pa                           | @chemical-potential            |
+| $P_c$                   | Critical pressure                                                                                                                               | Pa                           | @nonidealities                 |
+| $P_i$                   | Partial pressure of species $i$ $= x_i P$                                                                                                       | Pa                           | @ideal-gas                     |
+| pH                      | Negative log proton activity $= -\log_{10} a_{\ce{H+}}$                                                                                         |                              | @acid-base                     |
+| $\text{p}K_a$           | Negative log acid dissociation constant $= -\log_{10} K_a$                                                                                      |                              | @acid-base                     |
+| $q$                     | Adsorbed amount per volume                                                                                                                      | mol/m$^3$                    | @adsorption                    |
+| $\bar{q}_0$             | Free binding sites in SMA resin $= \Lambda - \sum_j(\nu_j+\sigma_j)q_j$                                                                         | mol/m$^3$                    | @multicomponent                |
+| $q_\text{max}$          | Maximum adsorption capacity                                                                                                                     | mol/m$^3$                    | @adsorption                    |
+| $q_s$                   | Counter-ion loading in resin phase (SMA)                                                                                                        | mol/m$^3$                    | @multicomponent                |
+| $\delta Q$              | Infinitesimal heat                                                                                                                              | J                            | @laws-of-thermodynamics        |
+| $Q$                     | Reaction quotient $= \prod_i a_i^{\nu_i}$                                                                                                       |                              | @reaction-gibbs-energy         |
+| $r$                     | Reaction rate                                                                                                                                   | mol/(L$\cdot$s)              | @kinetics                      |
+| $R$                     | Gas constant $= 8.314$ J/(mol K)                                                                                                                | J/(mol K)                    | @pressure                      |
+| $S$                     | Thermodynamic entropy ($= k_B \ln W$)                                                                                                           | J/K                          | @entropy                       |
+| $\mathbf{S}$            | Stoichiometric matrix $(S_{ij} = \nu_{ij})$                                                                                                     |                              | @multicomponent                |
+| $T$                     | Temperature                                                                                                                                     | K                            | @entropy                       |
+| $T_c$                   | Critical temperature                                                                                                                            | K                            | @nonidealities                 |
+| $U$                     | Internal energy                                                                                                                                 | J                            | @particles                     |
+| $v$, $\mathbf{v}$       | Particle velocity / speed                                                                                                                       | m/s                          | @particles                     |
+| $v_p$                   | Most probable speed                                                                                                                             | m/s                          | @maxwell-boltzmann             |
+| $\langle v \rangle$     | Mean speed                                                                                                                                      | m/s                          | @maxwell-boltzmann             |
+| $v_\text{rms}$          | Root-mean-square speed                                                                                                                          | m/s                          | @maxwell-boltzmann             |
+| $V$                     | Volume                                                                                                                                          | m$^3$                        | @pressure                      |
+| $\bar{V}_i$             | Partial molar volume $= (\partial V/\partial n_i)_{T,P,n_{j\neq i}}$                                                                            | m$^3$/mol                    | @chemical-potential            |
+| $V_c$                   | Critical molar volume $= 3b$ (van der Waals)                                                                                                    | m$^3$/mol                    | @nonidealities                 |
+| $V_m$                   | Molar volume $= V/n$                                                                                                                            | m$^3$/mol                    | @ideal-gas                     |
+| $V_\text{max}$          | Maximum reaction rate (Michaelis-Menten)                                                                                                        | mol/(L$\cdot$s)              | @saturation                    |
+| $\delta W$              | Infinitesimal work                                                                                                                              | J                            | @laws-of-thermodynamics        |
+| $x_i$                   | Mole fraction of species $i$ $= n_i/\sum_j n_j$                                                                                                 |                              | @ideal-gas                     |
+| $z_i$                   | Charge number of ion $i$                                                                                                                        |                              | @mixing                        |
 
 
 ### Greek
 
 
-| Symbol               | Meaning                                                                                          | Unit            | First use                   |
-| -------------------- | ------------------------------------------------------------------------------------------------ | --------------- | --------------------------- |
-| $\alpha_{ij}$        | Separation factor $= K_i/K_j$                                                                    |                 | @multicomponent             |
-| $\beta$              | Inverse temperature $= 1/k_BT$                                                                   | J$^{-1}$        | @maxwell-boltzmann          |
-| $\beta$              | Buffer capacity $= dc_b/d(\text{pH})$                                                            | mol/L           | @speciation-buffers         |
-| $\gamma_i$           | Activity coefficient of species $i$                                                              |                 | @mixing                     |
-| $\varepsilon$        | Particle energy                                                                                  | J               | @particles                  |
-| $\kappa^{-1}$        | Debye length                                                                                     | m               | @mixing                     |
-| $\Lambda$            | Ionic capacity of ion-exchange resin (total chargeable sites)                                    | mol/m$^3$       | @multicomponent             |
-| $\mu_i$              | Chemical potential of species $i$                                                                | J/mol           | @laws-of-thermodynamics     |
-| $\mu_i^\circ$        | Standard chemical potential                                                                      | J/mol           | @chemical-potential         |
-| $\mu_g$              | Specific growth rate (Monod)                                                                     | s$^{-1}$        | @saturation                 |
-| $\mu_{g,\text{max}}$ | Maximum specific growth rate                                                                     | s$^{-1}$        | @saturation                 |
-| $\nu_i$              | Stoichiometric coefficient (positive: product, negative: reactant); characteristic charge in SMA |                 | @reaction-coordinates       |
-| $\sigma_i$           | Steric shielding factor (SMA): sites blocked by adsorbed species $i$                             |                 | @multicomponent             |
-| $\theta$             | Surface occupancy fraction $= q/q_\text{max}$                                                    |                 | @adsorption                 |
-| $\xi$                | Extent of reaction                                                                               | mol             | @reaction-coordinates       |
-| $\rho$               | Total mass density $= \sum_i \rho_i = \sum_i c_i M_i$                                            | kg/m$^3$        | @ideal-gas                  |
-| $\rho_i$             | Mass concentration of species $i$ $= c_i M_i$                                                    | kg/m$^3$        | @ideal-gas                  |
+| Symbol               | Meaning                                                                                          | Unit            | First use                      |
+| -------------------- | ------------------------------------------------------------------------------------------------ | --------------- | ------------------------------ |
+| $\alpha_{ij}$        | Separation factor $= K_i/K_j$                                                                    |                 | @multicomponent                |
+| $\beta$              | Inverse temperature $= 1/k_BT$                                                                   | J$^{-1}$        | @maxwell-boltzmann             |
+| $\beta$              | Buffer capacity $= dc_b/d(\text{pH})$                                                            | mol/L           | @speciation-buffers            |
+| $\gamma_i$           | Activity coefficient of species $i$                                                              |                 | @mixing                        |
+| $\varepsilon$        | Particle energy                                                                                  | J               | @particles                     |
+| $\kappa^{-1}$        | Debye length                                                                                     | m               | @mixing                        |
+| $\Lambda$            | Ionic capacity of ion-exchange resin (total chargeable sites)                                    | mol/m$^3$       | @multicomponent                |
+| $\mu_i$              | Chemical potential of species $i$                                                                | J/mol           | @laws-of-thermodynamics        |
+| $\mu_i^\circ$        | Standard chemical potential                                                                      | J/mol           | @chemical-potential            |
+| $\mu_g$              | Specific growth rate (Monod)                                                                     | s$^{-1}$        | @saturation                    |
+| $\mu_{g,\text{max}}$ | Maximum specific growth rate                                                                     | s$^{-1}$        | @saturation                    |
+| $\nu_i$              | Stoichiometric coefficient (positive: product, negative: reactant); characteristic charge in SMA |                 | @reaction-coordinates          |
+| $\sigma_i$           | Steric shielding factor (SMA): sites blocked by adsorbed species $i$                             |                 | @multicomponent                |
+| $\theta$             | Surface occupancy fraction $= q/q_\text{max}$                                                    |                 | @adsorption                    |
+| $\xi$                | Extent of reaction                                                                               | mol             | @reaction-coordinates          |
+| $\rho$               | Total mass density $= \sum_i \rho_i = \sum_i c_i M_i$                                            | kg/m$^3$        | @ideal-gas                     |
+| $\rho_i$             | Mass concentration of species $i$ $= c_i M_i$                                                    | kg/m$^3$        | @ideal-gas                     |
 | $\rho C_p$           | Volumetric heat capacity of the fluid $= \sum_k x_k (\rho_k/M_k) C_{p,k}$                        | J/(m$^3$ K)     | @implementation-energy-balance |
-| $\dot{Q}_\text{ext}$ | External heat source rate per unit volume (wall transfer, jacket)                                 | W/m$^3$         | @implementation-energy-balance |
-| $\varphi$            | Fugacity coefficient $= f/P$                                                                     |                 | @nonidealities              |
-| $\varphi_j$          | Reaction flux of reaction $j$ (CADET)                                                            | mol/(L$\cdot$s) | @implementation-source-term |
-| $\psi_D$             | Donnan potential                                                                                 | V               | @multicomponent             |
-| $\Omega$             | Number of microstates                                                                            |                 | @entropy                    |
+| $\dot{Q}_\text{ext}$ | External heat source rate per unit volume (wall transfer, jacket)                                | W/m$^3$         | @implementation-energy-balance |
+| $\varphi$            | Fugacity coefficient $= f/P$                                                                     |                 | @nonidealities                 |
+| $\varphi_j$          | Reaction flux of reaction $j$ (CADET)                                                            | mol/(L$\cdot$s) | @implementation-source-term    |
+| $\psi_D$             | Donnan potential                                                                                 | V               | @multicomponent                |
+| $\Omega$             | Number of microstates                                                                            |                 | @entropy                       |
 
 **Note.** S
 ome symbols are overloaded.

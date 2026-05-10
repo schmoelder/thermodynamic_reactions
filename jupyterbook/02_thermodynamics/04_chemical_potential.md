@@ -8,7 +8,11 @@ kernelspec:
 # Gibbs Energy and Chemical Potential
 
 @thermodynamic-potentials established that the Gibbs free energy $G$ is minimised at equilibrium under constant temperature and pressure.
+There $G$ was a structural object, a Legendre transform adapted to constant $T$ and $P$, but its operational meaning was left open.
 This chapter develops what $G$ actually tells us: first as a criterion for spontaneity, then through its structure as a sum of per-species contributions.
+
+
+## Spontaneity
 
 A **spontaneous process** is one that proceeds on its own without any external driving force.
 Heat flows from hot to cold; gases expand into vacuum; salts dissolve in water.
@@ -18,11 +22,6 @@ What decides is the competition between energy and entropy, captured by $G$.
 Spontaneity is not limited to chemical reactions.
 Any process occurring at constant $T$ and $P$ (phase transitions, mixing, protein folding, membrane transport, electrochemistry) is spontaneous if and only if it lowers $G$.
 This universality is what makes $G$ the central quantity of chemical thermodynamics.
-
-One important limitation: $\Delta G < 0$ tells us that a process is thermodynamically possible, not that it will actually occur on any observable timescale.
-Rate is a separate question, governed by kinetics and the activation energy barrier (see the note below).
-
-## Spontaneity
 
 From @thermodynamic-potentials, $G = H - TS$, so for a process at constant $T$ and $P$:
 
@@ -102,14 +101,6 @@ The intercept at $T = 0$ is $\Delta H$; the slope is $-\Delta S$.
 A reaction becomes spontaneous ($\Delta G < 0$) where its line crosses zero, at the crossover temperature $T^* = \Delta H / \Delta S$.
 ```
 
-The four sign combinations identified in @fig-gibbs-helmholtz are summarised in @fig-spontaneity.
-
-```{figure} figures/spontaneity_quadrant.png
-:name: fig-spontaneity
-
-The four combinations of $\Delta H$ and $\Delta S$ signs and their consequences for spontaneity.
-```
-
 ```{admonition} Intuition
 :class: tip
 
@@ -133,13 +124,14 @@ This distinction is taken up in detail in the chapter on reaction kinetics.
 
 ## Chemical potential
 
-From $G = \sum_i \mu_i n_i$ (@thermodynamic-potentials), the chemical potential of species $i$ is:
+Up to this point, $G$ has been used as a criterion for whether processes proceed spontaneously at fixed $T$ and $P$.
+We now shift perspective and ask how $G$ is structured as a function of composition, i.e. how it changes when matter is redistributed between species.
 
+From the definition
 $$
 \mu_i = \left.\frac{\partial G}{\partial n_i}\right|_{T,P,n_{j \neq i}}
 $$
-
-It is the free energy cost of adding one mole of species $i$ while holding temperature, pressure, and all other amounts fixed.
+the chemical potential is the free energy cost of adding one mole of species $i$ while holding temperature, pressure, and all other amounts fixed.
 A species with high $\mu_i$ has a strong thermodynamic driving force to leave (react, diffuse, or precipitate); a species with low $\mu_i$ is stable where it is.
 
 ```{admonition} Intuition
@@ -187,8 +179,8 @@ For real gases, $V_m \neq RT/P$ and the integral gives the fugacity $f$ rather t
 
 ## Partial molar volume
 
-The size of $\bar{V}_i$ determines whether pressure or concentration is the natural composition variable.
-The **partial molar volume** of species $i$ is:
+How strongly $\mu_i$ responds to pressure depends on the volume contributed by each mole of species $i$.
+In a mixture, this is the **partial molar volume**:
 
 $$
 \bar{V}_i = \left.\frac{\partial V}{\partial n_i}\right|_{T,P,n_{j\neq i}}

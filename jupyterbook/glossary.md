@@ -103,7 +103,7 @@ Clausius inequality
 Clausius-Clapeyron equation
 : $dP/dT = \Delta H_\text{trans}/(T \cdot \Delta V)$: the slope of the coexistence curve between two phases.
   Derived from the phase equilibrium condition $\mu_i(\alpha) = \mu_i(\beta)$; predicts how boiling point or melting point changes with pressure.
-  Introduced in @chemical-potential.
+  Introduced in @thermodynamic-potentials.
 
 Characteristic speeds
 : The typical velocities that characterise a Maxwell-Boltzmann distribution: most probable speed $v_p$, mean speed $\langle v \rangle$, and root-mean-square speed $v_\text{rms}$.
@@ -409,12 +409,12 @@ Pseudo-first-order
 Phase
 : A homogeneous region of matter that is uniform in chemical composition and physical state, separated from other regions by a phase boundary.
   Examples: liquid water, water vapour, ice, oil in an oil-water mixture.
-  Introduced in @chemical-potential.
+  Introduced in @thermodynamic-potentials.
 
 Phase equilibrium
 : The state where two or more phases coexist at constant temperature and pressure.
   At phase equilibrium, the chemical potential of each species is equal in all phases: $\mu_i(\alpha) = \mu_i(\beta)$.
-  Introduced in @chemical-potential.
+  Introduced in @thermodynamic-potentials.
 
 pH
 : $\text{pH} = -\log_{10} a_{\ce{H+}}$: a logarithmic measure of proton activity in solution.
@@ -557,6 +557,10 @@ Transition state
 : The unstable arrangement of atoms at the top of the activation energy barrier, denoted $[\mathrm{AB}]^\ddagger$.
   In Transition State Theory it is treated as a quasi-equilibrium species; the activation Gibbs energy $\Delta G^\ddagger$ determines the rate.
   Introduced in @kinetics-temperature.
+
+Adiabatic
+: A process or system that exchanges no heat with its surroundings: $\dot{Q}_\text{ext} = 0$.
+  Introduced in @implementation-energy-balance.
 
 Adiabatic invariant
 : A conserved quantity in a system that exchanges no heat with its surroundings.
