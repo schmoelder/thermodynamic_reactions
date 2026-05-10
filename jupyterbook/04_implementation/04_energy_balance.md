@@ -196,7 +196,9 @@ model = ReactionModel(
 `volumetric_heat_capacity` computes $\rho C_p$ from {eq}`eq-rhocp`:
 
 ```{code-cell} ipython3
-rho_cp = model.volumetric_heat_capacity({"water": 1.0})
+c_pure = np.zeros(len(model.species))
+c_pure[model.species_index["water"]] = 1000.0
+rho_cp = model.volumetric_heat_capacity(c_pure)
 print(f"ρCp = {rho_cp:.3e} J/(m³·K)")
 ```
 
@@ -368,10 +370,14 @@ result_grad = simulate(
 :label: cell-gradient
 
 x_MeCN = np.array([0.4 * t / t_end for t in result_grad.t])
-rho_cp_t = np.array([
-    model_mix.volumetric_heat_capacity({"water": 1.0 - x, "MeCN": x})
-    for x in x_MeCN
-])
+
+def _rho_cp_mix(x_mecn: float) -> float:
+    c = np.zeros(len(model_mix.species))
+    c[model_mix.species_index["water"]] = 1.0 - x_mecn
+    c[model_mix.species_index["MeCN"]] = x_mecn
+    return model_mix.volumetric_heat_capacity(c)
+
+rho_cp_t = np.array([_rho_cp_mix(x) for x in x_MeCN])
 
 fig, axes = plt.subplots(1, 2, figsize=(9, 3.8))
 
