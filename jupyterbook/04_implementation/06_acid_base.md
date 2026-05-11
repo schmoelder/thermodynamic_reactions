@@ -225,6 +225,56 @@ for sp in ["H3PO4", "H2PO4-", "HPO4-2", "PO4-3"]:
           f"{eq_davies[sp]-eq_ideal[sp]:>+10.3f}")
 ```
 
+## Apparent pKw and the shift of neutral pH
+
+Activity corrections shift more than the apparent pKa values of buffer acids — they shift neutral pH itself.
+At the neutral point, the proton and hydroxide activities are equal: $a_{\ce{H+}} = a_{\ce{OH-}}$.
+Substituting into the $K_w$ constraint with $a_{\ce{H2O}} = 1$:
+
+$$
+K_w = a_{\ce{H+}}\,a_{\ce{OH-}} = a_{\ce{H+}}^2 = 10^{-14}
+\quad\Rightarrow\quad
+a_{\ce{H+}}^\text{neut} = 10^{-7}.
+$$
+
+Writing $a_{\ce{H+}} = \gamma_\pm\,c_{\ce{H+}}/c^\circ$, the neutral concentration is $c_{\ce{H+}}^\text{neut} = c^\circ \cdot 10^{-7} / \gamma_\pm$, so:
+
+$$
+\mathrm{pH}_\text{neut}
+= -\log_{10}\!\frac{c_{\ce{H+}}^\text{neut}}{c^\circ}
+= 7 + \log_{10}\gamma_\pm.
+$$
+
+Since $\gamma_\pm < 1$ at nonzero ionic strength, $\mathrm{pH}_\text{neut} < 7$.
+The Davies equation gives the shift directly:
+
+```{code-cell} ipython3
+A_davies = 0.509   # Davies constant at 25 °C, I in mol/L
+
+def log10_gamma_davies(I_mol_m3, z=1):
+    I = I_mol_m3 / 1000.0
+    sI = np.sqrt(I)
+    return -A_davies * z**2 * (sI / (1 + sI) - 0.3 * I)
+
+I_vals = np.array([0, 10, 25, 50, 100, 150, 200, 300, 500])
+pH_neutral = 7.0 + np.array([log10_gamma_davies(I) for I in I_vals])
+
+print(f"{'I (mol/m³)':>12}  {'γ±':>8}  {'pH_neutral':>12}  {'shift':>10}")
+for I, pH in zip(I_vals, pH_neutral):
+    print(f"{I:>12.0f}  {10**log10_gamma_davies(I):>8.4f}  {pH:>12.4f}  {pH - 7.0:>+10.4f}")
+```
+
+At physiological ionic strength ($I = 150\ \mathrm{mol/m^3}$), neutral pH is approximately 6.88 — a 0.12 unit shift.
+A solution prepared to pH 7.00 in high-salt media is slightly acidic relative to the true equal-activity midpoint.
+
+This effect requires two ingredients simultaneously.
+The $K_w$ constraint gives neutral pH its algebraic content: without $\ce{OH-}$ as a tracked species the condition $a_{\ce{H+}} = a_{\ce{OH-}}$ has nothing to enforce it.
+The Davies correction makes $\gamma_\pm \neq 1$: without it $\log_{10}\gamma_\pm = 0$ and neutral pH is always 7.0 regardless of ionic strength.
+Neither alone produces the shift; both are necessary.
+
+In CADET's original implementation, neither $\ce{OH-}$ nor ionic strength corrections were included — a consistent approximation at a coarser level.
+Adding Davies corrections to buffer equilibria without also tracking $\ce{OH-}$ and enforcing $K_w$ would have been the problematic intermediate state: ionic strength effects applied selectively, with no mechanism to propagate the shift to the proton--hydroxide balance.
+
 ---
 
 The next chapter combines multiple equilibria to compute pH curves and buffer
