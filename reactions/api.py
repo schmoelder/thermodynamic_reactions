@@ -71,6 +71,7 @@ from .reaction import (
     ThermodynamicReaction,
     parse_stoichiometry,
 )
+from .formulation import Solution
 from .species import (
     KB,
     R_GAS,
@@ -134,6 +135,8 @@ __all__ = [
     # model
     "ConservationReport",
     "ReactionModel",
+    # formulation
+    "Solution",
 ]
 
 
