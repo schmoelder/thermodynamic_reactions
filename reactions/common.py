@@ -14,7 +14,10 @@ Usage pattern::
         water, H_plus, OH_minus,
         acetic_acid, autoionisation, acetic_acid_equilibria,
     )
-    from reactions.api import ActivityCoefficientDavies, IonicStrengthIdeal, ReactionModel, Solution
+    from reactions.activity import ActivityCoefficientDavies
+    from reactions.formulation import Solution
+    from reactions.ionic import IonicStrengthIdeal
+    from reactions.model import ReactionModel
 
     davies = ActivityCoefficientDavies()
     model = ReactionModel(

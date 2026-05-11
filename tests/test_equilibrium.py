@@ -5,23 +5,19 @@ Unit tests for equilibrium constant K(T) and rate constant kf(T) models.
 import numpy as np
 import pytest
 
-from reactions.api import (
-    Component,
+from reactions.equilibrium import (
     EquilibriumConstant,
     EquilibriumConstantCustom,
     EquilibriumConstantPolynomial,
     EquilibriumConstantTabulated,
     EquilibriumConstantVantHoff,
     EquilibriumConstantVantHoffCp,
-    R_GAS,
-    RateConstantArrhenius,
-    RateConstantFixed,
-    RateConstantPolynomial,
-    ReactionModel,
-    Species,
-    ThermodynamicReaction,
 )
+from reactions.model import ReactionModel
+from reactions.rate import RateConstantArrhenius, RateConstantFixed, RateConstantPolynomial
+from reactions.reaction import ThermodynamicReaction
 from reactions.solver import simulate
+from reactions.species import Component, R_GAS, Species
 
 C_REF: float = 1000.0
 

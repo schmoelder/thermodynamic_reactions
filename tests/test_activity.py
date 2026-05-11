@@ -7,20 +7,13 @@ import warnings
 import numpy as np
 import pytest
 
-from reactions.api import (
-    ActivityCoefficientDavies,
-    ActivityCoefficientDebyeHuckel,
-    Component,
-    IonicStrengthFixed,
-    PhysicalState,
-    Species,
-    ThermodynamicReaction,
-    EquilibriumConstant,
-    ReactionModel,
-    _water_epsilon_r,
-    pKa,
-)
+from reactions.activity import ActivityCoefficientDavies, ActivityCoefficientDebyeHuckel, _water_epsilon_r
+from reactions.equilibrium import EquilibriumConstant, pKa
+from reactions.ionic import IonicStrengthFixed
+from reactions.model import ReactionModel
+from reactions.reaction import ThermodynamicReaction
 from reactions.solver import solve_equilibrium
+from reactions.species import Component, PhysicalState, Species
 
 C_REF: float = 1000.0
 

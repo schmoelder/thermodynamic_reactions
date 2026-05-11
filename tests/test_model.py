@@ -6,19 +6,11 @@ analytic Jacobian (dc and dT) vs finite differences, energy balance Jacobian.
 import numpy as np
 import pytest
 
-from reactions.api import (
-    Component,
-    EquilibriumConstant,
-    EquilibriumConstantVantHoff,
-    EquilibriumConstantVantHoffCp,
-    MassActionReaction,
-    RateConstantArrhenius,
-    RateConstantFixed,
-    ReactionModel,
-    Species,
-    ThermodynamicReaction,
-    pKa,
-)
+from reactions.equilibrium import EquilibriumConstant, EquilibriumConstantVantHoff, EquilibriumConstantVantHoffCp, pKa
+from reactions.model import ReactionModel
+from reactions.rate import RateConstantArrhenius, RateConstantFixed
+from reactions.reaction import MassActionReaction, ThermodynamicReaction
+from reactions.species import Component, Species
 
 
 # ---------------------------------------------------------------------------

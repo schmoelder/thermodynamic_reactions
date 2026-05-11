@@ -8,23 +8,14 @@ import math
 import numpy as np
 import pytest
 
-from reactions.api import (
-    Component,
-    EquilibriumConstant,
-    IonicStrengthIdeal,
-    ReactionModel,
-    Solution,
-    Species,
-    ThermodynamicReaction,
-    acetic_acid,
-    acetic_acid_equilibria,
-    autoionisation,
-    H_plus,
-    OH_minus,
-    pKa,
-    water,
-)
+from reactions.common import acetic_acid, acetic_acid_equilibria, autoionisation, H_plus, OH_minus, water
+from reactions.equilibrium import EquilibriumConstant, pKa
+from reactions.formulation import Solution
+from reactions.ionic import IonicStrengthIdeal
+from reactions.model import ReactionModel
+from reactions.reaction import ThermodynamicReaction
 from reactions.solver import solve_equilibrium
+from reactions.species import Component, Species
 
 C_REF: float = 1000.0  # mol/m³ — standard-state concentration
 

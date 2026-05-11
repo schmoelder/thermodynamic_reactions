@@ -8,21 +8,13 @@ import warnings
 import numpy as np
 import pytest
 
-from reactions.api import (
-    ActivityCoefficientCustom,
-    Component,
-    EquilibriumConstant,
-    EquilibriumConstantCustom,
-    EquilibriumConstantVantHoff,
-    MassActionReaction,
-    R_GAS,
-    RateConstantArrhenius,
-    RateConstantFixed,
-    ReactionModel,
-    Species,
-    ThermodynamicReaction,
-)
+from reactions.activity import ActivityCoefficientCustom
+from reactions.equilibrium import EquilibriumConstant, EquilibriumConstantCustom, EquilibriumConstantVantHoff
+from reactions.model import ReactionModel
+from reactions.rate import RateConstantArrhenius, RateConstantFixed
+from reactions.reaction import MassActionReaction, ThermodynamicReaction
 from reactions.solver import simulate
+from reactions.species import Component, R_GAS, Species
 
 C_REF: float = 1000.0  # mol/m³ — standard-state concentration
 
