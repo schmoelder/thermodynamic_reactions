@@ -30,25 +30,24 @@ Each species traces a sigmoid; the inflection of $f_{\ce{A-}}$ lies at $\text{pH
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
-pKa = 4.756   # acetic acid, NIST
-pH  = np.linspace(1, 9, 400)
+pKa = 4.756  # acetic acid, NIST
+pH = np.linspace(1, 9, 400)
 
-f_AcO  = 1.0 / (1.0 + 10.0 ** (pKa - pH))
+f_AcO = 1.0 / (1.0 + 10.0 ** (pKa - pH))
 f_AcOH = 1.0 - f_AcO
 
-fig, ax = plt.subplots(figsize=(7, 4))
-ax.plot(pH, f_AcO,  color="C0", linewidth=2.0, label=r"$f_{\mathrm{AcO}^-}$")
+fig, ax = setup_figure()
+ax.plot(pH, f_AcO, color="C0", linewidth=2.0, label=r"$f_{\mathrm{AcO}^-}$")
 ax.plot(pH, f_AcOH, color="C1", linewidth=2.0, label=r"$f_{\mathrm{AcOH}}$")
 ax.axvline(pKa, color="gray", linestyle=":", linewidth=1.0)
 ax.text(pKa + 0.08, 0.52, rf"$\mathrm{{p}}K_a = {pKa}$", fontsize=9, color="gray")
-ax.set_xlabel("pH", fontsize=11)
-ax.set_ylabel("Speciation fraction", fontsize=11)
+ax.set_xlabel("pH")
+ax.set_ylabel("Speciation fraction")
 ax.set_xlim(1, 9)
 ax.set_ylim(-0.02, 1.05)
 ax.legend(fontsize=10)
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
 fig.tight_layout()
 ```
 
@@ -75,6 +74,7 @@ Each transition produces one inflection point in the diagram at the correspondin
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
 pKa1, pKa2, pKa3 = 2.148, 7.198, 12.350
 Ka1 = 10 ** (-pKa1)
@@ -82,15 +82,15 @@ Ka2 = 10 ** (-pKa2)
 Ka3 = 10 ** (-pKa3)
 
 pH = np.linspace(0, 14, 500)
-h  = 10.0 ** (-pH)
+h = 10.0 ** (-pH)
 
-D  = h**3 + Ka1*h**2 + Ka1*Ka2*h + Ka1*Ka2*Ka3
+D = h**3 + Ka1 * h**2 + Ka1 * Ka2 * h + Ka1 * Ka2 * Ka3
 f0 = h**3 / D
 f1 = Ka1 * h**2 / D
 f2 = Ka1 * Ka2 * h / D
 f3 = Ka1 * Ka2 * Ka3 / D
 
-fig, ax = plt.subplots(figsize=(8, 4.5))
+fig, ax = setup_figure()
 labels = [
     r"$\mathrm{H_3PO_4}$",
     r"$\mathrm{H_2PO_4^-}$",
@@ -105,13 +105,11 @@ for pka, lbl in zip(
 ):
     ax.axvline(pka, color="gray", linestyle=":", linewidth=0.8)
     ax.text(pka + 0.15, 1.01, lbl, fontsize=8, color="gray", ha="left", va="bottom")
-ax.set_xlabel("pH", fontsize=11)
-ax.set_ylabel("Speciation fraction", fontsize=11)
+ax.set_xlabel("pH")
+ax.set_ylabel("Speciation fraction")
 ax.set_xlim(0, 14)
 ax.set_ylim(-0.02, 1.10)
 ax.legend(fontsize=9, loc="upper right")
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
 fig.tight_layout()
 ```
 
@@ -163,38 +161,56 @@ The buffer capacity falls to half its peak value one pH unit away from $\text{p}
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
-pKa   = 4.756
-c_tot = 0.1      # mol/L
-Kw    = 1e-14
+pKa = 4.756
+c_tot = 0.1  # mol/L
+Kw = 1e-14
 
 pH = np.linspace(1, 9, 500)
-h  = 10.0 ** (-pH)
+h = 10.0 ** (-pH)
 oh = Kw / h
 
 f_AcOH = 1.0 / (1.0 + 10.0 ** (pH - pKa))
-f_AcO  = 1.0 - f_AcOH
+f_AcO = 1.0 - f_AcOH
 
 ln10 = np.log(10)
-beta_water  = ln10 * (h + oh)
+beta_water = ln10 * (h + oh)
 beta_buffer = ln10 * c_tot * f_AcOH * f_AcO
-beta_total  = beta_water + beta_buffer
+beta_total = beta_water + beta_buffer
 
-fig, ax = plt.subplots(figsize=(7, 4))
-ax.plot(pH, beta_total,  color="#1c4f8a", linewidth=2.5, label=r"$\beta$ (total)")
-ax.plot(pH, beta_buffer, color="C1",      linewidth=1.5, linestyle="--",
-        label="buffer contribution")
-ax.plot(pH, beta_water,  color="C2",      linewidth=1.5, linestyle="--",
-        label="water contribution")
+fig, ax = setup_figure()
+ax.plot(
+    pH, beta_total, color=COLORS["primary"], linewidth=2.5, label=r"$\beta$ (total)"
+)
+ax.plot(
+    pH,
+    beta_buffer,
+    color="C1",
+    linewidth=1.5,
+    linestyle="--",
+    label="buffer contribution",
+)
+ax.plot(
+    pH,
+    beta_water,
+    color="C2",
+    linewidth=1.5,
+    linestyle="--",
+    label="water contribution",
+)
 ax.axvline(pKa, color="gray", linestyle=":", linewidth=1.0)
-ax.text(pKa + 0.1, beta_total.max() * 0.92,
-        rf"$\mathrm{{p}}K_a = {pKa}$", fontsize=9, color="gray")
-ax.set_xlabel("pH", fontsize=11)
-ax.set_ylabel(r"Buffer capacity $\beta$ [mol L$^{-1}$]", fontsize=11)
+ax.text(
+    pKa + 0.1,
+    beta_total.max() * 0.92,
+    rf"$\mathrm{{p}}K_a = {pKa}$",
+    fontsize=9,
+    color="gray",
+)
+ax.set_xlabel("pH")
+ax.set_ylabel(r"Buffer capacity $\beta$ [mol L$^{-1}$]")
 ax.set_xlim(1, 9)
 ax.legend(fontsize=9)
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
 fig.tight_layout()
 ```
 
@@ -253,19 +269,20 @@ For $\ce{HPO4^2-}$ ($z = -2$): the factor is 6, giving a shift near $-0.7$.
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
-A_davies = 0.509   # log10 Davies constant, water at 25 °C
+A_davies = 0.509  # log10 Davies constant, water at 25 °C
 
 I = np.linspace(0, 0.5, 400)
 f = np.sqrt(I) / (1 + np.sqrt(I)) - 0.3 * I
 
 cases = [
-    (0,  r"$z = 0$ (neutral acid, e.g. AcOH)"),
+    (0, r"$z = 0$ (neutral acid, e.g. AcOH)"),
     (-1, r"$z = -1$ (e.g. $\mathrm{H_2PO_4^-}$)"),
     (-2, r"$z = -2$ (e.g. $\mathrm{HPO_4^{2-}}$)"),
 ]
 
-fig, ax = plt.subplots(figsize=(7, 4))
+fig, ax = setup_figure()
 for z, label in cases:
     shift = -2 * A_davies * (1 - z) * f
     ax.plot(I * 1000, shift, linewidth=2.0, label=label)
@@ -273,11 +290,9 @@ for z, label in cases:
 ax.axhline(0, color="gray", linewidth=0.8, linestyle=":")
 ax.axvline(150, color="gray", linewidth=0.8, linestyle="--")
 ax.text(155, -0.05, r"$I = 150\ \mathrm{mmol/L}$", fontsize=8, color="gray")
-ax.set_xlabel(r"Ionic strength $I$ [mmol/L]", fontsize=11)
-ax.set_ylabel(r"$\mathrm{p}K_a^\mathrm{app} - \mathrm{p}K_a$", fontsize=11)
+ax.set_xlabel(r"Ionic strength $I$ [mmol/L]")
+ax.set_ylabel(r"$\mathrm{p}K_a^\mathrm{app} - \mathrm{p}K_a$")
 ax.legend(fontsize=9, loc="lower left")
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
 fig.tight_layout()
 ```
 

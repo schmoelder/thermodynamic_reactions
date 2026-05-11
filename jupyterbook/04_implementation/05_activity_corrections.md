@@ -28,15 +28,19 @@ The apparent equilibrium constant in concentration space becomes $K_c = K\,\gamm
 ```{code-cell} ipython3
 import numpy as np
 from reactions.api import (
-    Species, Component,
-    IonicStrengthIdeal, IonicStrengthBackground, IonicStrengthFixed,
+    Species,
+    Component,
+    IonicStrengthIdeal,
+    IonicStrengthBackground,
+    IonicStrengthFixed,
     ActivityCoefficientDebyeHuckel,
     ActivityCoefficientDavies,
     ActivityCoefficientCustom,
     PhysicalState,
     EquilibriumConstant,
     RateConstantFixed,
-    ThermodynamicReaction, ReactionModel,
+    ThermodynamicReaction,
+    ReactionModel,
     pKa,
 )
 from reactions.solver import solve_equilibrium, simulate
@@ -44,8 +48,8 @@ from reactions.solver import solve_equilibrium, simulate
 C_REF = 1000.0  # mol/m³
 
 K_thermo = 4.0
-gamma_B  = 0.7
-c_tot    = 1000.0   # mol/m³
+gamma_B = 0.7
+c_tot = 1000.0  # mol/m³
 
 comp_ab = Component("ab", [Species("A"), Species("B")])
 
@@ -74,16 +78,18 @@ model_custom = ReactionModel(
     ],
 )
 
-c_ideal  = solve_equilibrium(model_ideal,  c0={"A": c_tot / 2, "B": c_tot / 2})
+c_ideal = solve_equilibrium(model_ideal, c0={"A": c_tot / 2, "B": c_tot / 2})
 c_custom = solve_equilibrium(model_custom, c0={"A": c_tot / 2, "B": c_tot / 2})
 ```
 
 ```{code-cell} ipython3
 :tags: [remove-cell]
 
-K_c_expected = K_thermo / gamma_B   # apparent K in concentration space
-print(f"Ideal:   c_B/c_A = {c_ideal['B']/c_ideal['A']:.4f}  (K = {K_thermo})")
-print(f"Custom:  c_B/c_A = {c_custom['B']/c_custom['A']:.4f}  (K_c = K/γ_B = {K_c_expected:.4f})")
+K_c_expected = K_thermo / gamma_B  # apparent K in concentration space
+print(f"Ideal:   c_B/c_A = {c_ideal['B'] / c_ideal['A']:.4f}  (K = {K_thermo})")
+print(
+    f"Custom:  c_B/c_A = {c_custom['B'] / c_custom['A']:.4f}  (K_c = K/γ_B = {K_c_expected:.4f})"
+)
 ```
 
 ```{code-cell} ipython3
@@ -91,18 +97,37 @@ print(f"Custom:  c_B/c_A = {c_custom['B']/c_custom['A']:.4f}  (K_c = K/γ_B = {K
 :label: cell-custom-gamma
 
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
 gamma_B_range = np.linspace(0.3, 1.5, 300)
-K_c_range     = K_thermo / gamma_B_range
-fB_range      = K_c_range / (1 + K_c_range)
-fB_ideal      = K_thermo / (1 + K_thermo)
+K_c_range = K_thermo / gamma_B_range
+fB_range = K_c_range / (1 + K_c_range)
+fB_ideal = K_thermo / (1 + K_thermo)
 
-fig, ax = plt.subplots()
-ax.plot(gamma_B_range, fB_range, color="C0", label=r"non-ideal ($\gamma_\mathrm{A}=1$, $K=4$)")
-ax.axhline(fB_ideal, color="gray", lw=0.8, ls="--", label=f"ideal ($\\gamma_i = 1$,  $c_B/c_{{tot}} = {fB_ideal:.2f}$)")
-ax.axvline(1.0,     color="gray", lw=0.6, ls=":")
-ax.plot(gamma_B, K_thermo / gamma_B / (1 + K_thermo / gamma_B),
-        "o", color="C0", ms=7, zorder=5, label=rf"example $\gamma_\mathrm{{B}} = {gamma_B}$")
+fig, ax = setup_figure()
+ax.plot(
+    gamma_B_range,
+    fB_range,
+    color="C0",
+    label=r"non-ideal ($\gamma_\mathrm{A}=1$, $K=4$)",
+)
+ax.axhline(
+    fB_ideal,
+    color="gray",
+    lw=0.8,
+    ls="--",
+    label=f"ideal ($\\gamma_i = 1$,  $c_B/c_{{tot}} = {fB_ideal:.2f}$)",
+)
+ax.axvline(1.0, color="gray", lw=0.6, ls=":")
+ax.plot(
+    gamma_B,
+    K_thermo / gamma_B / (1 + K_thermo / gamma_B),
+    "o",
+    color="C0",
+    ms=7,
+    zorder=5,
+    label=rf"example $\gamma_\mathrm{{B}} = {gamma_B}$",
+)
 ax.set_xlabel(r"$\gamma_\mathrm{B}$")
 ax.set_ylabel(r"$c_\mathrm{B}^\mathrm{eq}\,/\,c_\mathrm{tot}$")
 ax.legend()
@@ -148,7 +173,7 @@ model_custom_kin = ReactionModel(
     ],
 )
 
-result_ideal  = simulate(model_ideal_kin,  c0={"A": c_tot, "B": 0.0}, t_span=(0, 2.0))
+result_ideal = simulate(model_ideal_kin, c0={"A": c_tot, "B": 0.0}, t_span=(0, 2.0))
 result_custom = simulate(model_custom_kin, c0={"A": c_tot, "B": 0.0}, t_span=(0, 2.0))
 ```
 
@@ -156,13 +181,18 @@ result_custom = simulate(model_custom_kin, c0={"A": c_tot, "B": 0.0}, t_span=(0,
 :tags: [remove-cell]
 :label: cell-custom-gamma-kinetics
 
-fB_ideal_eq  = K_thermo / (1 + K_thermo)
+fB_ideal_eq = K_thermo / (1 + K_thermo)
 fB_custom_eq = (K_thermo / gamma_B) / (1 + K_thermo / gamma_B)
 
-fig, ax = plt.subplots()
-ax.plot(result_ideal.t,  result_ideal["B"],  color="C0", label="ideal ($\\gamma_i = 1$)")
-ax.plot(result_custom.t, result_custom["B"], color="C1", label=rf"non-ideal ($\gamma_\mathrm{{B}} = {gamma_B}$)")
-ax.axhline(fB_ideal_eq  * c_tot, color="C0", lw=0.8, ls="--")
+fig, ax = setup_figure()
+ax.plot(result_ideal.t, result_ideal["B"], color="C0", label="ideal ($\\gamma_i = 1$)")
+ax.plot(
+    result_custom.t,
+    result_custom["B"],
+    color="C1",
+    label=rf"non-ideal ($\gamma_\mathrm{{B}} = {gamma_B}$)",
+)
+ax.axhline(fB_ideal_eq * c_tot, color="C0", lw=0.8, ls="--")
 ax.axhline(fB_custom_eq * c_tot, color="C1", lw=0.8, ls="--")
 ax.set_xlabel("time [s]")
 ax.set_ylabel(r"$c_\mathrm{B}$ [mol/m³]")
@@ -186,11 +216,13 @@ For aqueous electrolyte solutions the two built-in models cover the relevant ran
 `ActivityCoefficientDebyeHuckel` implements the Debye-Hückel limiting law, accurate to $I \approx 100\ \mathrm{mol/m}^3$; `ActivityCoefficientDavies` adds an empirical linear correction that extends validity to $\approx 500\ \mathrm{mol/m}^3$ (@nonidealities, @fig-activity):
 
 ```{code-cell} ipython3
-proton    = Component("proton",    [Species("H+",  charge=+1)])
+proton = Component("proton", [Species("H+", charge=+1)])
 hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-water     = Component("water",     [Species("H2O", charge=0, molar_mass=0.018015, density=1000.0)])
-chloride  = Component("chloride",  [Species("Cl-", charge=-1)])
-sodium    = Component("sodium",    [Species("Na+", charge=+1)])
+water = Component(
+    "water", [Species("H2O", charge=0, molar_mass=0.018015, density=1000.0)]
+)
+chloride = Component("chloride", [Species("Cl-", charge=-1)])
+sodium = Component("sodium", [Species("Na+", charge=+1)])
 ```
 
 Species names are labels only; the `charge` argument is authoritative for all electrostatic calculations.
@@ -219,7 +251,7 @@ model_nacl = ReactionModel(
     T=298.15,
 )
 
-c = np.array([1e-4, 1e-4, 1000.0, 150.0, 150.0])   # H+, OH-, H2O, Cl-, Na+ [mol/m³]
+c = np.array([1e-4, 1e-4, 1000.0, 150.0, 150.0])  # H+, OH-, H2O, Cl-, Na+ [mol/m³]
 state = model_nacl.make_state(c)
 print(f"I = {state.I / 1000:.4f} mol/L   (expected 0.1500 for 150 mM NaCl)")
 ```
@@ -233,22 +265,29 @@ print(f"I = {state.I / 1000:.4f} mol/L   (expected 0.1500 for 150 mM NaCl)")
 :label: cell-ionic-strength
 
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
 c_nacl = np.linspace(0, 300, 300)
-I_bg   = 50.0   # mol/m³
+I_bg = 50.0  # mol/m³
+
 
 def eval_I_ideal(c_salt):
     c_vec = np.array([1e-4, 1e-4, 1000.0, c_salt, c_salt])
     return model_nacl.make_state(c_vec).I
 
-I_ideal      = np.array([eval_I_ideal(c) for c in c_nacl])
-I_background = I_ideal + I_bg
-I_fixed_val  = 150.0 * np.ones_like(c_nacl)
 
-fig, ax = plt.subplots()
-ax.plot(c_nacl / 10, I_ideal      / 10, label="IonicStrengthIdeal")
-ax.plot(c_nacl / 10, I_background / 10, label=f"IonicStrengthBackground ($I_{{bg}}$ = {I_bg/10:.0f} mM)")
-ax.plot(c_nacl / 10, I_fixed_val  / 10, label="IonicStrengthFixed (150 mM)", ls="--")
+I_ideal = np.array([eval_I_ideal(c) for c in c_nacl])
+I_background = I_ideal + I_bg
+I_fixed_val = 150.0 * np.ones_like(c_nacl)
+
+fig, ax = setup_figure()
+ax.plot(c_nacl / 10, I_ideal / 10, label="IonicStrengthIdeal")
+ax.plot(
+    c_nacl / 10,
+    I_background / 10,
+    label=f"IonicStrengthBackground ($I_{{bg}}$ = {I_bg / 10:.0f} mM)",
+)
+ax.plot(c_nacl / 10, I_fixed_val / 10, label="IonicStrengthFixed (150 mM)", ls="--")
 ax.set_xlabel(r"$c_\mathrm{NaCl}$ [mM]")
 ax.set_ylabel(r"$I$ [mM]")
 ax.legend()
@@ -283,11 +322,11 @@ At finite ionic strength $\gamma_{\ce{H+}} < 1$, so pH exceeds $-\log_{10}(c_{\c
 This is not a correction applied on top of pH; it is the definition that pH measurements (glass electrode, calibrated against standard buffers) actually track.
 
 ```{code-cell} ipython3
-dav  = ActivityCoefficientDavies()
-c_H  = 1e-4     # mol/m³  (= 10⁻⁷ mol/L, nominal pH 7)
-I    = 150.0    # mol/m³  (= 150 mM)
+dav = ActivityCoefficientDavies()
+c_H = 1e-4  # mol/m³  (= 10⁻⁷ mol/L, nominal pH 7)
+I = 150.0  # mol/m³  (= 150 mM)
 
-state   = PhysicalState(c=np.array([c_H]), T=298.15, I=I)
+state = PhysicalState(c=np.array([c_H]), T=298.15, I=I)
 gamma_H = dav.activity(state, np.array([1.0]))[0]
 
 print(f"γ(H+) at 150 mM    = {gamma_H:.4f}")
@@ -332,11 +371,16 @@ model = ReactionModel(
     T=298.15,
 )
 
-c0       = {"HA": 0.5, "A-": 0.5, "H+": 10**(-pKa_thermo) * C_REF, "OH-": 10**(-7) * C_REF}
-c_eq     = solve_equilibrium(model, c0, T=298.15, prescribed={"H2O": water.c_ref})
-pH_eq    = -np.log10(c_eq["H+"] / C_REF)
-A_frac   = c_eq["A-"] / (c_eq["HA"] + c_eq["A-"])
-pKa_app  = pH_eq - np.log10(A_frac / (1 - A_frac))
+c0 = {
+    "HA": 0.5,
+    "A-": 0.5,
+    "H+": 10 ** (-pKa_thermo) * C_REF,
+    "OH-": 10 ** (-7) * C_REF,
+}
+c_eq = solve_equilibrium(model, c0, T=298.15, prescribed={"H2O": water.c_ref})
+pH_eq = -np.log10(c_eq["H+"] / C_REF)
+A_frac = c_eq["A-"] / (c_eq["HA"] + c_eq["A-"])
+pKa_app = pH_eq - np.log10(A_frac / (1 - A_frac))
 print(f"apparent pKa at 150 mM: {pKa_app:.3f}  (thermodynamic: {pKa_thermo})")
 ```
 
@@ -345,7 +389,13 @@ print(f"apparent pKa at 150 mM: {pKa_app:.3f}  (thermodynamic: {pKa_thermo})")
 :label: cell-activity-pka
 
 I_bg_range = np.array([0, 10, 25, 50, 100, 150, 200, 300, 400, 500])
-c0_loop    = {"HA": 1e-3, "A-": 1e-3, "H+": 10**(-pKa_thermo) * C_REF, "OH-": 10**(-7) * C_REF}
+c0_loop = {
+    "HA": 1e-3,
+    "A-": 1e-3,
+    "H+": 10 ** (-pKa_thermo) * C_REF,
+    "OH-": 10 ** (-7) * C_REF,
+}
+
 
 def make_model(activity_coeff, I_bg):
     return ReactionModel(
@@ -368,24 +418,30 @@ def make_model(activity_coeff, I_bg):
         T=298.15,
     )
 
-pKa_dh  = []
+
+pKa_dh = []
 pKa_dav = []
 
 for I_bg_mM in I_bg_range:
     I_bg = float(I_bg_mM)
-    for results, coeff in [(pKa_dh, ActivityCoefficientDebyeHuckel()),
-                           (pKa_dav, ActivityCoefficientDavies())]:
+    for results, coeff in [
+        (pKa_dh, ActivityCoefficientDebyeHuckel()),
+        (pKa_dav, ActivityCoefficientDavies()),
+    ]:
         model_i = make_model(coeff, I_bg)
-        c_eq    = solve_equilibrium(model_i, c0_loop, T=298.15, prescribed={"H2O": water.c_ref})
-        pH_eq   = -np.log10(c_eq["H+"] / C_REF)
-        A_frac  = c_eq["A-"] / (c_eq["HA"] + c_eq["A-"])
+        c_eq = solve_equilibrium(
+            model_i, c0_loop, T=298.15, prescribed={"H2O": water.c_ref}
+        )
+        pH_eq = -np.log10(c_eq["H+"] / C_REF)
+        A_frac = c_eq["A-"] / (c_eq["HA"] + c_eq["A-"])
         results.append(pH_eq - np.log10(A_frac / (1 - A_frac)))
 
-fig, ax = plt.subplots()
-ax.plot(I_bg_range, pKa_dh,  label="Debye-Hückel", marker="o", ms=4)
-ax.plot(I_bg_range, pKa_dav, label="Davies",        marker="s", ms=4)
-ax.axhline(pKa_thermo, color="gray", lw=0.8, ls="--",
-           label=f"thermodynamic pKa = {pKa_thermo}")
+fig, ax = setup_figure()
+ax.plot(I_bg_range, pKa_dh, label="Debye-Hückel", marker="o", ms=4)
+ax.plot(I_bg_range, pKa_dav, label="Davies", marker="s", ms=4)
+ax.axhline(
+    pKa_thermo, color="gray", lw=0.8, ls="--", label=f"thermodynamic pKa = {pKa_thermo}"
+)
 ax.axvline(100, color="gray", lw=0.6, ls=":")
 ax.set_xlabel(r"$I$ [mM]")
 ax.set_ylabel(r"apparent $\mathrm{p}K_a$")
@@ -420,10 +476,10 @@ import warnings
 from reactions.api import _water_epsilon_r
 
 charges = np.array([1.0, -1.0])
-I       = 150.0  # mol/m³
+I = 150.0  # mol/m³
 
 dav_fixed = ActivityCoefficientDavies()
-dav_Tdep  = ActivityCoefficientDavies(epsilon_r=_water_epsilon_r)
+dav_Tdep = ActivityCoefficientDavies(epsilon_r=_water_epsilon_r)
 
 for T in [298.15, 310.0, 330.0]:
     state = PhysicalState(c=np.array([1e-4, 1e-4]), T=T, I=I)

@@ -72,6 +72,7 @@ The same equation governs $K_\text{ads}$ for adsorption (@adsorption) and $K_a$ 
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
 R = 8.314  # J/(mol·K)
 T = np.linspace(280, 400, 300)
@@ -81,7 +82,7 @@ cases = [
     (r"endothermic  ($\Delta_r H^\circ = +40\,\mathrm{kJ/mol}$)", +40e3, +100.0, "C3"),
 ]
 
-fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+fig, axes = setup_figure(1, 2)
 
 for ax, (label, dH, dS, color) in zip(axes, cases):
     dG = dH - T * dS
@@ -92,7 +93,7 @@ for ax, (label, dH, dS, color) in zip(axes, cases):
     ax.set_title(label)
     slope = -dH / R
     ax.annotate(
-        f"slope $= -\\Delta_r H^\\circ / R$\n$= {slope/1e3:.1f}$ kK",
+        f"slope $= -\\Delta_r H^\\circ / R$\n$= {slope / 1e3:.1f}$ kK",
         xy=(1e3 / T[150], np.log(K[150])),
         xytext=(20, -30 if dH < 0 else 30),
         textcoords="offset points",

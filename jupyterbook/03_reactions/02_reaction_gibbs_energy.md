@@ -48,28 +48,44 @@ The derivative of $G(\xi)$ reproduces the reaction Gibbs energy, as shown in @fi
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
 xi = np.linspace(0.001, 0.999, 600)
 delta = -1.0
 
+
 def g_norm(xi, delta):
     return delta * xi + (1 - xi) * np.log(1 - xi) + xi * np.log(xi)
 
+
 def drg_norm(xi, delta):
     return delta + np.log(xi / (1 - xi))
+
 
 def xi_eq(delta):
     K = np.exp(-delta)
     return K / (1 + K)
 
-def add_tangent(ax, xi_pt, delta, half_width=0.10, color="mediumpurple"):
+
+def add_tangent(ax, xi_pt, delta, half_width=0.10, color=None):
+    if color is None:
+        color = COLORS["quaternary"]
     g_pt = g_norm(xi_pt, delta)
     slope = drg_norm(xi_pt, delta)
     x_tan = np.array([xi_pt - half_width, xi_pt + half_width])
     y_tan = g_pt + slope * (x_tan - xi_pt)
     ax.plot(x_tan, y_tan, color=color, linewidth=1.8, zorder=4)
-    ax.plot(xi_pt, g_pt, "o", color="white", markersize=7, zorder=5,
-            markeredgecolor="#1c4f8a", markeredgewidth=1.5)
+    ax.plot(
+        xi_pt,
+        g_pt,
+        "o",
+        color="white",
+        markersize=7,
+        zorder=5,
+        markeredgecolor="#1c4f8a",
+        markeredgewidth=1.5,
+    )
+
 
 g = g_norm(xi, delta)
 xi_e = xi_eq(delta)
@@ -77,23 +93,71 @@ g_e = g_norm(xi_e, delta)
 xi_left = 0.22
 xi_right = 0.95
 
-fig, ax = plt.subplots(figsize=(7, 5))
-ax.plot(xi, g, color="#1c4f8a", linewidth=2.5, zorder=3)
+fig, ax = setup_figure()
+ax.plot(xi, g, color=COLORS["primary"], linewidth=2.5, zorder=3)
 ax.plot([0.0, 1.04], [0.0, 0.0], "--", color="gray", linewidth=1.0)
 ax.plot([0.0, 1.04], [delta, delta], "--", color="gray", linewidth=1.0)
 
 add_tangent(ax, xi_left, delta)
 add_tangent(ax, xi_right, delta)
 
-ax.plot([xi_e - 0.10, xi_e + 0.10], [g_e, g_e],
-        color="mediumpurple", linewidth=1.8, zorder=4)
-ax.plot(xi_e, g_e, "o", color="white", markersize=10, zorder=6,
-        markeredgecolor="#1c4f8a", markeredgewidth=2)
-ax.axvline(xi_e, color="gray", linestyle=":", linewidth=1.0)
+ax.plot(
+    [xi_e - 0.10, xi_e + 0.10],
+    [g_e, g_e],
+    color=COLORS["quaternary"],
+    linewidth=1.8,
+    zorder=4,
+)
+ax.plot(
+    xi_e,
+    g_e,
+    "o",
+    color="white",
+    markersize=10,
+    zorder=6,
+    markeredgecolor=COLORS["primary"],
+    markeredgewidth=2,
+)
+
+ann_kw = dict(
+    fontsize=9,
+    color=COLORS["quaternary"],
+    arrowprops=dict(
+        arrowstyle="-", color=COLORS["quaternary"], lw=0.8, shrinkA=0, shrinkB=5
+    ),
+)
+ax.annotate(
+    r"$\Delta_r G < 0$",
+    xy=(xi_left, g_norm(xi_left, delta)),
+    xytext=(xi_left, g_norm(xi_left, delta) - 0.2),
+    ha="center",
+    va="center",
+    **ann_kw,
+)
+ax.annotate(
+    r"$\Delta_r G = 0$",
+    xy=(xi_e, g_e),
+    xytext=(xi_e, g_e + 0.1),
+    ha="center",
+    va="center",
+    **ann_kw,
+)
+ax.annotate(
+    r"$\Delta_r G > 0$",
+    xy=(xi_right, g_norm(xi_right, delta)),
+    xytext=(xi_right, g_norm(xi_right, delta) - 0.2),
+    ha="center",
+    va="center",
+    **ann_kw,
+)
 
 ax.set_xlabel(r"Extent of reaction, $\xi$")
 ax.set_ylabel("Gibbs energy, $G$")
-ax.set_xticks([])
+ax.set_xlim(0, 1)
+ax.set_xticks([0, xi_e, 1])
+ax.set_xticklabels(["0", r"$\xi_\mathrm{eq}$", "1"])
+ax.set_yticks([delta, 0.0])
+ax.set_yticklabels([r"$G^\circ_\mathrm{B}$", r"$G^\circ_\mathrm{A}$"])
 
 fig.tight_layout()
 ```

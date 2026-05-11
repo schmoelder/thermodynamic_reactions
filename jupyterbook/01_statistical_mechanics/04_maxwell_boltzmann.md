@@ -60,11 +60,12 @@ The result is a **Gamma distribution** with shape $\frac{3}{2}$ and scale $m\sig
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 from scipy import stats
 
 sigma = 1.0  # kT/m = 1 in arbitrary units
 
-fig, axes = plt.subplots(1, 3, figsize=(12, 3.5))
+fig, axes = setup_figure(1, 3, figsize=(12, 3.5))
 
 v_x = np.linspace(-4, 4, 400)
 axes[0].plot(v_x, stats.norm(scale=sigma).pdf(v_x), "C0")
@@ -78,14 +79,18 @@ axes[1].set_xlabel(r"speed $v$  [a.u.]")
 axes[1].set_title(r"speed: $p(v) \propto v^2\,e^{-v^2/2\sigma^2}$")
 
 eps = np.linspace(0, 8, 400)
-axes[2].plot(eps, stats.gamma(a=3/2, scale=sigma**2).pdf(eps), "C2")
+axes[2].plot(eps, stats.gamma(a=3 / 2, scale=sigma**2).pdf(eps), "C2")
 axes[2].set_xlabel(r"energy $\varepsilon$  [a.u.]")
-axes[2].set_title(r"energy: $p(\varepsilon) \propto \varepsilon^{1/2}\,e^{-\varepsilon/m\sigma^2}$")
+axes[2].set_title(
+    r"energy: $p(\varepsilon) \propto \varepsilon^{1/2}\,e^{-\varepsilon/m\sigma^2}$"
+)
 
 for ax in axes[1:]:
     ax.set_ylabel("")
 
-plt.suptitle(r"From Gaussian velocity components to the Maxwell–Boltzmann distribution", y=1.02)
+plt.suptitle(
+    r"From Gaussian velocity components to the Maxwell–Boltzmann distribution", y=1.02
+)
 fig.tight_layout()
 ```
 
@@ -145,6 +150,7 @@ It is one of the central results of statistical mechanics: in any system in ther
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 from scipy import stats
 
 x_max = 8.0
@@ -152,10 +158,10 @@ eps = np.linspace(0, x_max, 500)
 kT_vals = [0.5, 1.0, 2.0, 3.0]
 colors = ["C0", "C1", "C2", "C3"]
 
-fig, ax = plt.subplots(figsize=(7, 4))
+fig, ax = setup_figure()
 
 for kT, color in zip(kT_vals, colors):
-    pdf = stats.gamma(a=3/2, scale=kT).pdf(eps)
+    pdf = stats.gamma(a=3 / 2, scale=kT).pdf(eps)
     ax.plot(
         eps,
         pdf,
@@ -210,28 +216,29 @@ The corresponding energy distribution has mode $\varepsilon_\text{mode} = \frac{
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 from scipy import stats
 
 kT = 1.0
-m  = 1.0
+m = 1.0
 sigma = np.sqrt(kT / m)
 
-v_p    = np.sqrt(2 * kT / m)
+v_p = np.sqrt(2 * kT / m)
 v_mean = np.sqrt(8 * kT / (np.pi * m))
-v_rms  = np.sqrt(3 * kT / m)
+v_rms = np.sqrt(3 * kT / m)
 
-E_a       = 3.0 * kT
-eps_mode  = 0.5 * kT
-eps_mean  = 1.5 * kT
+E_a = 3.0 * kT
+eps_mode = 0.5 * kT
+eps_mean = 1.5 * kT
 
-fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+fig, axes = setup_figure(1, 2)
 
 v = np.linspace(0, 5, 400)
 axes[0].plot(v, stats.maxwell(scale=sigma).pdf(v), "C0", lw=2)
 for xv, col, lbl in [
-    (v_p,    "C1", r"$v_p = \sqrt{2k_BT/m}$"),
+    (v_p, "C1", r"$v_p = \sqrt{2k_BT/m}$"),
     (v_mean, "C2", r"$\langle v\rangle = \sqrt{8k_BT/\pi m}$"),
-    (v_rms,  "C3", r"$v_\mathrm{rms} = \sqrt{3k_BT/m}$"),
+    (v_rms, "C3", r"$v_\mathrm{rms} = \sqrt{3k_BT/m}$"),
 ]:
     axes[0].axvline(xv, color=col, lw=1.5, label=lbl)
 axes[0].set_xlabel(r"speed $v$  [a.u.]")
@@ -240,16 +247,18 @@ axes[0].set_title("Speed distribution")
 axes[0].legend(fontsize=9)
 
 eps = np.linspace(0, 8, 400)
-pdf_e = stats.gamma(a=3/2, scale=kT).pdf(eps)
+pdf_e = stats.gamma(a=3 / 2, scale=kT).pdf(eps)
 axes[1].plot(eps, pdf_e, "C0", lw=2)
-axes[1].axvline(eps_mode, color="C1", lw=1.5,
-                label=r"$\varepsilon_\mathrm{mode} = k_BT/2$")
-axes[1].axvline(eps_mean, color="C3", lw=1.5,
-                label=r"$\langle\varepsilon\rangle = 3k_BT/2$")
-axes[1].axvline(E_a, color="C4", lw=1.5, ls="--",
-                label=r"$E_a$ (activation energy)")
-axes[1].fill_between(eps, pdf_e, where=(eps >= E_a), alpha=0.25, color="C4",
-                     label="_nolegend_")
+axes[1].axvline(
+    eps_mode, color="C1", lw=1.5, label=r"$\varepsilon_\mathrm{mode} = k_BT/2$"
+)
+axes[1].axvline(
+    eps_mean, color="C3", lw=1.5, label=r"$\langle\varepsilon\rangle = 3k_BT/2$"
+)
+axes[1].axvline(E_a, color="C4", lw=1.5, ls="--", label=r"$E_a$ (activation energy)")
+axes[1].fill_between(
+    eps, pdf_e, where=(eps >= E_a), alpha=0.25, color="C4", label="_nolegend_"
+)
 axes[1].set_xlabel(r"energy $\varepsilon$  [a.u.]")
 axes[1].set_title("Energy distribution")
 axes[1].legend(fontsize=9)
@@ -282,25 +291,26 @@ The Arrhenius equation $k = A\, e^{-E_a/k_BT}$ captures this dependence and is d
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 from scipy import stats
 from scipy.special import gammaincc
 
 kT = 1.0
 x_max = 10.0
 eps = np.linspace(0, x_max, 500)
-pdf = stats.gamma(a=3/2, scale=kT).pdf(eps)
+pdf = stats.gamma(a=3 / 2, scale=kT).pdf(eps)
 
 Ea_vals = [2.0, 4.0, 6.0]
 colors_ea = ["C1", "firebrick", "C3"]
 
-fig, ax = plt.subplots(figsize=(7, 4))
+fig, ax = setup_figure()
 ax.plot(eps, pdf, color="steelblue", linewidth=2.5, zorder=3)
 
 for Ea, color in zip(Ea_vals, colors_ea):
     mask = eps >= Ea
     eps_tail = np.concatenate([[Ea], eps[mask]])
-    pdf_tail = np.concatenate([[stats.gamma(a=3/2, scale=kT).pdf(Ea)], pdf[mask]])
-    frac = gammaincc(3/2, Ea / kT)
+    pdf_tail = np.concatenate([[stats.gamma(a=3 / 2, scale=kT).pdf(Ea)], pdf[mask]])
+    frac = gammaincc(3 / 2, Ea / kT)
     ax.fill_between(
         eps_tail,
         pdf_tail,

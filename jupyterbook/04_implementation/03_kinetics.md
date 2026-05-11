@@ -37,7 +37,7 @@ from reactions.api import (
 from reactions.solver import simulate, solve_equilibrium
 
 K_val = 4.0
-c_tot = 1000.0    # mol/m³
+c_tot = 1000.0  # mol/m³
 kf_thermo = 2000.0  # mol/(m³·s); τ ≈ C_REF / (kf * (1 + 1/K)) ≈ 0.4 s
 
 comp_a = Component("A")
@@ -80,7 +80,9 @@ B_eq = c_tot * K_val / (1 + K_val)
 A_eq = c_tot - B_eq
 
 print(f"solve_equilibrium: c_A = {c_eq['A']:.4f}, c_B = {c_eq['B']:.4f}")
-print(f"simulate long-time: c_A = {result_kin['A'][-1]:.4f}, c_B = {result_kin['B'][-1]:.4f}")
+print(
+    f"simulate long-time: c_A = {result_kin['A'][-1]:.4f}, c_B = {result_kin['B'][-1]:.4f}"
+)
 
 fig, ax = plt.subplots()
 ax.plot(result_kin.t, result_kin["A"], label="A", color="C0")
@@ -119,7 +121,7 @@ With $K(T)$ from `EquilibriumConstantVantHoff`, the derived $k^r(T) = k^f(T)/K(T
 
 ```{code-cell} ipython3
 kf_arr = RateConstantArrhenius(A=1e10, Ea=40e3)
-K_vH   = EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0)
+K_vH = EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0)
 ```
 
 ```{code-cell} ipython3
@@ -128,7 +130,7 @@ K_vH   = EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0)
 
 T_range = np.linspace(270, 370, 300)
 kf_vals = np.array([kf_arr.kf(T) for T in T_range])
-K_true  = np.array([K_vH.K(T) for T in T_range])
+K_true = np.array([K_vH.K(T) for T in T_range])
 
 kr_fixed = kf_arr.kf(298.15) / K_vH.K(298.15)
 ratio_fixed = kf_vals / kr_fixed
@@ -140,8 +142,14 @@ axes[0].set_xlabel(r"$1000\,/\,T\ [\mathrm{K}^{-1}]$")
 axes[0].set_ylabel(r"$\ln k^f$")
 axes[0].set_title("Arrhenius plot")
 
-axes[1].plot(T_range - 273.15, K_true,       color="C0", label=r"$K(T)$ [van't Hoff]")
-axes[1].plot(T_range - 273.15, ratio_fixed,  color="C1", ls="--", label=r"$k^f(T)\,/\,k^r$ [fixed $k^r$]")
+axes[1].plot(T_range - 273.15, K_true, color="C0", label=r"$K(T)$ [van't Hoff]")
+axes[1].plot(
+    T_range - 273.15,
+    ratio_fixed,
+    color="C1",
+    ls="--",
+    label=r"$k^f(T)\,/\,k^r$ [fixed $k^r$]",
+)
 axes[1].fill_between(T_range - 273.15, K_true, ratio_fixed, alpha=0.15, color="C3")
 axes[1].axvline(298.15 - 273.15, color="gray", lw=0.8, ls=":", label="calibration T")
 axes[1].set_xlabel(r"$T$ [°C]")
@@ -184,10 +192,12 @@ model = ReactionModel(
 :tags: [remove-cell]
 
 T_check = np.linspace(280, 360, 9)
-print(f"{'T (K)':>8}  {'kf':>12}  {'kr':>12}  {'kf/kr':>10}  {'K(T)':>10}  {'error':>10}")
+print(
+    f"{'T (K)':>8}  {'kf':>12}  {'kr':>12}  {'kf/kr':>10}  {'K(T)':>10}  {'error':>10}"
+)
 for T in T_check:
     kf_val = kf_arr.kf(T)
-    K_val  = K_vH.K(T)
+    K_val = K_vH.K(T)
     kr_val = kf_val / K_val
     print(
         f"{T:>8.2f}  {kf_val:>12.4f}  {kr_val:>12.4f}"
@@ -228,19 +238,23 @@ K_320 = K_vH.K(320.0)
 B_eq_298 = c_tot * K_298 / (1 + K_298)
 B_eq_320 = c_tot * K_320 / (1 + K_320)
 
-print(f"T = 298.15 K:  K = {K_298:.3f},  c_B_eq = {B_eq_298:.1f} mol/m³  ({100*K_298/(1+K_298):.1f}%)")
-print(f"T = 320.00 K:  K = {K_320:.3f},  c_B_eq = {B_eq_320:.1f} mol/m³  ({100*K_320/(1+K_320):.1f}%)")
+print(
+    f"T = 298.15 K:  K = {K_298:.3f},  c_B_eq = {B_eq_298:.1f} mol/m³  ({100 * K_298 / (1 + K_298):.1f}%)"
+)
+print(
+    f"T = 320.00 K:  K = {K_320:.3f},  c_B_eq = {B_eq_320:.1f} mol/m³  ({100 * K_320 / (1 + K_320):.1f}%)"
+)
 
 fig, axes = plt.subplots(1, 2, figsize=(8, 3.5), sharey=True)
 
 for ax, result, T, K, B_eq, label in [
     (axes[0], result_298, 298.15, K_298, B_eq_298, "298 K"),
-    (axes[1], result_320, 320.0,  K_320, B_eq_320, "320 K"),
+    (axes[1], result_320, 320.0, K_320, B_eq_320, "320 K"),
 ]:
     ax.plot(result.t, result["A"], label="A", color="C0")
     ax.plot(result.t, result["B"], label="B", color="C1")
     ax.axhline(c_tot - B_eq, color="C0", lw=1.0, ls="--")
-    ax.axhline(B_eq,         color="C1", lw=1.0, ls="--", label="equilibrium")
+    ax.axhline(B_eq, color="C1", lw=1.0, ls="--", label="equilibrium")
     ax.set_xlabel("time [s]")
     ax.set_title(f"$T = {label}$,  $K = {K:.2f}$")
 
@@ -296,18 +310,19 @@ B_inst = c_tot * K_inst / (1 + K_inst)
 
 fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
 
-axes[0].plot(result_ramp.t, result_ramp["A"], color="C0", label="A")
-axes[0].plot(result_ramp.t, result_ramp["B"], color="C1", label="B")
-axes[0].plot(result_ramp.t, B_inst,           color="C1", ls="--", lw=1.0,
-             label=r"$c_B^\mathrm{eq}(T(t))$")
-axes[0].plot(result_ramp.t, c_tot - B_inst,   color="C0", ls="--", lw=1.0)
+axes[0].plot(result_ramp.t, T_inst - 273.15, color="C3")
 axes[0].set_xlabel("time [s]")
-axes[0].set_ylabel(r"concentration [mol/m³]")
-axes[0].legend(fontsize=8)
+axes[0].set_ylabel(r"$T$ [°C]")
 
-axes[1].plot(result_ramp.t, T_inst - 273.15, color="C3")
+axes[1].plot(result_ramp.t, result_ramp["A"], color="C0", label="A")
+axes[1].plot(result_ramp.t, result_ramp["B"], color="C1", label="B")
+axes[1].plot(
+    result_ramp.t, B_inst, color="C1", ls="--", lw=1.0, label=r"$c_B^\mathrm{eq}(T(t))$"
+)
+axes[1].plot(result_ramp.t, c_tot - B_inst, color="C0", ls="--", lw=1.0)
 axes[1].set_xlabel("time [s]")
-axes[1].set_ylabel(r"$T$ [°C]")
+axes[1].set_ylabel(r"concentration [mol/m³]")
+axes[1].legend(fontsize=8)
 
 fig.tight_layout()
 ```
@@ -316,9 +331,9 @@ fig.tight_layout()
 :name: fig-T-ramp
 
 Kinetic simulation under a linear temperature ramp from $298\ \text{K}$ to $320\ \text{K}$ over $10\ \text{s}$.
-Left: concentration trajectories; dashed lines track the instantaneous equilibrium
+Left: the prescribed temperature programme stored in `result_ramp.T_profile`.
+Right: concentration trajectories; dashed lines track the instantaneous equilibrium
 $c_\text{B}^\text{eq}(T(t)) = c_\text{tot}\,K(T(t))/(1+K(T(t)))$.
-Right: the prescribed temperature programme stored in `result_ramp.T_profile`.
 The exothermic reaction loses product B as temperature rises, consistent with Le Chatelier's principle.
 ```
 
@@ -328,7 +343,7 @@ A slower rate constant or a faster ramp would introduce a visible lag between th
 
 ## Structure of a reaction model
 
-Three chapters have now introduced three API classes — `MassActionReaction`, `ThermodynamicReaction(mode="equil")`, and `ThermodynamicReaction(mode="kinetic")` — that all reduce to the same source term $\mathbf{S}\boldsymbol{\varphi}$ but differ in what constrains $\varphi$.
+Three chapters have now introduced three API classes (`MassActionReaction`, `ThermodynamicReaction(mode="equil")`, and `ThermodynamicReaction(mode="kinetic")`) that all reduce to the same source term $\mathbf{S}\boldsymbol{\varphi}$ but differ in what constrains $\varphi$.
 A reaction model is a composition of five independent layers:
 
 | Layer | What it specifies |
@@ -343,14 +358,14 @@ The three current classes occupy different positions along the first three layer
 
 | Class | Equilibrium relation | Kinetic closure |
 | ----- | -------------------- | --------------- |
-| `MassActionReaction` | none — $k^r$ is a free parameter | mass-action polynomial |
+| `MassActionReaction` | none; $k^r$ is a free parameter | mass-action polynomial |
 | `ThermodynamicReaction(mode="kinetic")` | $K(T)$ enforces $k^r = k^f/K$ automatically | Arrhenius, polynomial, tabulated, or custom |
-| `ThermodynamicReaction(mode="equil")` | $K(T)$ as an algebraic constraint | none — fast-reaction limit |
-| `EnzymaticReaction` *(introduced in @implementation-enzyme)* | none — reverse rate absent | custom saturating closure (MM, Hill, user-supplied) |
+| `ThermodynamicReaction(mode="equil")` | $K(T)$ as an algebraic constraint | none; fast-reaction limit |
+| `EnzymaticReaction` *(introduced in @implementation-enzyme)* | none; reverse rate absent | custom saturating closure (MM, Hill, user-supplied) |
 
 The key distinction is whether a class carries an explicit equilibrium relation.
 `MassActionReaction` and `EnzymaticReaction` are siblings at the stoichiometry-plus-closure level: neither enforces thermodynamic consistency between forward and reverse rates.
-`MassActionReaction` is not a deficient form — it is permissive, empirical, and appropriate when thermodynamic parameters are unavailable or when the two rate constants are treated as independently fitted quantities.
+`MassActionReaction` is not a deficient form; it is permissive, empirical, and appropriate when thermodynamic parameters are unavailable or when the two rate constants are treated as independently fitted quantities.
 `ThermodynamicReaction` adds the equilibrium relation as an explicit layer; in kinetic mode that relation derives $k^r$ automatically so consistency is maintained across all temperatures, and in equilibrium mode the kinetic closure disappears entirely (the fast-reaction limit).
 
 The activity model and state dependency layers are orthogonal: they extend any of the four classes without changing stoichiometry, equilibrium relation, or kinetic closure.

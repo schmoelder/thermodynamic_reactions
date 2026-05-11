@@ -41,7 +41,7 @@ from reactions.api import (
 from reactions.solver import simulate, solve_equilibrium
 
 K_val = 4.0
-c_tot = 1000.0    # mol/m³
+c_tot = 1000.0  # mol/m³
 
 model_eq = ReactionModel(
     components=[Component("A"), Component("B")],
@@ -101,22 +101,30 @@ When temperature varies, a fixed ratio $k^f/k^r$ calibrated at one temperature d
 :tags: [remove-cell]
 :label: cell-eq-drift
 
-dH = -20e3    # J/mol  (exothermic)
-dS = -50.0    # J/(mol·K)
+dH = -20e3  # J/mol  (exothermic)
+dS = -50.0  # J/(mol·K)
 K_vH_drift = EquilibriumConstantVantHoff(dH=dH, dS=dS)
 
-T_ref   = 298.15
-K_ref   = K_vH_drift.K(T_ref)
+T_ref = 298.15
+K_ref = K_vH_drift.K(T_ref)
 
 T_sweep = np.linspace(270, 370, 200)
-K_true  = np.array([K_vH_drift.K(T) for T in T_sweep])
+K_true = np.array([K_vH_drift.K(T) for T in T_sweep])
 K_fixed = np.full_like(T_sweep, K_ref)
 
 fig, ax = plt.subplots()
-ax.plot(T_sweep - 273.15, K_true,  color="C0", label=r"$K(T)$ [van't Hoff]")
-ax.plot(T_sweep - 273.15, K_fixed, color="C1", ls="--", label=f"$k^f/k^r$ [fixed at {T_ref - 273.15:.0f} °C]")
+ax.plot(T_sweep - 273.15, K_true, color="C0", label=r"$K(T)$ [van't Hoff]")
+ax.plot(
+    T_sweep - 273.15,
+    K_fixed,
+    color="C1",
+    ls="--",
+    label=f"$k^f/k^r$ [fixed at {T_ref - 273.15:.0f} °C]",
+)
 ax.fill_between(T_sweep - 273.15, K_true, K_fixed, alpha=0.15, color="C3")
-ax.axvline(T_ref - 273.15, color="gray", lw=0.8, ls=":", label="calibration temperature")
+ax.axvline(
+    T_ref - 273.15, color="gray", lw=0.8, ls=":", label="calibration temperature"
+)
 ax.set_xlabel(r"$T$ [°C]")
 ax.set_ylabel(r"$K$")
 ax.legend()
@@ -140,8 +148,8 @@ $$
 For an exothermic reaction ($\Delta H^\circ < 0$) heating decreases $K$, shifting the equilibrium toward the reactant (@fig-eq-vanthoff).
 
 ```{code-cell} ipython3
-dH = -20e3    # J/mol  (exothermic)
-dS = -50.0    # J/(mol·K)
+dH = -20e3  # J/mol  (exothermic)
+dS = -50.0  # J/(mol·K)
 
 K_vH = EquilibriumConstantVantHoff(dH=dH, dS=dS)
 ```
@@ -155,8 +163,8 @@ for T in [280.0, 298.15, 320.0, 350.0]:
     K = K_vH.K(T)
     print(f"{T - 273.15:>8.1f}  {K:>8.4f}  {K / (1 + K):>10.4f}")
 
-T_arr  = np.linspace(270, 370, 300)
-K_arr  = np.array([K_vH.K(T) for T in T_arr])
+T_arr = np.linspace(270, 370, 300)
+K_arr = np.array([K_vH.K(T) for T in T_arr])
 fB_arr = K_arr / (1 + K_arr)
 
 fig, axes = plt.subplots(1, 2, figsize=(8, 3.5))
@@ -207,7 +215,9 @@ c_320 = solve_equilibrium(
 
 K_320 = K_vH.K(320.0)
 print(f"K(320 K)  = {K_320:.6f}")
-print(f"c_B / c_A = {c_320['B'] / c_320['A']:.6f}   (error: {abs(c_320['B'] / c_320['A'] - K_320):.2e})")
+print(
+    f"c_B / c_A = {c_320['B'] / c_320['A']:.6f}   (error: {abs(c_320['B'] / c_320['A'] - K_320):.2e})"
+)
 ```
 
 
@@ -234,13 +244,18 @@ K_cp = EquilibriumConstantVantHoffCp(dH=dH, dS=dS, dCp=+200.0, T_ref=298.15)
 :tags: [remove-cell]
 :label: cell-eq-cp
 
-T_wide   = np.linspace(250, 450, 400)
+T_wide = np.linspace(250, 450, 400)
 K_vH_arr = np.array([K_vH.K(T) for T in T_wide])
 K_cp_arr = np.array([K_cp.K(T) for T in T_wide])
 
 fig, ax = plt.subplots()
 ax.plot(1000 / T_wide, np.log(K_vH_arr), label="VantHoff (straight line)")
-ax.plot(1000 / T_wide, np.log(K_cp_arr), "--", label=r"VantHoffCp ($\Delta C_p = +200\ \mathrm{J\,mol^{-1}\,K^{-1}}$)")
+ax.plot(
+    1000 / T_wide,
+    np.log(K_cp_arr),
+    "--",
+    label=r"VantHoffCp ($\Delta C_p = +200\ \mathrm{J\,mol^{-1}\,K^{-1}}$)",
+)
 ax.axvline(1000 / 298.15, color="gray", lw=0.8, ls=":", label=r"$T_\mathrm{ref}$")
 ax.set_xlabel(r"$1000\,/\,T\ [\mathrm{K}^{-1}]$")
 ax.set_ylabel(r"$\ln K$")
@@ -265,7 +280,7 @@ K_exp = EquilibriumConstantCustom(lambda T: 2.5 * np.exp(-1500 / T))
 # Measured data points
 K_tab = EquilibriumConstantTabulated(
     T_data=[280.0, 298.15, 320.0, 350.0],
-    K_data=[5.2,   4.0,    2.8,   1.7  ],
+    K_data=[5.2, 4.0, 2.8, 1.7],
 )
 ```
 

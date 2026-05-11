@@ -113,19 +113,19 @@ from reactions.solver import simulate
 
 WATER = Species(
     name="water",
-    molar_mass=0.018,    # kg/mol
-    density=1000.0,      # kg/m³
+    molar_mass=0.018,  # kg/mol
+    density=1000.0,  # kg/m³
     heat_capacity=75.3,  # J/(mol·K)
 )
 
-dH_rxn = -20e3   # J/mol  (exothermic)
-dS_rxn = -50.0   # J/(mol·K)
-Ea     = 40e3    # J/mol
-A_arr  = 1e10    # mol/(m³·s)
-T0     = 298.15  # K
-c_tot  = 1000.0  # mol/m³
+dH_rxn = -20e3  # J/mol  (exothermic)
+dS_rxn = -50.0  # J/(mol·K)
+Ea = 40e3  # J/mol
+A_arr = 1e10  # mol/(m³·s)
+T0 = 298.15  # K
+c_tot = 1000.0  # mol/m³
 
-K_vH  = EquilibriumConstantVantHoff(dH=dH_rxn, dS=dS_rxn)
+K_vH = EquilibriumConstantVantHoff(dH=dH_rxn, dS=dS_rxn)
 kf_arr = RateConstantArrhenius(A=A_arr, Ea=Ea)
 
 model = ReactionModel(
@@ -196,8 +196,9 @@ print(f"Relative variation:   {rel_var:.2e}")
 :label: cell-adiabatic
 
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
-fig, axes = plt.subplots(1, 2, figsize=(8, 3.8))
+fig, axes = setup_figure(1, 2)
 
 axes[0].plot(result.t, result["A"], color="C0", label="A")
 axes[0].plot(result.t, result["B"], color="C1", label="B")
@@ -235,24 +236,31 @@ result_iso = simulate(
 :tags: [remove-cell]
 :label: cell-comparison
 
-fig, axes = plt.subplots(1, 2, figsize=(8, 3.8))
+fig, axes = setup_figure(1, 2)
 
-K_T0    = K_vH.K(T0)
+K_T0 = K_vH.K(T0)
 T_final = float(result.T_profile[-1])
-K_Tf    = K_vH.K(T_final)
+K_Tf = K_vH.K(T_final)
 c_B_iso_eq = c_tot * K_T0 / (1 + K_T0)
 c_B_adi_eq = c_tot * K_Tf / (1 + K_Tf)
 
-axes[0].plot(result_iso.t, result_iso["B"], color="C1", ls="--", label="isothermal $T_0$")
-axes[0].plot(result.t,     result["B"],     color="C1",           label="adiabatic")
+axes[0].plot(
+    result_iso.t, result_iso["B"], color="C1", ls="--", label="isothermal $T_0$"
+)
+axes[0].plot(result.t, result["B"], color="C1", label="adiabatic")
 axes[0].axhline(c_B_iso_eq, color="C1", lw=0.8, ls=":")
 axes[0].axhline(c_B_adi_eq, color="C1", lw=0.8, ls=":")
 axes[0].set_xlabel("time [s]")
 axes[0].set_ylabel(r"$c_B$ [mol/m³]")
 axes[0].legend()
 
-axes[1].plot(result_iso.t, np.full_like(result_iso.t, T0) - 273.15,
-             color="C3", ls="--", label="isothermal $T_0$")
+axes[1].plot(
+    result_iso.t,
+    np.full_like(result_iso.t, T0) - 273.15,
+    color="C3",
+    ls="--",
+    label="isothermal $T_0$",
+)
 axes[1].plot(result.t, result.T_profile - 273.15, color="C3", label="adiabatic")
 axes[1].set_xlabel("time [s]")
 axes[1].set_ylabel(r"$T$ [°C]")
@@ -282,8 +290,8 @@ Each callable is evaluated at the current integration time $t$:
 ```{code-cell} ipython3
 MECN = Species(
     name="MeCN",
-    molar_mass=0.041,    # kg/mol
-    density=786.0,       # kg/m³
+    molar_mass=0.041,  # kg/mol
+    density=786.0,  # kg/m³
     heat_capacity=91.5,  # J/(mol·K)
 )
 
@@ -312,7 +320,7 @@ result_grad = simulate(
     T=T0,
     solvent_composition={
         "water": lambda t: 1.0 - 0.4 * t / t_end,
-        "MeCN":  lambda t: 0.4 * t / t_end,
+        "MeCN": lambda t: 0.4 * t / t_end,
     },
 )
 ```
@@ -323,15 +331,17 @@ result_grad = simulate(
 
 x_MeCN = np.array([0.4 * t / t_end for t in result_grad.t])
 
+
 def _rho_cp_mix(x_mecn: float) -> float:
     c = np.zeros(len(model_mix.species))
     c[model_mix.species_index["water"]] = 1.0 - x_mecn
     c[model_mix.species_index["MeCN"]] = x_mecn
     return model_mix.volumetric_heat_capacity(c)
 
+
 rho_cp_t = np.array([_rho_cp_mix(x) for x in x_MeCN])
 
-fig, axes = plt.subplots(1, 2, figsize=(9, 3.8))
+fig, axes = setup_figure(1, 2)
 
 axes[0].plot(result_grad.t, result_grad["A"], color="C0", label="A")
 axes[0].plot(result_grad.t, result_grad["B"], color="C1", label="B")

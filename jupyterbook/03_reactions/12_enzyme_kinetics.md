@@ -52,17 +52,18 @@ These apparent orders arise from enzyme saturation, not stoichiometry; no balanc
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
 Vmax = 1.0
-Km   = 1.0
-S    = np.linspace(0, 8, 400)
+Km = 1.0
+S = np.linspace(0, 8, 400)
 
-r       = Vmax * S / (Km + S)
+r = Vmax * S / (Km + S)
 r_first = (Vmax / Km) * S
-S_lo    = S[S <= 1.5]
+S_lo = S[S <= 1.5]
 
-fig, ax = plt.subplots(figsize=(7, 4))
-ax.plot(S, r, color="#1c4f8a", linewidth=2.5, label="Michaelis-Menten")
+fig, ax = setup_figure()
+ax.plot(S, r, color=COLORS["primary"], linewidth=2.5, label="Michaelis-Menten")
 ax.plot(
     S_lo,
     r_first[S <= 1.5],
@@ -74,16 +75,19 @@ ax.plot(
 ax.axhline(Vmax, color="C2", linewidth=1.5, linestyle="--", label=r"$V_\mathrm{max}$")
 ax.axvline(Km, color="gray", linewidth=1.0, linestyle=":")
 ax.plot(Km, Vmax / 2, "o", color="gray", markersize=7, zorder=5)
-ax.text(Km + 0.1, Vmax / 2,
-        r"$[\mathrm{S}] = K_m,\ r = V_\mathrm{max}/2$", fontsize=9, va="center")
+ax.text(
+    Km + 0.1,
+    Vmax / 2,
+    r"$[\mathrm{S}] = K_m,\ r = V_\mathrm{max}/2$",
+    fontsize=9,
+    va="center",
+)
 ax.text(Km, -0.08, r"$K_m$", ha="center", va="top", fontsize=10, color="gray")
-ax.set_xlabel(r"$[\mathrm{S}]$ [a.u.]", fontsize=11)
-ax.set_ylabel(r"$r$ [a.u.]", fontsize=11)
+ax.set_xlabel(r"$[\mathrm{S}]$ [a.u.]")
+ax.set_ylabel(r"$r$ [a.u.]")
 ax.set_ylim(-0.05, 1.35)
 ax.set_xlim(0, 8)
 ax.legend(fontsize=9, loc="lower right")
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
 fig.tight_layout()
 ```
 

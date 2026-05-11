@@ -174,30 +174,35 @@ This **asymmetric reference state** defines the standard state so that $\gamma_i
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
 x1 = np.linspace(0.001, 0.999, 400)
 x2 = 1 - x1
 
-fig, axes = plt.subplots(1, 2, figsize=(9, 3.8))
+fig, axes = setup_figure(1, 2)
 
 for A, color, label in [
-    ( 0.0, "C0", r"ideal  ($A = 0$)"),
-    ( 1.8, "C1", r"positive  ($A = 1.8$)"),
+    (0.0, "C0", r"ideal  ($A = 0$)"),
+    (1.8, "C1", r"positive  ($A = 1.8$)"),
     (-1.8, "C2", r"negative  ($A = -1.8$)"),
 ]:
     dG = x1 * np.log(x1) + x2 * np.log(x2) + A * x1 * x2
-    g1  = np.exp(A * x2 ** 2)
+    g1 = np.exp(A * x2**2)
     axes[0].plot(x1, dG, color=color, label=label)
     axes[1].plot(x1, g1, color=color, label=label)
 
 axes[0].axhline(0, color="gray", lw=0.5, ls="--")
 axes[0].set_xlabel(r"$x_1$")
 axes[0].set_ylabel(r"$\Delta_\mathrm{mix}G \;/\; nRT$")
+axes[0].set_xlim(0, 1)
+axes[0].set_xticks([0, 0.5, 1])
 axes[0].legend(fontsize=8)
 
 axes[1].axhline(1, color="gray", lw=0.5, ls="--")
 axes[1].set_xlabel(r"$x_1$")
 axes[1].set_ylabel(r"$\gamma_1$")
+axes[1].set_xlim(0, 1)
+axes[1].set_xticks([0, 0.5, 1])
 axes[1].legend(fontsize=8)
 
 fig.tight_layout()
@@ -289,34 +294,39 @@ Above $I \approx 0.1\ \mathrm{mol/L}$ the simple point-charge picture breaks dow
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 from reactions.api import (
     ActivityCoefficientDebyeHuckel,
     ActivityCoefficientDavies,
     PhysicalState,
 )
 
-dh  = ActivityCoefficientDebyeHuckel()
+dh = ActivityCoefficientDebyeHuckel()
 dav = ActivityCoefficientDavies()
 
-I_dh  = np.linspace(1, 100, 200)
+I_dh = np.linspace(1, 100, 200)
 I_dav = np.linspace(1, 500, 400)
 
-def gamma_series(model, I_values, z):
-    return np.array([
-        model.activity(
-            PhysicalState(c=np.array([1.0]), T=298.15, I=float(I)),
-            np.array([float(z)]),
-        )[0]
-        for I in I_values
-    ])
 
-fig, axes = plt.subplots(1, 2, figsize=(9, 3.8), sharey=True)
+def gamma_series(model, I_values, z):
+    return np.array(
+        [
+            model.activity(
+                PhysicalState(c=np.array([1.0]), T=298.15, I=float(I)),
+                np.array([float(z)]),
+            )[0]
+            for I in I_values
+        ]
+    )
+
+
+fig, axes = setup_figure(1, 2, sharey=True)
 
 for ax, z, title in [
     (axes[0], 1, r"$|z| = 1$  (monovalent)"),
     (axes[1], 2, r"$|z| = 2$  (divalent)"),
 ]:
-    ax.plot(I_dh,  gamma_series(dh,  I_dh,  z), color="C0", label="Debye-Hückel")
+    ax.plot(I_dh, gamma_series(dh, I_dh, z), color="C0", label="Debye-Hückel")
     ax.plot(I_dav, gamma_series(dav, I_dav, z), color="C1", label="Davies")
     ax.axvline(100, color="gray", lw=0.7, ls=":", label="DH valid limit")
     ax.set_xlabel(r"$I$  [mol/m³]")

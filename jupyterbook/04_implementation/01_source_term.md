@@ -87,7 +87,7 @@ Most components map to a single chemical form and need no further configuration:
 ```{code-cell} ipython3
 from reactions.api import Component
 
-a      = Component("A")
+a = Component("A")
 proton = Component("H+", charge=+1)
 ```
 
@@ -96,12 +96,15 @@ When a component spans multiple charge states, such as the protonation forms of 
 ```{code-cell} ipython3
 from reactions.api import Component, Species
 
-phosphate = Component("phosphate", [
-    Species("H3PO4",  charge=0),
-    Species("H2PO4-", charge=-1),
-    Species("HPO4-2", charge=-2),
-    Species("PO4-3",  charge=-3),
-])
+phosphate = Component(
+    "phosphate",
+    [
+        Species("H3PO4", charge=0),
+        Species("H2PO4-", charge=-1),
+        Species("HPO4-2", charge=-2),
+        Species("PO4-3", charge=-3),
+    ],
+)
 ```
 
 Each `Species` carries a `c_ref` attribute (default 1000 mol/m³) that sets the standard-state concentration $c^\circ_i$ in the activity $a_i = \gamma_i c_i / c^\circ_i$.

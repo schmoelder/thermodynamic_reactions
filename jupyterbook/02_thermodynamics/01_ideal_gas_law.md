@@ -49,8 +49,9 @@ $$\frac{V}{n} = \text{const} \quad (T,\, P \text{ fixed})$$
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
-fig, axes = plt.subplots(1, 4, figsize=(14, 3.5))
+fig, axes = setup_figure(1, 4)
 
 V = np.linspace(0.5, 3, 200)
 for C, label in [(1, "$T_1$"), (2, "$T_2$"), (3, "$T_3$")]:

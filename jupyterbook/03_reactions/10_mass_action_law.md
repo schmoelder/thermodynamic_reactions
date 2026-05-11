@@ -58,33 +58,46 @@ The relation holds only for each microscopic elementary step individually.
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
-K   = 3.0
+K = 3.0
 k_f = 3.0
 k_r = k_f / K
 
-xi    = np.linspace(0, 1, 400)
-c_A   = 1 - xi
-c_B   = xi
-r_f   = k_f * c_A
-r_r   = k_r * c_B
+xi = np.linspace(0, 1, 400)
+c_A = 1 - xi
+c_B = xi
+r_f = k_f * c_A
+r_r = k_r * c_B
 r_net = r_f - r_r
 xi_eq = K / (1 + K)
 
-fig, ax = plt.subplots(figsize=(7, 4))
-ax.plot(xi, r_f,   color="C0",     linewidth=2.0, label=r"$r_f = k^f[\mathrm{A}]$")
-ax.plot(xi, r_r,   color="C1",     linewidth=2.0, label=r"$r_r = k^r[\mathrm{B}]$")
-ax.plot(xi, r_net, color="#1c4f8a",linewidth=2.0, linestyle="--",
-        label=r"$r_\mathrm{net}$")
+fig, ax = setup_figure()
+ax.plot(xi, r_f, color="C0", linewidth=2.0, label=r"$r_f = k^f[\mathrm{A}]$")
+ax.plot(xi, r_r, color="C1", linewidth=2.0, label=r"$r_r = k^r[\mathrm{B}]$")
+ax.plot(
+    xi,
+    r_net,
+    color=COLORS["primary"],
+    linewidth=2.0,
+    linestyle="--",
+    label=r"$r_\mathrm{net}$",
+)
 ax.axvline(xi_eq, color="gray", linestyle=":", linewidth=1.2)
 ax.axhline(0, color="gray", linewidth=0.8)
-ax.text(xi_eq + 0.02, k_f * 0.9, r"$\xi_\mathrm{eq}$, $r_\mathrm{net}=0$",
-        fontsize=9, color="gray", va="top")
-ax.set_xlabel(r"Extent of reaction $\xi$ / $\xi_\mathrm{max}$", fontsize=11)
-ax.set_ylabel("Rate [a.u.]", fontsize=11)
+ax.text(
+    xi_eq + 0.02,
+    k_f * 0.9,
+    r"$\xi_\mathrm{eq}$, $r_\mathrm{net}=0$",
+    fontsize=9,
+    color="gray",
+    va="top",
+)
+ax.set_xlabel(r"Extent of reaction $\xi$ / $\xi_\mathrm{max}$")
+ax.set_ylabel("Rate [a.u.]")
+ax.set_xlim(0, 1)
+ax.set_xticks([0, 1])
 ax.legend(fontsize=9)
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
 fig.tight_layout()
 ```
 

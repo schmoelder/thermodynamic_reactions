@@ -54,62 +54,74 @@ $$
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 import matplotlib.cm as cm
 from scipy.optimize import brentq
 from scipy.integrate import quad
 
-R = 0.08206   # L·atm/(mol·K)
-a = 3.640     # CO₂, L²·atm/mol²
-b = 0.04267   # CO₂, L/mol
+R = 0.08206  # L·atm/(mol·K)
+a = 3.640  # CO₂, L²·atm/mol²
+b = 0.04267  # CO₂, L/mol
 
-Tc = 8*a / (27*R*b)
-Pc = a / (27*b**2)
-Vc = 3*b
+Tc = 8 * a / (27 * R * b)
+Pc = a / (27 * b**2)
+Vc = 3 * b
+
 
 def P_vdw(Vm, T):
-    return R*T / (Vm - b) - a / Vm**2
+    return R * T / (Vm - b) - a / Vm**2
+
 
 def coexistence(T):
     def dPdV(Vm):
-        return -R*T / (Vm - b)**2 + 2*a / Vm**3
-    Vm_s1 = brentq(dPdV, b*1.001, Vc*0.9999)
-    Vm_s2 = brentq(dPdV, Vc*1.0001, 20.0)
-    P_min = P_vdw(Vm_s1, T)   # local pressure minimum (liquid spinodal)
-    P_max = P_vdw(Vm_s2, T)   # local pressure maximum (vapor spinodal)
-    V_hi  = 500.0
+        return -R * T / (Vm - b) ** 2 + 2 * a / Vm**3
+
+    Vm_s1 = brentq(dPdV, b * 1.001, Vc * 0.9999)
+    Vm_s2 = brentq(dPdV, Vc * 1.0001, 20.0)
+    P_min = P_vdw(Vm_s1, T)  # local pressure minimum (liquid spinodal)
+    P_max = P_vdw(Vm_s2, T)  # local pressure maximum (vapor spinodal)
+    V_hi = 500.0
     # P_coex lies in (P_min, P_max); P_min can be negative so clamp from below
     # by P_vdw(V_hi) so that the vapor-root search always has a sign change
     P_lo = max(P_min, P_vdw(V_hi, T)) + 1e-6
     P_hi = P_max - 1e-6
+
     def area(P_star):
-        Vl = brentq(lambda V: P_vdw(V, T) - P_star, b*1.001, Vm_s1)
+        Vl = brentq(lambda V: P_vdw(V, T) - P_star, b * 1.001, Vm_s1)
         Vv = brentq(lambda V: P_vdw(V, T) - P_star, Vm_s2, V_hi)
         return quad(lambda V: P_vdw(V, T) - P_star, Vl, Vv)[0]
+
     Pc_co = brentq(area, P_lo, P_hi)
-    Vl = brentq(lambda V: P_vdw(V, T) - Pc_co, b*1.001, Vm_s1)
+    Vl = brentq(lambda V: P_vdw(V, T) - Pc_co, b * 1.001, Vm_s1)
     Vv = brentq(lambda V: P_vdw(V, T) - Pc_co, Vm_s2, V_hi)
     return Pc_co, Vl, Vv
 
+
 def isotherm_start(T):
     """Return Vm start, skipping the unphysical negative-P liquid branch when present."""
-    def dPdV(Vm): return -R*T / (Vm - b)**2 + 2*a / Vm**3
+
+    def dPdV(Vm):
+        return -R * T / (Vm - b) ** 2 + 2 * a / Vm**3
+
     try:
-        Vm_s1 = brentq(dPdV, b*1.001, Vc*0.9999)
+        Vm_s1 = brentq(dPdV, b * 1.001, Vc * 0.9999)
     except ValueError:
-        return b * 1.005   # supercritical: no spinodal
+        return b * 1.005  # supercritical: no spinodal
     if P_vdw(Vm_s1, T) < 0:
-        Vm_s2 = brentq(dPdV, Vc*1.0001, 20.0)
+        Vm_s2 = brentq(dPdV, Vc * 1.0001, 20.0)
         return brentq(lambda V: P_vdw(V, T), Vm_s1, Vm_s2)
     return b * 1.005
 
+
 XLIM1 = 0.8
 # Restrict saturation curve to T where Vv ≤ XLIM1 so dome outline closes at plot edge
-T_cross = brentq(lambda T: coexistence(T)[2] - XLIM1, 0.70*Tc, 0.80*Tc)
-T_coex1 = np.linspace(T_cross * 0.999, 0.998*Tc, 80)
-coex1   = [coexistence(T) for T in T_coex1]
-Pc_1    = [c[0] for c in coex1]
-Vl_1    = [c[1] for c in coex1]
-Vv_1    = [c[2] for c in coex1]
+T_cross = brentq(lambda T: coexistence(T)[2] - XLIM1, 0.70 * Tc, 0.80 * Tc)
+T_coex1 = np.linspace(T_cross * 0.999, 0.998 * Tc, 80)
+coex1 = [coexistence(T) for T in T_coex1]
+Pc_1 = [c[0] for c in coex1]
+Vl_1 = [c[1] for c in coex1]
+Vv_1 = [c[2] for c in coex1]
+
 
 def draw_fills(ax, Pc_arr, Vl_arr, Vv_arr, xlim):
     # Gas: right of vapor branch down to dome bottom only (avoids linear artifact)
@@ -117,27 +129,34 @@ def draw_fills(ax, Pc_arr, Vl_arr, Vv_arr, xlim):
         [Pc] + list(reversed(Pc_arr)),
         [Vc] + list(reversed(Vv_arr)),
         xlim,
-        color="#fdae61", alpha=0.18,
+        color="#fdae61",
+        alpha=0.18,
     )
     # Two-phase dome
     ax.fill(
         Vl_arr + [Vc] + list(reversed(Vv_arr)) + [Vv_arr[0], Vl_arr[0]],
         Pc_arr + [Pc] + list(reversed(Pc_arr)) + [0.0, 0.0],
-        color="#888888", alpha=0.12,
+        color="#888888",
+        alpha=0.12,
     )
     # Liquid: left of liquid branch, extend to axis
     ax.fill_betweenx(
         [0.0] + Pc_arr + [Pc],
         0,
         [Vl_arr[0]] + Vl_arr + [Vc],
-        color="#4393c3", alpha=0.18,
+        color="#4393c3",
+        alpha=0.18,
     )
     # Saturation curve outline
     ax.plot(
         Vl_arr + [Vc] + list(reversed(Vv_arr)),
         Pc_arr + [Pc] + list(reversed(Pc_arr)),
-        color="#888888", lw=1.4, ls="--", label="saturation curve",
+        color="#888888",
+        lw=1.4,
+        ls="--",
+        label="saturation curve",
     )
+
 
 T_show = [0.80, 0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15]
 # Subcritical: dark→light blue as T→Tc; Tc: black; supercritical: light→dark red
@@ -148,20 +167,31 @@ _sup_v = np.linspace(0.45, 0.85, _n_sup)
 _si = _ri = 0
 colors = []
 for Tr in T_show:
-    if   Tr < 1.0: colors.append(cm.Blues(_sub_v[_si])); _si += 1
-    elif Tr > 1.0: colors.append(cm.Reds(_sup_v[_ri]));  _ri += 1
-    else:          colors.append("black")
+    if Tr < 1.0:
+        colors.append(cm.Blues(_sub_v[_si]))
+        _si += 1
+    elif Tr > 1.0:
+        colors.append(cm.Reds(_sup_v[_ri]))
+        _ri += 1
+    else:
+        colors.append("black")
 
-fig, ax = plt.subplots(figsize=(5.5, 4.5))
+fig, ax = setup_figure()
 draw_fills(ax, Pc_1, Vl_1, Vv_1, XLIM1)
 
-Vm_base = np.linspace(b*1.005, XLIM1 + 0.2, 6000)
+Vm_base = np.linspace(b * 1.005, XLIM1 + 0.2, 6000)
 for Tr, col in zip(T_show, colors):
     Vm_s = isotherm_start(Tr * Tc)
-    Vm   = Vm_base[Vm_base >= Vm_s]
-    P    = P_vdw(Vm, Tr * Tc)
-    lbl  = r"$T = T_c$" if Tr == 1.00 else rf"$T = {Tr:.2f}\,T_c$"
-    ax.plot(Vm, np.where(P < 0, np.nan, P), color=col, lw=2.2 if Tr == 1.00 else 1.8, label=lbl)
+    Vm = Vm_base[Vm_base >= Vm_s]
+    P = P_vdw(Vm, Tr * Tc)
+    lbl = r"$T = T_c$" if Tr == 1.00 else rf"$T = {Tr:.2f}\,T_c$"
+    ax.plot(
+        Vm,
+        np.where(P < 0, np.nan, P),
+        color=col,
+        lw=2.2 if Tr == 1.00 else 1.8,
+        label=lbl,
+    )
     if Tr < 1.0:
         Pc_co, Vl_co, Vv_co = coexistence(Tr * Tc)
         ax.plot([Vl_co, Vv_co], [Pc_co, Pc_co], color=col, ls="--", lw=1.0, zorder=4)
@@ -169,19 +199,38 @@ for Tr, col in zip(T_show, colors):
 
 ax.plot(Vc, Pc, "ko", ms=6, zorder=5)
 ax.annotate(
-    "critical\npoint", xy=(Vc, Pc), xytext=(Vc + 0.02, Pc + 2),
-    fontsize=8, ha="center",
+    "critical\npoint",
+    xy=(Vc, Pc),
+    xytext=(Vc + 0.02, Pc + 2),
+    fontsize=8,
+    ha="center",
 )
 
-ax.text(0.025, 42, "liquid", fontsize=8, color="#2166ac",
-        va="center", ha="center", rotation=90)
-ax.text(0.3, 10, "two-phase\nregion", fontsize=9, color="#555555",
-        va="center", ha="center")
+ax.text(
+    0.025,
+    42,
+    "liquid",
+    fontsize=8,
+    color="#2166ac",
+    va="center",
+    ha="center",
+    rotation=90,
+)
+ax.text(
+    0.3,
+    10,
+    "two-phase\nregion",
+    fontsize=9,
+    color="#555555",
+    va="center",
+    ha="center",
+)
 ax.text(0.50, 60, "gas", fontsize=9, color="#d6604d", va="center")
 
 ax.axhline(Pc, color="#888888", lw=0.7, ls=":", alpha=0.7)
-ax.text(0.4, 90, "supercritical fluid",
-        fontsize=8, color="#888888", va="top", ha="center")
+ax.text(
+    0.4, 90, "supercritical fluid", fontsize=8, color="#888888", va="top", ha="center"
+)
 
 ax.set_xlim(0, XLIM1)
 ax.set_ylim(0, 100)

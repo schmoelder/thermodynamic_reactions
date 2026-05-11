@@ -28,25 +28,26 @@ The reverse barrier is $E_a' = E_a - \Delta_r H^\circ$: smaller than $E_a$ for a
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
 Ea_fwd = 60.0
 drH = -25.0
 
 n = 500
-x_left  = np.linspace(0, 0.5, n // 2)
+x_left = np.linspace(0, 0.5, n // 2)
 x_right = np.linspace(0.5, 1.0, n // 2)
 
-t_left  = np.linspace(0, np.pi, n // 2)
+t_left = np.linspace(0, np.pi, n // 2)
 t_right = np.linspace(0, np.pi, n // 2)
 
-y_left  = Ea_fwd * (1 - np.cos(t_left)) / 2
+y_left = Ea_fwd * (1 - np.cos(t_left)) / 2
 y_right = Ea_fwd + (drH - Ea_fwd) * (1 - np.cos(t_right)) / 2
 
 x = np.concatenate([x_left, x_right[1:]])
 y = np.concatenate([y_left, y_right[1:]])
 
-fig, ax = plt.subplots(figsize=(7, 4.5))
-ax.plot(x, y, color="#1c4f8a", linewidth=2.5)
+fig, ax = setup_figure()
+ax.plot(x, y, color=COLORS["primary"], linewidth=2.5)
 
 ax.hlines(0.0, -0.1, 0.32, colors="gray", linestyles="--", linewidth=1.0)
 ax.hlines(drH, 0.68, 1.1, colors="gray", linestyles="--", linewidth=1.0)
@@ -57,8 +58,7 @@ ax.annotate(
     xytext=(0.30, 0.0),
     arrowprops=dict(arrowstyle="<->", color="C1", lw=1.5),
 )
-ax.text(0.28, Ea_fwd / 2, r"$E_a$",
-        ha="right", va="center", fontsize=12, color="C1")
+ax.text(0.28, Ea_fwd / 2, r"$E_a$", ha="right", va="center", fontsize=12, color="C1")
 
 ax.annotate(
     "",
@@ -66,22 +66,28 @@ ax.annotate(
     xytext=(0.70, 0.0),
     arrowprops=dict(arrowstyle="<->", color="C2", lw=1.5),
 )
-ax.text(0.72, drH / 2, r"$\Delta_r H^\circ$",
-        ha="left", va="center", fontsize=11, color="C2")
+ax.text(
+    0.72,
+    drH / 2,
+    r"$\Delta_r H^\circ$",
+    ha="left",
+    va="center",
+    fontsize=11,
+    color="C2",
+)
 
-ax.text(0.5, Ea_fwd + 3, r"$[\mathrm{AB}]^\ddagger$",
-        ha="center", va="bottom", fontsize=12)
+ax.text(
+    0.5, Ea_fwd + 3, r"$[\mathrm{AB}]^\ddagger$", ha="center", va="bottom", fontsize=12
+)
 ax.text(-0.05, 2, "Reactants", ha="right", va="bottom", fontsize=10, color="gray")
 ax.text(1.05, drH + 2, "Products", ha="left", va="bottom", fontsize=10, color="gray")
 
 ax.set_xlim(-0.18, 1.18)
 ax.set_ylim(drH - 15, Ea_fwd + 18)
-ax.set_xlabel("Reaction coordinate", fontsize=11)
-ax.set_ylabel("Potential energy", fontsize=11)
+ax.set_xlabel("Reaction coordinate")
+ax.set_ylabel("Potential energy")
 ax.set_xticks([])
 ax.set_yticks([])
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
 fig.tight_layout()
 ```
 
@@ -131,25 +137,24 @@ Thermodynamic consistency further constrains forward and reverse reactions, link
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
 R = 8.314
 T = np.linspace(300, 1200, 400)
 T_inv = 1000 / T
 
 Ea_vals = [20_000, 40_000, 60_000, 80_000]
-colors  = ["C0", "C1", "C2", "C3"]
+colors = ["C0", "C1", "C2", "C3"]
 
-fig, ax = plt.subplots(figsize=(7, 4.5))
+fig, ax = setup_figure()
 for Ea, color in zip(Ea_vals, colors):
-    ln_k  = -Ea / R / T
+    ln_k = -Ea / R / T
     label = rf"$E_a = {Ea // 1000:.0f}\ \mathrm{{kJ/mol}}$"
     ax.plot(T_inv, ln_k, color=color, linewidth=2.0, label=label)
 
-ax.set_xlabel(r"$1000/T\ [\mathrm{K}^{-1}]$", fontsize=11)
-ax.set_ylabel(r"$\ln(k/A)$", fontsize=11)
+ax.set_xlabel(r"$1000/T\ [\mathrm{K}^{-1}]$")
+ax.set_ylabel(r"$\ln(k/A)$")
 ax.legend(fontsize=9)
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
 fig.tight_layout()
 ```
 

@@ -39,15 +39,16 @@ The sign of $\Delta G$ therefore depends on both the signs of $\Delta H$ and $\D
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
 T = np.linspace(0, 2.5, 300)
 
 line_color = "#2c7bb6"
-ds_color   = "#2ca25f"
-dh_color   = "#d73027"
-alpha_curv = 0.04   # small heat-capacity curvature term
+ds_color = "#2ca25f"
+dh_color = "#d73027"
+alpha_curv = 0.04  # small heat-capacity curvature term
 
-fig, axes = plt.subplots(1, 2, figsize=(8, 3.8))
+fig, axes = setup_figure(1, 2)
 
 for ax, dH, subtitle in zip(
     axes,
@@ -55,7 +56,7 @@ for ax, dH, subtitle in zip(
     ["a) endothermic  ($\\Delta H > 0$)", "b) exothermic  ($\\Delta H < 0$)"],
 ):
     for dS, ds_label, va in [
-        ( 0.4, r"$\Delta S > 0$", "top"),
+        (0.4, r"$\Delta S > 0$", "top"),
         (-0.4, r"$\Delta S < 0$", "bottom"),
     ]:
         # Lines curve away from each other (heat-capacity effect)
@@ -66,20 +67,31 @@ for ax, dH, subtitle in zip(
         t_lab = 1.2
         dG_lab = dH - t_lab * dS - np.sign(dS) * alpha_curv * t_lab**2
         offset = -0.18 if va == "top" else 0.18
-        ax.text(t_lab, dG_lab + offset, ds_label,
-                color=ds_color, fontsize=9.5, ha="center", va=va)
+        ax.text(
+            t_lab,
+            dG_lab + offset,
+            ds_label,
+            color=ds_color,
+            fontsize=9.5,
+            ha="center",
+            va=va,
+        )
 
     sign = ">" if dH > 0 else "<"
-    ax.annotate(rf"$\Delta H {sign} 0$",
-                xy=(0, dH), xytext=(-0.35, dH),
-                color=dh_color, fontsize=9.5, va="center", ha="right",
-                annotation_clip=False)
+    ax.annotate(
+        rf"$\Delta H {sign} 0$",
+        xy=(0, dH),
+        xytext=(-0.35, dH),
+        color=dh_color,
+        fontsize=9.5,
+        va="center",
+        ha="right",
+        annotation_clip=False,
+    )
     ax.plot(0, dH, "o", color=dh_color, ms=5, zorder=5)
 
     ax.spines["left"].set_position("zero")
     ax.spines["bottom"].set_position("zero")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_xlim(-0.5, 2.8)
@@ -87,8 +99,15 @@ for ax, dH, subtitle in zip(
 
     ax.text(2.72, 0.12, r"$T$", fontsize=11)
     ax.text(0.08, 2.1, r"$\Delta G$", fontsize=11)
-    ax.text(0.5, -0.1, subtitle, transform=ax.transAxes,
-            ha="center", fontstyle="italic", fontsize=10)
+    ax.text(
+        0.5,
+        -0.1,
+        subtitle,
+        transform=ax.transAxes,
+        ha="center",
+        fontstyle="italic",
+        fontsize=10,
+    )
 
 fig.tight_layout()
 ```
@@ -244,21 +263,27 @@ The thermodynamic derivation above and the statistical one are the same calculat
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
 c_ref = 1.0
 c = np.logspace(-3, 1, 300) * c_ref
 R = 8.314
 
-fig, ax = plt.subplots(figsize=(6, 4))
+fig, ax = setup_figure()
 for T, color in zip([280, 310, 340], ["C0", "C1", "C2"]):
     mu = R * T * np.log(c / c_ref)
     ax.plot(c / c_ref, mu / 1000, color=color, label=f"$T = {T}$ K")
 
 ax.axvline(1, color="gray", linestyle=":", lw=1)
 ax.axhline(0, color="gray", linestyle=":", lw=1)
-ax.annotate(r"$c = c^\circ$, $\mu = \mu^\circ$", xy=(1, 0), xytext=(2, -3),
-            fontsize=9, color="gray",
-            arrowprops=dict(arrowstyle="->", color="gray", lw=0.8))
+ax.annotate(
+    r"$c = c^\circ$, $\mu = \mu^\circ$",
+    xy=(1, 0),
+    xytext=(2, -3),
+    fontsize=9,
+    color="gray",
+    arrowprops=dict(arrowstyle="->", color="gray", lw=0.8),
+)
 ax.set_xscale("log")
 ax.set_xlabel(r"$c / c^\circ$")
 ax.set_ylabel(r"$(\mu - \mu^\circ)\ /\ \mathrm{kJ\,mol^{-1}}$")

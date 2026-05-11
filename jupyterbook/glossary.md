@@ -427,6 +427,11 @@ pH
   Neutral pH at 25 °C is 7.0; it decreases to 6.5 near 60 °C because $K_w$ is temperature-dependent.
   Introduced in @acid-base.
 
+pH-stat
+: An experimental or computational technique that holds pH constant at a prescribed value throughout an experiment or simulation.
+  Implemented numerically by passing `prescribed={"H+": c_H}` to `solve_equilibrium` or `simulate`, which fixes the proton concentration as an external control rather than a free variable.
+  Introduced in @implementation-practical.
+
 pKa
 : $\text{p}K_a = -\log_{10} K_a$: the negative logarithm of the acid dissociation constant.
   Provides a convenient scale for comparing acid strengths; the pH at which equal amounts of the acid and conjugate base are present.

@@ -56,6 +56,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import lgamma
 
+
 def log_W(occupations):
     N = sum(occupations)
     return lgamma(N + 1) - sum(lgamma(n + 1) for n in occupations)
@@ -66,11 +67,11 @@ def log_W(occupations):
 :label: cell-macrostates
 
 macrostates = [
-    [ 0, 20,  0,  0,  0],  # spike: Omega=1
-    [15,  0,  0,  0,  5],  # bimodal extremes
-    [10,  0, 10,  0,  0],  # bimodal centre
-    [12,  2,  2,  2,  2],  # concentrated with equal tails
-    [10,  4,  3,  2,  1],  # Boltzmann-like (exponential decrease)
+    [0, 20, 0, 0, 0],  # spike: Omega=1
+    [15, 0, 0, 0, 5],  # bimodal extremes
+    [10, 0, 10, 0, 0],  # bimodal centre
+    [12, 2, 2, 2, 2],  # concentrated with equal tails
+    [10, 4, 3, 2, 1],  # Boltzmann-like (exponential decrease)
 ]
 # All have N=20 particles and total energy U = sum(n_i * eps_i) = 20
 

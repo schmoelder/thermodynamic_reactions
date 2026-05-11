@@ -45,8 +45,8 @@ from reactions.api import (
 )
 from reactions.solver import simulate
 
-Vmax = 1.0    # mol/(m³·s)
-Km   = 200.0  # mol/m³
+Vmax = 1.0  # mol/(m³·s)
+Km = 200.0  # mol/m³
 
 model_mm = ReactionModel(
     components=[Component("S"), Component("P")],
@@ -76,16 +76,18 @@ model_hill = ReactionModel(
 import matplotlib.pyplot as plt
 
 S_vals = np.linspace(0, 1000, 400)
-v_mm   = Vmax * S_vals / (Km + S_vals)
+v_mm = Vmax * S_vals / (Km + S_vals)
 v_hill = Vmax * S_vals**3 / (Km**3 + S_vals**3)
-v_lin  = (Vmax / Km) * S_vals
+v_lin = (Vmax / Km) * S_vals
 
 fig, ax = plt.subplots()
-ax.plot(S_vals, v_mm,   label="Michaelis-Menten")
+ax.plot(S_vals, v_mm, label="Michaelis-Menten")
 ax.plot(S_vals, v_hill, label=r"Hill ($n = 3$)")
-ax.plot(S_vals, v_lin,  ls=":", color="gray", label=r"linear ($k^f = V_\mathrm{max}/K_m$)")
+ax.plot(
+    S_vals, v_lin, ls=":", color="gray", label=r"linear ($k^f = V_\mathrm{max}/K_m$)"
+)
 ax.axhline(Vmax, color="gray", lw=0.8, ls="--", label=r"$V_\mathrm{max}$")
-ax.axvline(Km,   color="gray", lw=0.8, ls="-.", label=r"$K_m$")
+ax.axvline(Km, color="gray", lw=0.8, ls="-.", label=r"$K_m$")
 ax.set_xlabel(r"$[S]\ [\mathrm{mol/m^3}]$")
 ax.set_ylabel(r"$v\ [\mathrm{mol/(m^3 \cdot s)}]$")
 ax.legend()
@@ -108,9 +110,9 @@ For a single reaction, $v \equiv \varphi_j$ in CADET notation; the stoichiometri
 For $\ce{S -> P}$ with $\nu_S = -1$, $\nu_P = +1$ this gives $\dot{c}_S = -\varphi$ and $\dot{c}_P = +\varphi$.
 
 ```{code-cell} ipython3
-S0 = 600.0   # mol/m³  (initial substrate)
+S0 = 600.0  # mol/m³  (initial substrate)
 
-result_mm   = simulate(model_mm,   c0={"S": S0}, t_span=(0, 2000.0))
+result_mm = simulate(model_mm, c0={"S": S0}, t_span=(0, 2000.0))
 result_hill = simulate(model_hill, c0={"S": S0}, t_span=(0, 2000.0))
 ```
 
@@ -121,11 +123,11 @@ result_hill = simulate(model_hill, c0={"S": S0}, t_span=(0, 2000.0))
 fig, axes = plt.subplots(1, 2, figsize=(9, 3.8), sharey=True)
 
 for ax, result, label in [
-    (axes[0], result_mm,   "Michaelis-Menten"),
+    (axes[0], result_mm, "Michaelis-Menten"),
     (axes[1], result_hill, r"Hill ($n = 3$)"),
 ]:
     ax.plot(result.t, result["S"], label="S (substrate)", color="C0")
-    ax.plot(result.t, result["P"], label="P (product)",   color="C1")
+    ax.plot(result.t, result["P"], label="P (product)", color="C1")
     ax.set_xlabel("time [s]")
     ax.set_title(label)
 

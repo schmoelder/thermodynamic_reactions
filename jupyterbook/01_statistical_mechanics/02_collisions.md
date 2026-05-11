@@ -21,15 +21,16 @@ Every particle carries identical kinetic energy $\varepsilon_0 = \frac{1}{2}mv_0
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
 rng = np.random.default_rng(42)
 
-N  = 1000
+N = 1000
 v0 = 1.0
-v  = np.full(N, v0, dtype=float)
-v[:N//2] *= -1
+v = np.full(N, v0, dtype=float)
+v[: N // 2] *= -1
 
-fig, axes = plt.subplots(1, 2, figsize=(10, 3.5))
+fig, axes = setup_figure(1, 2)
 
 axes[0].hist(v, bins=30, color="C0", edgecolor="white")
 axes[0].set_xlabel("velocity $v$")
@@ -75,7 +76,9 @@ After many collisions the system reaches a **steady state** in which the distrib
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 from scipy import stats
+
 
 def simulate_collisions_with_snapshots(
     N: int,
@@ -111,6 +114,7 @@ def simulate_collisions_with_snapshots(
         snapshots[target] = 0.5 * np.sum(v**2, axis=1).copy()
     return snapshots
 
+
 rng = np.random.default_rng(42)
 N = 2000
 v0 = 1.0
@@ -121,12 +125,12 @@ snapshots = simulate_collisions_with_snapshots(N, v0, step_counts, rng)
 kT = v0**2 / 3
 eps_max = 3.0
 eps_range = np.linspace(0, eps_max, 300)
-mb_pdf = stats.gamma(a=3/2, scale=kT).pdf(eps_range)
+mb_pdf = stats.gamma(a=3 / 2, scale=kT).pdf(eps_range)
 
 y_max = mb_pdf.max() * 7
 labels = ["0 collisions", "600 collisions", "4 000 collisions", "50 000 collisions"]
 
-fig, axes = plt.subplots(1, 4, figsize=(14, 3.5), sharey=True)
+fig, axes = setup_figure(1, 4, sharey=True)
 
 for ax, n, label in zip(axes, step_counts, labels):
     ax.hist(
@@ -139,7 +143,9 @@ for ax, n, label in zip(axes, step_counts, labels):
         edgecolor="white",
     )
     ax.fill_between(eps_range, mb_pdf, alpha=0.4, color="firebrick")
-    ax.plot(eps_range, mb_pdf, color="firebrick", linewidth=2, label="Maxwell-Boltzmann")
+    ax.plot(
+        eps_range, mb_pdf, color="firebrick", linewidth=2, label="Maxwell-Boltzmann"
+    )
     ax.set_xlabel(r"kinetic energy $\varepsilon$ [a.u.]")
     ax.set_ylim(0, y_max)
     ax.set_xlim(0, eps_max)

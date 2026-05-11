@@ -241,18 +241,22 @@ todo: update figure.
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 from scipy.optimize import brentq
 
 x = np.linspace(1e-4, 1 - 1e-4, 2000)
 
-A = 2.8    # interaction parameter; > 2 for phase separation
-B = 0.25   # asymmetry
+A = 2.8  # interaction parameter; > 2 for phase separation
+B = 0.25  # asymmetry
+
 
 def G_f(xi):
     return xi * np.log(xi) + (1 - xi) * np.log(1 - xi) + A * xi * (1 - xi) + B * xi
 
+
 def dG_f(xi):
     return np.log(xi) - np.log(1 - xi) + A * (1 - 2 * xi) + B
+
 
 def residual(xa):
     m = dG_f(xa)
@@ -261,6 +265,7 @@ def residual(xa):
     except ValueError:
         return 1.0
     return (G_f(xb) - G_f(xa)) / (xb - xa) - m
+
 
 xa = brentq(residual, 0.04, 0.44)
 m_ct = dG_f(xa)
@@ -273,18 +278,78 @@ x_mid = x[(x >= xa) & (x <= xb)]
 G_mid = G_f(x_mid)
 tan_mid = G_f(xa) + m_ct * (x_mid - xa)
 
-fig, ax = plt.subplots(figsize=(6, 3.8))
+fig, ax = setup_figure()
 ax.plot(x, G_f(x), color="C0", lw=2.2)
 ax.plot(x_line, y_line, color="C2", lw=1.5, ls="--")
 ax.fill_between(x_mid, tan_mid, G_mid, alpha=0.12, color="C2")
 ax.plot([xa, xb], [G_f(xa), G_f(xb)], "o", color="C2", ms=7, zorder=5)
 
-ax.annotate(r"$x^\alpha$", xy=(xa, G_f(xa)),
-            xytext=(xa - 0.05, G_f(xa) + 0.15), fontsize=11, ha="center", color="C2")
-ax.annotate(r"$x^\beta$", xy=(xb, G_f(xb)),
-            xytext=(xb + 0.05, G_f(xb) + 0.15), fontsize=11, ha="center", color="C2")
-ax.text((xa + xb) / 2, (G_f(xa) + G_f(xb)) / 2 + 0.05,
-        "two phases", ha="center", fontsize=9, color="C2", style="italic")
+ax.text(
+    2 * (xa + xb) / 3,
+    2 * (G_f(xa) + G_f(xb)) / 3,
+    "two phases",
+    ha="center",
+    fontsize=9,
+    color="C2",
+    style="italic",
+)
+
+x_ex = 0.75
+G_ex = G_f(x_ex)
+tan_ex = G_f(xa) + m_ct * (x_ex - xa)
+ax.plot(x_ex, G_ex, "o", color="C3", ms=7, zorder=6)
+ax.plot(x_ex, tan_ex, "o", color="C3", ms=7, zorder=6, mfc="white", mew=1.5)
+ax.annotate(
+    "",
+    xy=(x_ex, tan_ex),
+    xytext=(x_ex, G_ex),
+    arrowprops=dict(arrowstyle="<->", color="C3", lw=1.4),
+)
+ax.text(
+    x_ex + 0.03,
+    (G_ex + tan_ex) / 2,
+    r"$\Delta G$",
+    color="C3",
+    fontsize=10,
+    va="center",
+)
+ax.axvline(x_ex, color="C3", lw=0.8, ls=":", ymax=0.92)
+
+# lever rule: two segments at tangent level, split at x_ex
+f_beta = (x_ex - xa) / (xb - xa)  # fraction of phase beta
+f_alpha = (xb - x_ex) / (xb - xa)  # fraction of phase alpha
+ax.annotate(
+    "",
+    xy=(x_ex, tan_ex),
+    xytext=(xa, tan_ex),
+    arrowprops=dict(arrowstyle="<->", color="C3", lw=1.0, linestyle="dashed"),
+)
+ax.annotate(
+    "",
+    xy=(xb, tan_ex),
+    xytext=(x_ex, tan_ex),
+    arrowprops=dict(arrowstyle="<->", color="C3", lw=1.0, linestyle="dashed"),
+)
+ax.text(
+    (xa + x_ex) / 2,
+    tan_ex + 0.05,
+    rf"$f^\beta={f_beta:.2f}$",
+    ha="center",
+    va="top",
+    color="C3",
+    fontsize=8.5,
+)
+ax.text(
+    (x_ex + xb) / 2,
+    tan_ex + 0.05,
+    rf"$f^\alpha={f_alpha:.2f}$",
+    ha="center",
+    va="top",
+    color="C3",
+    fontsize=8.5,
+)
+ax.axvline(xa, color="C3", lw=0.8, ls=":", ymax=0.92)
+ax.axvline(xb, color="C3", lw=0.8, ls=":", ymax=0.92)
 
 ax.set_xlabel("Composition $x$")
 ax.set_ylabel("Molar Gibbs energy $G$")
@@ -292,8 +357,6 @@ ax.set_xlim(-0.02, 1.02)
 ax.set_xticks([0, xa, xb, 1])
 ax.set_xticklabels(["0", r"$x^\alpha$", r"$x^\beta$", "1"])
 ax.set_yticks([])
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
 fig.tight_layout()
 ```
 
@@ -325,12 +388,13 @@ where $\Delta H_\text{trans}$ is the enthalpy absorbed at constant pressure when
 
 import numpy as np
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
-Cp_liq   = 4.18    # kJ/(kg·K)
-Cp_vap   = 2.01    # kJ/(kg·K)
+Cp_liq = 4.18  # kJ/(kg·K)
+Cp_vap = 2.01  # kJ/(kg·K)
 dH_trans = 2257.0  # kJ/kg
-T_start  =   20.0  # °C
-T_boil   =  100.0  # °C
+T_start = 20.0  # °C
+T_boil = 100.0  # °C
 
 Q_heat = Cp_liq * (T_boil - T_start)
 
@@ -346,28 +410,46 @@ T3 = T_boil + (Q3 - (Q_heat + dH_trans)) / Cp_vap
 Q_all = np.concatenate([Q1, Q2, Q3])
 T_all = np.concatenate([T1, T2, T3])
 
-fig, ax = plt.subplots(figsize=(7, 3.8))
+fig, ax = setup_figure()
 ax.plot(Q_all, T_all, color="C0", lw=2.2)
 
-ax.annotate("", xy=(Q_heat, T_boil - 4), xytext=(0, T_boil - 4),
-            arrowprops=dict(arrowstyle="<->", color="C1", lw=1.4))
-ax.text(Q_heat / 2, T_boil - 9,
-        r"$\int C_p\,dT \approx 335\ \mathrm{kJ}$",
-        ha="center", va="top", color="C1", fontsize=9.5)
+ax.annotate(
+    "",
+    xy=(Q_heat, T_boil + 4),
+    xytext=(0, T_boil + 4),
+    arrowprops=dict(arrowstyle="<->", color="C1", lw=1.4),
+)
+ax.text(
+    Q_heat / 2,
+    T_boil + 9,
+    r"$\int C_p\,dT \approx 335\ \mathrm{kJ}$",
+    ha="center",
+    va="bottom",
+    color="C1",
+    fontsize=9.5,
+)
 
-ax.annotate("", xy=(Q_heat + dH_trans, T_boil + 4), xytext=(Q_heat, T_boil + 4),
-            arrowprops=dict(arrowstyle="<->", color="C2", lw=1.4))
-ax.text(Q_heat + dH_trans / 2, T_boil + 9,
-        r"$\Delta H_\text{trans} \approx 2260\ \mathrm{kJ}$",
-        ha="center", va="bottom", color="C2", fontsize=9.5)
+ax.annotate(
+    "",
+    xy=(Q_heat + dH_trans, T_boil + 4),
+    xytext=(Q_heat, T_boil + 4),
+    arrowprops=dict(arrowstyle="<->", color="C2", lw=1.4),
+)
+ax.text(
+    Q_heat + dH_trans / 2,
+    T_boil + 9,
+    r"$\Delta H_\text{vap} \approx 2260\ \mathrm{kJ}$",
+    ha="center",
+    va="bottom",
+    color="C2",
+    fontsize=9.5,
+)
 
 ax.axhline(T_boil, color="gray", lw=0.8, linestyle=":")
 ax.set_xlabel(r"Heat added $Q$ (kJ per kg)")
 ax.set_ylabel(r"Temperature ($^\circ$C)")
 ax.set_xlim(-80, Q_all[-1] + 80)
 ax.set_ylim(0, 145)
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
 fig.tight_layout()
 ```
 
@@ -375,7 +457,7 @@ fig.tight_layout()
 :name: fig-latent-heat
 
 Heat added vs temperature for 1 kg of water.
-During liquid heating the slope is $C_p$; at 100 °C the temperature plateaus while $\Delta H_\text{trans} \approx 2260\ \mathrm{kJ/kg}$ is absorbed (roughly seven times the energy of the heating segment).
+During liquid heating the slope is $C_p$; at 100 °C the temperature plateaus while the enthalpy of vaporisation $\Delta H_\text{vap} \approx 2260\ \mathrm{kJ/kg}$ is absorbed (roughly seven times the energy of the heating segment).
 The Clausius-Clapeyron equation converts this large latent heat into a steep coexistence slope: water boils near 70 °C at altitude and above 100 °C in a pressure cooker.
 ```
 

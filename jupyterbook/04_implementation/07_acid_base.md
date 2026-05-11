@@ -15,12 +15,16 @@ The `pKa()` factory (@implementation-practical), water autoionisation, and Davie
 import numpy as np
 
 from reactions.api import (
-    Species, Component,
+    Species,
+    Component,
     ActivityCoefficientDavies,
-    ThermodynamicReaction, ReactionModel,
+    ThermodynamicReaction,
+    ReactionModel,
     IonicStrengthBackground,
     pKa,
-    water, H_plus, OH_minus,
+    water,
+    H_plus,
+    OH_minus,
 )
 from reactions.solver import solve_equilibrium
 ```
@@ -52,11 +56,11 @@ model_acetic = ReactionModel(
     T=298.15,
 )
 
-c_tot = 100.0   # mol/m³ = 100 mM total acetate
-c0    = {"HAc": c_tot, "Ac-": 1e-6, "H+": 1e-4, "OH-": 1e-7}
-c_eq  = solve_equilibrium(model_acetic, c0, T=298.15, prescribed={"H2O": water.c_ref})
+c_tot = 100.0  # mol/m³ = 100 mM total acetate
+c0 = {"HAc": c_tot, "Ac-": 1e-6, "H+": 1e-4, "OH-": 1e-7}
+c_eq = solve_equilibrium(model_acetic, c0, T=298.15, prescribed={"H2O": water.c_ref})
 
-pH    = -np.log10(c_eq["H+"] / H_plus.c_ref)
+pH = -np.log10(c_eq["H+"] / H_plus.c_ref)
 pKa_v = -np.log10(k_acetic.K(298.15))
 pH_HH = pKa_v + np.log10(c_eq["Ac-"] / c_eq["HAc"])
 
@@ -94,24 +98,31 @@ Species names include conventional charge notation for readability; the `charge`
 ```{code-cell} ipython3
 pKa1, pKa2, pKa3 = 2.148, 7.198, 12.350
 
-phosphate = Component("phosphate", [
-    Species("H3PO4",  charge=0),
-    Species("H2PO4-", charge=-1),
-    Species("HPO4-2", charge=-2),
-    Species("PO4-3",  charge=-3),
-])
+phosphate = Component(
+    "phosphate",
+    [
+        Species("H3PO4", charge=0),
+        Species("H2PO4-", charge=-1),
+        Species("HPO4-2", charge=-2),
+        Species("PO4-3", charge=-3),
+    ],
+)
 
 model_phosphate_ideal = ReactionModel(
     components=[phosphate, H_plus, OH_minus, water],
     reactions=[
-        ThermodynamicReaction("H3PO4 <-> H2PO4- + H+",  mode="equil",
-                              equilibrium_constant=pKa(pKa1)),
-        ThermodynamicReaction("H2PO4- <-> HPO4-2 + H+", mode="equil",
-                              equilibrium_constant=pKa(pKa2)),
-        ThermodynamicReaction("HPO4-2 <-> PO4-3 + H+",  mode="equil",
-                              equilibrium_constant=pKa(pKa3)),
-        ThermodynamicReaction("H2O <-> H+ + OH-",        mode="equil",
-                              equilibrium_constant=pKa(14.00)),
+        ThermodynamicReaction(
+            "H3PO4 <-> H2PO4- + H+", mode="equil", equilibrium_constant=pKa(pKa1)
+        ),
+        ThermodynamicReaction(
+            "H2PO4- <-> HPO4-2 + H+", mode="equil", equilibrium_constant=pKa(pKa2)
+        ),
+        ThermodynamicReaction(
+            "HPO4-2 <-> PO4-3 + H+", mode="equil", equilibrium_constant=pKa(pKa3)
+        ),
+        ThermodynamicReaction(
+            "H2O <-> H+ + OH-", mode="equil", equilibrium_constant=pKa(14.00)
+        ),
     ],
     T=298.15,
 )
@@ -123,27 +134,35 @@ The analytic speciation fractions serve as both initial guesses for the Newton s
 ```{code-cell} ipython3
 def phosphate_fractions(pH, Ka1, Ka2, Ka3):
     h = 10.0 ** (-pH)
-    D = h**3 + Ka1*h**2 + Ka1*Ka2*h + Ka1*Ka2*Ka3
-    return h**3/D, Ka1*h**2/D, Ka1*Ka2*h/D, Ka1*Ka2*Ka3/D
+    D = h**3 + Ka1 * h**2 + Ka1 * Ka2 * h + Ka1 * Ka2 * Ka3
+    return h**3 / D, Ka1 * h**2 / D, Ka1 * Ka2 * h / D, Ka1 * Ka2 * Ka3 / D
 
-Ka1 = 10**(-pKa1); Ka2 = 10**(-pKa2); Ka3 = 10**(-pKa3)
-c_tot_phosphate = 100.0   # mol/m³
+
+Ka1 = 10 ** (-pKa1)
+Ka2 = 10 ** (-pKa2)
+Ka3 = 10 ** (-pKa3)
+c_tot_phosphate = 100.0  # mol/m³
 
 print(f"{'pH':>6}  {'H3PO4 ana':>12}  {'H3PO4 num':>12}  {'error':>10}")
 for pH in [4.0, 7.2, 10.0]:
     a0, a1, a2, a3 = phosphate_fractions(pH, Ka1, Ka2, Ka3)
-    H  = 10.0**(-pH) * H_plus.c_ref
+    H = 10.0 ** (-pH) * H_plus.c_ref
     OH = 1e-14 * H_plus.c_ref**2 / H
     c0 = {
-        "H3PO4":  max(a0*c_tot_phosphate, 1e-10),
-        "H2PO4-": max(a1*c_tot_phosphate, 1e-10),
-        "HPO4-2": max(a2*c_tot_phosphate, 1e-10),
-        "PO4-3":  max(a3*c_tot_phosphate, 1e-10),
-        "H+": H, "OH-": OH,
+        "H3PO4": max(a0 * c_tot_phosphate, 1e-10),
+        "H2PO4-": max(a1 * c_tot_phosphate, 1e-10),
+        "HPO4-2": max(a2 * c_tot_phosphate, 1e-10),
+        "PO4-3": max(a3 * c_tot_phosphate, 1e-10),
+        "H+": H,
+        "OH-": OH,
     }
-    c_eq = solve_equilibrium(model_phosphate_ideal, c0, T=298.15, prescribed={"H2O": water.c_ref})
-    ana  = a0 * c_tot_phosphate
-    print(f"{pH:>6.1f}  {ana:>12.4f}  {c_eq['H3PO4']:>12.4f}  {abs(c_eq['H3PO4']-ana):>10.2e}")
+    c_eq = solve_equilibrium(
+        model_phosphate_ideal, c0, T=298.15, prescribed={"H2O": water.c_ref}
+    )
+    ana = a0 * c_tot_phosphate
+    print(
+        f"{pH:>6.1f}  {ana:>12.4f}  {c_eq['H3PO4']:>12.4f}  {abs(c_eq['H3PO4'] - ana):>10.2e}"
+    )
 ```
 
 
@@ -156,18 +175,30 @@ Activity coefficients shift the apparent p$K_a$ values at nonzero ionic strength
 model_phosphate_davies = ReactionModel(
     components=[phosphate, H_plus, OH_minus, water],
     reactions=[
-        ThermodynamicReaction("H3PO4 <-> H2PO4- + H+",  mode="equil",
-                              equilibrium_constant=pKa(pKa1),
-                              activity_coefficient=ActivityCoefficientDavies()),
-        ThermodynamicReaction("H2PO4- <-> HPO4-2 + H+", mode="equil",
-                              equilibrium_constant=pKa(pKa2),
-                              activity_coefficient=ActivityCoefficientDavies()),
-        ThermodynamicReaction("HPO4-2 <-> PO4-3 + H+",  mode="equil",
-                              equilibrium_constant=pKa(pKa3),
-                              activity_coefficient=ActivityCoefficientDavies()),
-        ThermodynamicReaction("H2O <-> H+ + OH-",        mode="equil",
-                              equilibrium_constant=pKa(14.00),
-                              activity_coefficient=ActivityCoefficientDavies()),
+        ThermodynamicReaction(
+            "H3PO4 <-> H2PO4- + H+",
+            mode="equil",
+            equilibrium_constant=pKa(pKa1),
+            activity_coefficient=ActivityCoefficientDavies(),
+        ),
+        ThermodynamicReaction(
+            "H2PO4- <-> HPO4-2 + H+",
+            mode="equil",
+            equilibrium_constant=pKa(pKa2),
+            activity_coefficient=ActivityCoefficientDavies(),
+        ),
+        ThermodynamicReaction(
+            "HPO4-2 <-> PO4-3 + H+",
+            mode="equil",
+            equilibrium_constant=pKa(pKa3),
+            activity_coefficient=ActivityCoefficientDavies(),
+        ),
+        ThermodynamicReaction(
+            "H2O <-> H+ + OH-",
+            mode="equil",
+            equilibrium_constant=pKa(14.00),
+            activity_coefficient=ActivityCoefficientDavies(),
+        ),
     ],
     ionic_strength=IonicStrengthBackground(I_bg=150.0),
     T=298.15,
@@ -177,25 +208,32 @@ model_phosphate_davies = ReactionModel(
 At physiological ionic strength ($I = 150\ \mathrm{mol/m}^3$), phosphate is particularly sensitive because its species carry charges 0, $-1$, $-2$, and $-3$:
 
 ```{code-cell} ipython3
-pH  = 7.2
+pH = 7.2
 a0, a1, a2, a3 = phosphate_fractions(pH, Ka1, Ka2, Ka3)
-H   = 10.0**(-pH) * H_plus.c_ref
-OH  = 1e-14 * H_plus.c_ref**2 / H
-c0  = {
-    "H3PO4":  max(a0*c_tot_phosphate, 1e-10),
-    "H2PO4-": max(a1*c_tot_phosphate, 1e-10),
-    "HPO4-2": max(a2*c_tot_phosphate, 1e-10),
-    "PO4-3":  max(a3*c_tot_phosphate, 1e-10),
-    "H+": H, "OH-": OH,
+H = 10.0 ** (-pH) * H_plus.c_ref
+OH = 1e-14 * H_plus.c_ref**2 / H
+c0 = {
+    "H3PO4": max(a0 * c_tot_phosphate, 1e-10),
+    "H2PO4-": max(a1 * c_tot_phosphate, 1e-10),
+    "HPO4-2": max(a2 * c_tot_phosphate, 1e-10),
+    "PO4-3": max(a3 * c_tot_phosphate, 1e-10),
+    "H+": H,
+    "OH-": OH,
 }
-eq_ideal  = solve_equilibrium(model_phosphate_ideal,  c0, T=298.15, prescribed={"H2O": water.c_ref})
-eq_davies = solve_equilibrium(model_phosphate_davies, c0, T=298.15, prescribed={"H2O": water.c_ref})
+eq_ideal = solve_equilibrium(
+    model_phosphate_ideal, c0, T=298.15, prescribed={"H2O": water.c_ref}
+)
+eq_davies = solve_equilibrium(
+    model_phosphate_davies, c0, T=298.15, prescribed={"H2O": water.c_ref}
+)
 
 print(f"At pH 7.2, I = 150 mol/m³ vs ideal (mol/m³):")
 print(f"{'Species':>10}  {'ideal':>10}  {'Davies':>10}  {'shift':>10}")
 for sp in ["H3PO4", "H2PO4-", "HPO4-2", "PO4-3"]:
-    print(f"{sp:>10}  {eq_ideal[sp]:>10.3f}  {eq_davies[sp]:>10.3f}  "
-          f"{eq_davies[sp]-eq_ideal[sp]:>+10.3f}")
+    print(
+        f"{sp:>10}  {eq_ideal[sp]:>10.3f}  {eq_davies[sp]:>10.3f}  "
+        f"{eq_davies[sp] - eq_ideal[sp]:>+10.3f}"
+    )
 ```
 
 ## Apparent pKw and the shift of neutral pH
@@ -224,21 +262,24 @@ The Davies equation gives the shift directly (@fig-pKw-shift):
 ```{code-cell} ipython3
 :tags: [remove-cell]
 
-A_davies = 0.509   # Davies constant at 25 °C, I in mol/L
+A_davies = 0.509  # Davies constant at 25 °C, I in mol/L
+
 
 def log10_gamma_davies(I_mol_m3, z=1):
     I = I_mol_m3 / 1000.0
     sI = np.sqrt(I)
     return -A_davies * z**2 * (sI / (1 + sI) - 0.3 * I)
 
+
 def log10_gamma_dh(I_mol_m3, z=1):
     I = I_mol_m3 / 1000.0
     sI = np.sqrt(I)
     return -A_davies * z**2 * sI / (1 + sI)
 
+
 I_range = np.linspace(0, 500, 400)
 pH_dav = 7.0 + np.array([log10_gamma_davies(I) for I in I_range])
-pH_dh  = 7.0 + np.array([log10_gamma_dh(I)     for I in I_range])
+pH_dh = 7.0 + np.array([log10_gamma_dh(I) for I in I_range])
 ```
 
 ```{code-cell} ipython3
@@ -246,12 +287,13 @@ pH_dh  = 7.0 + np.array([log10_gamma_dh(I)     for I in I_range])
 :label: cell-pKw-shift
 
 import matplotlib.pyplot as plt
+from reactions.plots import setup_figure, COLORS
 
-fig, ax = plt.subplots(figsize=(6, 3.5))
+fig, ax = setup_figure()
 ax.plot(I_range, pH_dav, color="C0", label="Davies")
-ax.plot(I_range, pH_dh,  color="C1", label="Debye–Hückel", ls="--")
+ax.plot(I_range, pH_dh, color="C1", label="Debye–Hückel", ls="--")
 ax.axhline(7.0, color="gray", lw=0.8, ls=":", label="ideal ($\\gamma = 1$)")
-ax.axvline(150,  color="gray", lw=0.6, ls=":")
+ax.axvline(150, color="gray", lw=0.6, ls=":")
 pH_150 = 7.0 + log10_gamma_davies(150)
 ax.annotate(
     f"pH = {pH_150:.2f}  at  $I = 150$",
