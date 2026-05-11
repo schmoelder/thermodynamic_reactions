@@ -1238,3 +1238,60 @@ def test_solution_c0_and_prescribed_are_copies():
     c0 = sol.c0
     c0["H2O"] = 0.0
     assert sol.c0["H2O"] != 0.0
+
+
+# ---------------------------------------------------------------------------
+# solve_equilibrium conservation enforcement
+# ---------------------------------------------------------------------------
+
+
+def test_equilibrium_conservation_pure_weak_acid():
+    """
+    100 mM pure HAc in water: pH ~2.88, total acetate conserved.
+    Prior to the conservation fix, pH was determined solely by the initial
+    c_OH- guess and total acetate was not conserved.
+    """
+    import math
+    from reactions.api import (
+        water, H_plus, OH_minus, acetic_acid,
+        autoionisation, acetic_acid_equilibria,
+        IonicStrengthIdeal, ReactionModel, Solution,
+    )
+    model = ReactionModel(
+        components=[acetic_acid, H_plus, OH_minus, water],
+        reactions=[*acetic_acid_equilibria(), *autoionisation()],
+        ionic_strength=IonicStrengthIdeal(),
+    )
+    sol = Solution(water, solutes={"HAc": 100.0, "Ac-": 1e-6, "H+": 1e-4, "OH-": 1e-7})
+    c_eq = solve_equilibrium(model, sol.c0, prescribed=sol.prescribed)
+
+    pH = -math.log10(c_eq["H+"] / 1000)
+    total_acetate = c_eq["HAc"] + c_eq["Ac-"]
+
+    assert pytest.approx(pH, abs=0.01) == 2.88
+    assert pytest.approx(total_acetate, rel=1e-6) == 100.0
+
+
+def test_equilibrium_conservation_independent_of_initial_oh():
+    """
+    solve_equilibrium must give the same pH regardless of c_OH- initial guess.
+    """
+    import math
+    from reactions.api import (
+        water, H_plus, OH_minus, acetic_acid,
+        autoionisation, acetic_acid_equilibria,
+        IonicStrengthIdeal, ReactionModel,
+    )
+    model = ReactionModel(
+        components=[acetic_acid, H_plus, OH_minus, water],
+        reactions=[*acetic_acid_equilibria(), *autoionisation()],
+        ionic_strength=IonicStrengthIdeal(),
+    )
+    c_base = {"HAc": 100.0, "Ac-": 1e-6, "H+": 1e-4, "H2O": water.c_ref}
+    pHs = []
+    for c_oh in [1e-5, 1e-7, 1e-9]:
+        c0 = {**c_base, "OH-": c_oh}
+        c_eq = solve_equilibrium(model, c0, prescribed={"H2O": water.c_ref})
+        pHs.append(-math.log10(c_eq["H+"] / 1000))
+
+    assert max(pHs) - min(pHs) < 1e-4

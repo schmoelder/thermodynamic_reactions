@@ -525,6 +525,66 @@ def solve_equilibrium(
     for i in prescribed_idx:
         c_init[i] = _prescribed_fns[model.species[i].name](0.0)
 
+    # -----------------------------------------------------------------------
+    # Conservation enforcement
+    #
+    # For an equilibrium-only (DAE) system, some ODE rows are trivially zero
+    # (species that are neither dep in any equil reaction nor involved in any
+    # kinetic reaction).  These rows carry no gradient information and the
+    # Newton step leaves the corresponding species at their initial values,
+    # violating stoichiometric conservation.
+    #
+    # Fix: identify those trivially unconstrained dynamic species, compute
+    # the left null space of the stoichiometric matrix (the conservation
+    # moieties), and replace their zero residual rows with explicit
+    # conservation equations  w^T c = w^T c0.
+    # -----------------------------------------------------------------------
+    equil_dep_set = set(int(d) for d in model.equil_dep)
+    kinetic_col_idx = [j for j, is_k in enumerate(model.kinetic_mask) if is_k]
+
+    # Local indices (within dynamic_idx) of trivially unconstrained species.
+    trivial_local: list[int] = []
+    for local_i, global_i in enumerate(dynamic_idx):
+        if global_i in equil_dep_set:
+            continue  # algebraic row — already constrained
+        if kinetic_col_idx and np.any(model.nu[global_i, kinetic_col_idx] != 0):
+            continue  # has a kinetic ODE contribution — not trivial
+        trivial_local.append(local_i)
+
+    # Left null space of N_dyn: conservation moiety vectors, shape (n_dyn, n_moiety)
+    if trivial_local:
+        N_dyn = model.nu[np.ix_(dynamic_idx, list(range(len(model.reactions))))]
+        U_s, sv, _ = np.linalg.svd(N_dyn, full_matrices=True)
+        sv_tol = max(N_dyn.shape) * np.finfo(float).eps * (sv.max() if len(sv) > 0 else 1.0)
+        n_sv = min(N_dyn.shape)
+        is_null = np.concatenate([sv < sv_tol, np.ones(n_dyn - n_sv, dtype=bool)])
+        moiety_vecs = U_s[:, is_null]               # (n_dyn, n_moiety)
+        moiety_targets = moiety_vecs.T @ c_init[dynamic_idx]  # conserved quantities
+    else:
+        moiety_vecs = np.zeros((n_dyn, 0))
+        moiety_targets = np.zeros(0)
+    n_moiety = moiety_vecs.shape[1]
+
+    def _apply_conservation(r: np.ndarray, c_dyn: np.ndarray) -> np.ndarray:
+        """Replace trivial ODE rows with conservation equations."""
+        r = r.copy()
+        for slot, local_i in enumerate(trivial_local):
+            if slot >= n_moiety:
+                break
+            w = moiety_vecs[:, slot]
+            r[local_i] = np.dot(w, c_dyn) - moiety_targets[slot]
+        return r
+
+    def _conservation_jac_rows(J_y: np.ndarray, c_dyn: np.ndarray) -> np.ndarray:
+        """Set trivial rows of J_y to conservation equation Jacobians."""
+        J_y = J_y.copy()
+        for slot, local_i in enumerate(trivial_local):
+            if slot >= n_moiety:
+                break
+            w = moiety_vecs[:, slot]
+            J_y[local_i, :] = w * c_dyn   # ∂(w^T c)/∂y_k = w_k * c_k
+        return J_y
+
     # Newton in log space, reduced to dynamic species only.
     y = np.log(c_init[dynamic_idx])
     c_dot_zero = np.zeros(n)
@@ -532,9 +592,10 @@ def solve_equilibrium(
     for iteration in range(max_iter):
         c = c_init.copy()
         c[dynamic_idx] = np.exp(y)
+        c_dyn = np.exp(y)
 
         r_full = model.residual(c, c_dot_zero, T)
-        r = r_full[dynamic_idx]
+        r = _apply_conservation(r_full[dynamic_idx], c_dyn)
         r_norm = float(np.linalg.norm(r))
 
         if r_norm < tol:
@@ -543,7 +604,7 @@ def solve_equilibrium(
         # Jacobian in log space: dr/dy_k = dr/dc_k * c_k
         J_c_full = model.jacobian(c, c_dot_zero, T)
         J_c = J_c_full[np.ix_(dynamic_idx, dynamic_idx)]
-        J_y = J_c * np.exp(y)[np.newaxis, :]
+        J_y = _conservation_jac_rows(J_c * c_dyn[np.newaxis, :], c_dyn)
 
         # Tikhonov regularisation for near-singular systems
         J_y += np.eye(n_dyn) * 1e-12
@@ -559,7 +620,9 @@ def solve_equilibrium(
             y_new = y + alpha * dy
             c_new = c_init.copy()
             c_new[dynamic_idx] = np.exp(y_new)
-            r_new = model.residual(c_new, c_dot_zero, T)[dynamic_idx]
+            c_dyn_new = np.exp(y_new)
+            r_new_full = model.residual(c_new, c_dot_zero, T)[dynamic_idx]
+            r_new = _apply_conservation(r_new_full, c_dyn_new)
             if np.linalg.norm(r_new) < r_norm * (1.0 - 1e-4 * alpha):
                 break
             alpha *= 0.5
@@ -568,8 +631,10 @@ def solve_equilibrium(
 
     c_sol = c_init.copy()
     c_sol[dynamic_idx] = np.exp(y)
+    c_dyn_sol = c_sol[dynamic_idx]
+    r_sol_full = model.residual(c_sol, c_dot_zero, T)[dynamic_idx]
     r_final_norm = float(np.linalg.norm(
-        model.residual(c_sol, c_dot_zero, T)[dynamic_idx]
+        _apply_conservation(r_sol_full, c_dyn_sol)
     ))
 
     if r_final_norm > 1e-6:
