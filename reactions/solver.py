@@ -18,7 +18,13 @@ from typing import Callable, Optional, Union
 import numpy as np
 from scipy.integrate import solve_ivp
 
-from reactions.api import ReactionModel
+from .model import ReactionModel
+
+__all__ = [
+    "SimulationResult",
+    "simulate",
+    "solve_equilibrium",
+]
 
 
 # ---------------------------------------------------------------------------

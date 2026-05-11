@@ -15,6 +15,15 @@ from .equilibrium import EquilibriumConstantBase
 from .rate import RateBase, RateConstantBase, RateConstantFixed
 from .species import PhysicalState
 
+__all__ = [
+    "parse_stoichiometry",
+    "ReactionBase",
+    "ThermodynamicReaction",
+    "MassActionReaction",
+    "EnzymaticReaction",
+    "CustomReaction",
+]
+
 
 # ---------------------------------------------------------------------------
 # Stoichiometry parser

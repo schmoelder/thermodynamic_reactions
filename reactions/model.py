@@ -13,6 +13,11 @@ from .ionic import IonicStrengthBase, IonicStrengthIdeal
 from .reaction import MassActionReaction, ReactionBase, ThermodynamicReaction
 from .species import Component, PhysicalState, Species
 
+__all__ = [
+    "ConservationReport",
+    "ReactionModel",
+]
+
 
 # ---------------------------------------------------------------------------
 # Conservation report

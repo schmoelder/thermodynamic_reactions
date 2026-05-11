@@ -9,6 +9,15 @@ from typing import Optional
 
 import numpy as np
 
+__all__ = [
+    "R_GAS",
+    "KB",
+    "H_PLANCK",
+    "PhysicalState",
+    "Species",
+    "Component",
+]
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------

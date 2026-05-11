@@ -12,6 +12,17 @@ import numpy as np
 
 from .species import R_GAS
 
+__all__ = [
+    "EquilibriumConstantBase",
+    "EquilibriumConstant",
+    "EquilibriumConstantVantHoff",
+    "EquilibriumConstantVantHoffCp",
+    "EquilibriumConstantCustom",
+    "EquilibriumConstantTabulated",
+    "EquilibriumConstantPolynomial",
+    "pKa",
+]
+
 
 class EquilibriumConstantBase(ABC):
     """Abstract base for equilibrium constant models."""

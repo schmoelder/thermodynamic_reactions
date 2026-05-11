@@ -12,6 +12,18 @@ import numpy as np
 
 from .species import PhysicalState, R_GAS
 
+__all__ = [
+    "RateConstantBase",
+    "RateConstantFixed",
+    "RateConstantArrhenius",
+    "RateConstantPolynomial",
+    "RateConstantTabulated",
+    "RateBase",
+    "MichaelisMenten",
+    "HillRate",
+    "CustomRate",
+]
+
 
 # ---------------------------------------------------------------------------
 # Forward rate constant  kf(T)

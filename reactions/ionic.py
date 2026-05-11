@@ -11,6 +11,13 @@ import numpy as np
 
 from .species import PhysicalState
 
+__all__ = [
+    "IonicStrengthBase",
+    "IonicStrengthIdeal",
+    "IonicStrengthBackground",
+    "IonicStrengthFixed",
+]
+
 
 class IonicStrengthBase(ABC):
     """Abstract base for ionic strength models."""

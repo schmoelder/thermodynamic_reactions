@@ -8,7 +8,9 @@ from __future__ import annotations
 
 from typing import Union
 
-from reactions.species import Component
+from .species import Component
+
+__all__ = ["Solution"]
 
 
 class Solution:

@@ -13,6 +13,17 @@ import numpy as np
 
 from .species import PhysicalState
 
+__all__ = [
+    "_DH_A_CONST",
+    "_DH_B_L_CONST",
+    "_water_epsilon_r",
+    "ActivityCoefficientBase",
+    "ActivityCoefficientIdeal",
+    "ActivityCoefficientDebyeHuckel",
+    "ActivityCoefficientDavies",
+    "ActivityCoefficientCustom",
+]
+
 # ---------------------------------------------------------------------------
 # Debye-Hückel physical constants (mol/L convention)
 # A_L(T) = _DH_A_CONST   / (εr·T)^(3/2)   [(mol/L)^(-1/2)]
