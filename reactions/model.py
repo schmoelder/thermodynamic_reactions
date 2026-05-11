@@ -266,8 +266,8 @@ class ReactionModel:
         Volumetric heat capacity ρCp [J/(m³·K)] from species with all three
         of molar_mass, density, and heat_capacity set.
 
-        ρCp = Σ_k x_k · (ρ_k / M_k) · Cp_k
-        where x_k = c_k / Σ_j c_j (sum over thermal species only).
+        ρCp = Σ_k c_k · Cp_k
+        where c_k [mol/m³] and Cp_k [J/(mol·K)].
         """
         thermal = [
             (i, sp) for i, sp in enumerate(self.species)
@@ -278,16 +278,7 @@ class ReactionModel:
                 "No species with molar_mass, density, and heat_capacity set. "
                 "Energy balance requires at least one such species."
             )
-        c_total = sum(c[i] for i, _ in thermal)
-        if c_total == 0.0:
-            raise ValueError("All thermal-species concentrations are zero.")
-        rho_cp = 0.0
-        for i, sp in thermal:
-            x = c[i] / c_total
-            if x == 0.0:
-                continue
-            rho_cp += x * (sp.density / sp.molar_mass) * sp.heat_capacity
-        return rho_cp
+        return sum(c[i] * sp.heat_capacity for i, sp in thermal)
 
     def jacobian_dT(
         self,
