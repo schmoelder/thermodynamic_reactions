@@ -88,10 +88,11 @@ At constant pressure, changes in enthalpy correspond directly to heat exchange, 
 Reaction enthalpies $\Delta_r H$ and the Kirchhoff relations are therefore expressed in terms of $H$.
 The Helmholtz energy $A$ is the appropriate potential when temperature and volume are controlled, corresponding to a rigid system in thermal contact with a reservoir.
 This is the natural setting for molecular simulation, where $N$, $V$, and $T$ are directly specified, and for certain condensed-matter models.
-In typical solution chemistry, reactions occur in open vessels at approximately constant temperature and pressure; volume is not fixed, while pressure is maintained by the surroundings.
-Under these conditions, the Gibbs free energy $G$ is the relevant potential, and $A$ does not appear further in this book.
+In typical solution chemistry, reactions occur in open vessels at approximately constant temperature and pressure, so the Gibbs free energy $G$ is the relevant potential; $A$ does not appear further in this book.
 
 ## Differentials of the potentials
+
+The differential of each potential is fixed by its natural variables and the fundamental relation:
 
 The differentials of each potential follow from the fundamental relation and their definitions:
 

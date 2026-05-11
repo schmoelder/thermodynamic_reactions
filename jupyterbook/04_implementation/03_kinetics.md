@@ -20,6 +20,8 @@ The constraint $k^r(T) = k^f(T)/K(T)$ is enforced in both modes.
 
 The rate constant in `ThermodynamicReaction` has units $\text{mol}/(\text{m}^3\cdot\mathrm{s})$ because the reaction flux is evaluated in terms of dimensionless activities $a_i = c_i / c^\circ$ rather than concentrations directly.
 For a first-order reaction at ideal conditions this is related to the mass-action rate constant by $k^{f,\text{thermo}} = k^{f,\text{MA}} \cdot c^\circ$ (@implementation-source-term, @mass-action-law).
+The factor $c^\circ = 1000\ \mathrm{mol/m^3}$ reflects the standard-state choice: `MassActionReaction` implicitly uses $c^\circ = 1\ \mathrm{mol/m^3}$, so the same physical rate requires a 1000-fold larger $k^f$ in `ThermodynamicReaction`.
+`MassActionReaction` is the $\gamma_i = 1$, free-$k^r$ limit of `ThermodynamicReaction` (@implementation-source-term): equivalent at fixed temperature when $k^r$ is set to $k^f/K$ by hand, but without the mechanism to enforce this as temperature changes.
 
 ```{code-cell} ipython3
 import numpy as np

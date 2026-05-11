@@ -204,7 +204,9 @@ for pH, b in zip(pH_m_mid[::15], beta_m[::15]):
 A salt background shifts apparent pKa values (@speciation-buffers, @implementation-activity),
 which broadens and shifts the buffer capacity peak.
 The ideal speciation is used as the initial guess; the non-ideal model then fully re-equilibrates under the activity-corrected residuals.
-The same model with `IonicStrengthBackground` and `ActivityCoefficientDavies` shows the ionic strength correction:
+The same model with `IonicStrengthBackground` and `ActivityCoefficientDavies` shows the ionic strength correction.
+The sweep is limited to pH 3--11: above pH 11.5, the Davies correction for $\ce{PO4^3-}$ ($z = -3$) becomes large enough to make the Newton Jacobian ill-conditioned, and the solver diverges.
+This is outside the practical IEX range, so the truncation has no consequence here; a more robust solver or a different activity model (e.g. Pitzer) would extend the range:
 
 ```{code-cell} ipython3
 model_phos_davies = ReactionModel(
@@ -227,7 +229,6 @@ model_phos_davies = ReactionModel(
     T=298.15,
 )
 
-# z=-3 γ correction overflows Newton above pH ≈ 11.5; outside IEX practical range
 pH_dav = np.linspace(3.0, 11.0, 180)
 H_dav = np.array([
     solve_equilibrium(model_phos_davies, solve_at_pH(model_phos, pH, c_phos), T=298.15, prescribed={"H2O": water.c_ref})["H+"]

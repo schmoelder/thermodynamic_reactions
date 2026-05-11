@@ -13,7 +13,9 @@ For enzyme-catalysed reactions the rate saturates because the enzyme active site
 
 This chapter is an orthogonal extension: it depends on the kinetic framework introduced in @implementation-kinetics, but is independent of the acid-base and activity chemistry in @implementation-activity through @implementation-buffer.
 `EnzymaticReaction` slots into the same $\mathbf{S}\boldsymbol{\varphi}$ framework as `ThermodynamicReaction`; only the rate closure $\varphi$ changes.
-Three reaction classes cover the library: `ThermodynamicReaction` enforces an equilibrium or thermodynamic consistency constraint, `MassActionReaction` applies a linear rate law with a free reverse constant, and `EnzymaticReaction` accepts a custom rate closure.
+Three reaction classes cover the library: `ThermodynamicReaction` enforces thermodynamic consistency ($k^r = k^f/K$ at every evaluation), `MassActionReaction` applies a linear rate law with a free reverse constant, and `EnzymaticReaction` accepts a custom rate closure.
+`EnzymaticReaction` does not enforce $k^r = k^f/K$: the rate closure is supplied by the user and may represent an empirical fit that is not thermodynamically reversible in the strict sense (@kinetics-reversibility).
+This is appropriate for enzyme catalysis, where the Michaelis-Menten and Hill forms describe net forward flux under physiological conditions and the reverse reaction is typically negligible or absorbed into the effective parameters.
 
 
 ## Saturation rate laws
