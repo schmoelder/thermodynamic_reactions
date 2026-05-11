@@ -125,7 +125,7 @@ model_ac  = ReactionModel(
 print("Analytic Jacobian verification:")
 check_jacobian(model_ma, np.array([1.0, 0.5]),       "A⇌B MassActionReaction")
 check_jacobian(model_td, np.array([500.0, 200.0]),   "A⇌B ThermodynamicReaction kinetic")
-check_jacobian(model_ac, np.array([10.0, 90.0, 6.3e-5, 1.6e-4]),
+check_jacobian(model_ac, np.array([10.0, 90.0, 6.3e-5, 1.6e-4, 1000.0]),
                "Acetic acid (equil)")
 ```
 

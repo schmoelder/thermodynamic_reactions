@@ -306,7 +306,7 @@ $$
 $$
 
 The neutral species $\ce{HA}$ has $\gamma_{\ce{HA}} \approx 1$, while $\ce{A-}$ and $\ce{H+}$ both have $\gamma_i < 1$ at finite $I$, so $\text{pKa}^\text{app} < \text{pKa}$ at any non-zero ionic strength.
-At 150 mM, typical of IEX loading conditions, the suppression reaches $\approx 0.25$--$0.35$ units (@fig-activity-pka):
+At 150 mM, typical of IEX loading conditions, the suppression reaches $\approx 0.25-0.35$ units (@fig-activity-pka):
 
 ```{code-cell} ipython3
 acid = Component("acid", [Species("HA", charge=0), Species("A-", charge=-1)])

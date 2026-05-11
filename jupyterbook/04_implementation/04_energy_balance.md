@@ -24,7 +24,7 @@ Modelling this thermal feedback requires treating $T$ as a dynamic state variabl
 ## Energy balance for a reactive fluid
 
 Consider a closed, well-mixed liquid-phase system at constant pressure with no shaft work.
-For liquid-phase systems, density and pressure variations are small enough to neglect: $\rho$ and $C_p$ are treated as constant over the integration, and expansion work $P\,dV$ is negligible.
+For liquid-phase systems, density variations and expansion work are negligible, so $\rho$ and $C_p$ are treated as constant.
 Under these conditions, the first law reduces to (@laws-of-thermodynamics, @thermodynamic-potentials):
 
 $$
@@ -47,7 +47,7 @@ dH = C_{p,\text{tot}}\,dT + \sum_j \underbrace{\left(\sum_i \nu_{ij}\,\bar{H}_i\
 $$
 
 where $\Delta_r H_j = \sum_i \nu_{ij} \bar{H}_i$ is the reaction enthalpy under current conditions.
-Setting equal to {eq}`eq-first-law-H`, dividing by the fluid volume $V$ and by $dt$, and using the reaction flux $\varphi_j = (1/V)\,(d\xi_j/dt)$ (@kinetics):
+Equating with {eq}`eq-first-law-H`, dividing by $V\,dt$, and using the reaction flux $\varphi_j = (1/V)\,(d\xi_j/dt)$ (@kinetics):
 
 $$
 \rho C_p\,\dot{T}
@@ -55,13 +55,16 @@ $$
 $$ (eq-energy-balance)
 
 where $\rho C_p = C_{p,\text{tot}}/V$ is the volumetric heat capacity [J/(m³·K)] and $\dot{Q}_\text{ext} = \delta Q_\text{ext}/(V\,dt)$ is the external heat input per unit volume [W/m³].
-For an adiabatic system, $\dot{Q}_\text{ext} = 0$.
+A system is **adiabatic** when it exchanges no heat with its surroundings; for such a system, $\dot{Q}_\text{ext} = 0$.
 
-In the current implementation, $\Delta_r H_j$ is parameterised using the standard-state quantity $\Delta_r H^\circ_j(T)$ from the equilibrium constant model (@equilibrium-temperature): for `EquilibriumConstantVantHoff`, this is the constant $\Delta H^\circ$; for `EquilibriumConstantVantHoffCp`, it includes the Kirchhoff correction $\Delta H^\circ + \Delta C_p(T - T_\text{ref})$.
+```{admonition} Implementation note
+:class: note
+
+$\Delta_r H_j$ is approximated by the standard-state value $\Delta_r H^\circ_j(T)$ from the equilibrium constant model (@equilibrium-temperature): for `EquilibriumConstantVantHoff`, this is the constant $\Delta H^\circ$; for `EquilibriumConstantVantHoffCp`, it includes the Kirchhoff correction $\Delta H^\circ + \Delta C_p(T - T_\text{ref})$.
 This approximation is accurate for dilute liquid-phase systems where activity corrections to the reaction enthalpy are small.
+```
 
-An exothermic reaction ($\Delta_r H^\circ < 0$) acts as a heat source and raises the fluid temperature.
-The rising temperature then decreases $K(T)$, reducing the forward driving force — Le Chatelier's principle expressed as a coupled ODE.
+An exothermic reaction ($\Delta_r H^\circ < 0$) raises the temperature, which shifts $K(T)$ and feeds back into the reaction rate: Le Chatelier's principle expressed dynamically.
 
 ```{admonition} Intuition: thermal response scale
 :class: tip
@@ -92,29 +95,21 @@ For pure water ($\rho = 1000\ \mathrm{kg/m^3}$, $M = 0.018\ \mathrm{kg/mol}$, $C
 
 ## Temperature dependence of the reaction flux
 
-Appending $T$ to the concentration state vector requires the partial derivative $\partial\varphi_j/\partial T$ for each reaction.
-Splitting the flux using $k^r = k^f/K$, with the activity products $P^f$ and $P^r$ independent of $T$:
-
-$$
-\varphi_j = k^f(T)\,P^f - k^r(T)\,P^r.
-$$
-
-Differentiating with respect to $T$ and collecting terms:
+Appending $T$ to the concentration state vector requires the partial derivative $\partial\varphi_j/\partial T$ for each reaction:
 
 $$
 \frac{\partial\varphi_j}{\partial T}
 = \frac{d\ln k^f}{dT}\,\varphi_j
-+ k^r\,\frac{d\ln K}{dT}\,P^r.
++ k^r\,\frac{d\ln K}{dT}\,P^r_j.
 $$ (eq-dvarphi-dT)
 
-The first term scales the current flux by the logarithmic rate sensitivity; the second is a correction from the shifting equilibrium.
-For `RateConstantArrhenius` and `EquilibriumConstantVantHoff`, both $d\ln k^f/dT = E_a/(RT^2)$ and $d\ln K/dT = \Delta_r H^\circ/(RT^2)$ are analytic (@kinetics-temperature, @equilibrium-temperature).
-`EquilibriumConstantCustom` and `EquilibriumConstantTabulated` return `None` for these derivatives; the library substitutes a finite-difference estimate automatically.
+The first term scales the current flux by the logarithmic rate sensitivity; the second captures the shift in equilibrium.
+For `RateConstantArrhenius` and `EquilibriumConstantVantHoff`, both derivatives are analytic (@kinetics-temperature, @equilibrium-temperature).
 
 
 ## Extended Jacobian structure
 
-With the state vector extended to $\mathbf{y} = [\mathbf{c},\,T]^\intercal$, the full residual is
+With the state vector extended to $\mathbf{y} = [\mathbf{c},\,T]^\intercal$, and under the standard-state approximation ($\Delta_r H_j \approx \Delta_r H^\circ_j$) and adiabatic assumption ($\dot{Q}_\text{ext} = 0$), the full residual is
 
 $$
 \mathbf{F}(\mathbf{y},\dot{\mathbf{y}}) =
@@ -124,7 +119,7 @@ $$
 \end{pmatrix}.
 $$
 
-The Jacobian $\partial\mathbf{F}/\partial\mathbf{y}$ has block structure:
+The Jacobian retains block structure:
 
 $$
 J =
@@ -136,9 +131,8 @@ J =
 \end{pmatrix}.
 $$
 
-The top-left block and the top-right column are analytic, computed by `ReactionModel.jacobian()` and `ReactionModel.jacobian_dT()`.
-The bottom row is also analytic for structured models: $\partial F_T/\partial c_k = \sum_j (\Delta_r H_j/\rho C_p)\,\partial\varphi_j/\partial c_k$ from `net_rate_jac`, and $\partial F_T/\partial T = -\sum_j (\Delta_r H_j\,\partial\varphi_j/\partial T + \varphi_j\,\mathrm{d}\Delta_r H_j/\mathrm{d}T)/\rho C_p$ from `net_rate_dT` and `d_reaction_enthalpy_dT`.
-`EquilibriumConstantCustom` and `EquilibriumConstantTabulated` substitute finite-difference estimates for $\Delta_r H_j$ and $\mathrm{d}\Delta_r H_j/\mathrm{d}T$; the remaining blocks stay analytic.
+All blocks are analytic for structured models and are exposed through the corresponding `ReactionModel` derivative methods.
+`EquilibriumConstantCustom` and `EquilibriumConstantTabulated` substitute finite-difference estimates where needed; the remaining blocks stay analytic.
 
 
 ## Specifying solvent properties
@@ -411,14 +405,14 @@ Left: concentrations; the reaction profile is similar to the pure-water case.
 Right: temperature evolution and the time-varying $\rho C_p$ (dashed); as MeCN fraction increases, the lower heat capacity of acetonitrile reduces $\rho C_p$, so the same heat release produces a progressively larger temperature rise per unit volume.
 ```
 
-`solvent_composition` cannot be combined with a callable $T(t)$: the two approaches prescribe the same degree of freedom.
+`solvent_composition` cannot be combined with a callable $T(t)$ because both prescribe the thermal state externally.
 Passing both raises `ValueError`.
 
 ```{admonition} Scope: aqueous activity coefficients
 :class: warning
 
 `volumetric_heat_capacity` correctly handles solvent mixtures via {eq}`eq-rhocp`.
-The activity coefficient models (`ActivityCoefficientDebyeHuckel`, `ActivityCoefficientDavies`) are currently calibrated for pure water at 25 °C; the Debye-Hückel parameter $A$ depends on the solvent dielectric constant $\varepsilon$, which changes with composition.
+The activity coefficient models (`ActivityCoefficientDebyeHuckel`, `ActivityCoefficientDavies`) are currently calibrated for pure water at 25 °C; the Debye-Hückel parameter $A$ depends on the solvent dielectric constant $\varepsilon_r$, which changes with composition.
 Mixed-solvent activity corrections require a dielectric mixing model $\varepsilon(x_k)$ that is not yet implemented.
 See the discussion in `LIBRARY.md` under "Known limitations".
 ```
@@ -426,5 +420,5 @@ See the discussion in `LIBRARY.md` under "Known limitations".
 ---
 
 Temperature as a dynamic state requires only solvent species with complete physical fields (`molar_mass`, `density`, `heat_capacity`) and reactions that expose $\Delta_r H^\circ(T)$ via `reaction_enthalpy`.
-The solver interface is otherwise unchanged: `simulate` returns the same `SimulationResult` with an additional `T_profile` array.
+The solver interface is otherwise unchanged; `simulate` simply adds a `T_profile` array to the returned `SimulationResult`.
 The following chapter extends the activity term $a_i = \gamma_i c_i / c^\circ$ to non-ideal solutions, where ionic-strength corrections shift the apparent equilibrium composition (@implementation-activity).
