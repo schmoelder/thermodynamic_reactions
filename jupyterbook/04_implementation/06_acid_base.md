@@ -91,10 +91,16 @@ print(f"pH (numerical)          = {pH:.4f}")
 print(f"pH (Henderson-Hasselbalch) = {pH_HH:.4f}")
 ```
 
-Water appears in the model so that the autoionisation constraint $\ce{H2O <=> H+ + OH-}$ is stoichiometrically balanced, but its molar concentration is fixed by the solvent density and is not altered by the acid-base chemistry.
-The `prescribed={"H2O": C_REF}` argument holds water at $c_{\ce{H2O}} = c^\circ = 1000\,\mathrm{mol/m^3}$ throughout the solve: no balance equation is written for it, and it enters only through the stoichiometry of the constraints it appears in.
-Setting $c_{\ce{H2O}} = c^\circ$ gives $a_{\ce{H2O}} = \gamma_{\ce{H2O}}\,c_{\ce{H2O}}/c^\circ = 1$, the standard dilute-solution approximation for the solvent activity.
-In the full CADET model the transport solver owns the entire concentration vector and passes it unchanged to the reaction model at each solver step; `prescribed` at the call site models this contract, nominating which species are externally controlled rather than solved for.
+Water appears in the model so that the autoionisation constraint $\ce{H2O <=> H+ + OH-}$ is stoichiometrically balanced.
+The `prescribed={"H2O": C_REF}` argument fixes $c_{\ce{H2O}} = c^\circ = 1000\,\mathrm{mol/m}^3$ throughout the solve: no balance equation is written for it, and each constraint it appears in receives activity $a_{\ce{H2O}} = c_{\ce{H2O}}/c^\circ = 1$.
+The value $1000\,\mathrm{mol/m}^3$ is not the physical concentration of water ($\approx 55\,\mathrm{mol/L}$); it is the standard-state reference that gives unit solvent activity — the same approximation already built into the tabulated $K_w = 10^{-14}$.
+In dilute aqueous solutions the mole fraction of water is very close to one, so $a_{\ce{H2O}} \approx 1$ regardless; setting $c_{\ce{H2O}} = c^\circ$ makes this exact within the model.
+With $a_{\ce{H2O}} = 1$ the equilibrium condition reduces to $a_{\ce{H+}}\,a_{\ce{OH-}} = K_w$, where $K_w = 10^{-14}$ is the dimensionless water-ion product at 25 °C: the conventional $\mathrm{p}K_w = 14$ expressed as an equilibrium constant with activities referenced to $c^\circ = 1\,\mathrm{mol/L}$.
+This is a prototype convention: in CADET-Core the transport solver owns the full concentration vector and passes it unchanged to the reaction model at each step, so the reaction model never prescribes any species directly.
+
+`prescribed` is not limited to solvents.
+Fixing a non-solvent species, for example holding $c_{\ce{H+}}$ at a target value, turns `solve_equilibrium` into a speciation calculator at a given proton activity.
+Sweeping a sequence of prescribed proton activities maps out equilibrium composition as a function of pH, equivalent to a pH-stat measurement; @implementation-buffer uses this pattern to compute buffer capacity numerically.
 
 The numerical result matches Henderson-Hasselbalch (@acid-base) because the ideal-dilute approximation holds at 100 mM.
 Activity corrections break this agreement at finite ionic strength, as shown below.
