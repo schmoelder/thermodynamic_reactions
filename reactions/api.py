@@ -71,6 +71,24 @@ from .reaction import (
     ThermodynamicReaction,
     parse_stoichiometry,
 )
+from .common import (
+    H_plus,
+    OH_minus,
+    acetic_acid,
+    acetic_acid_equilibria,
+    autoionisation,
+    citric_acid,
+    citric_acid_equilibria,
+    hepes,
+    hepes_equilibria,
+    mops,
+    mops_equilibria,
+    phosphate,
+    phosphate_equilibria,
+    tris,
+    tris_equilibria,
+    water,
+)
 from .formulation import Solution
 from .species import (
     KB,
@@ -137,6 +155,23 @@ __all__ = [
     "ReactionModel",
     # formulation
     "Solution",
+    # common components and reaction factories
+    "water",
+    "H_plus",
+    "OH_minus",
+    "acetic_acid",
+    "acetic_acid_equilibria",
+    "autoionisation",
+    "citric_acid",
+    "citric_acid_equilibria",
+    "hepes",
+    "hepes_equilibria",
+    "mops",
+    "mops_equilibria",
+    "phosphate",
+    "phosphate_equilibria",
+    "tris",
+    "tris_equilibria",
 ]
 
 
