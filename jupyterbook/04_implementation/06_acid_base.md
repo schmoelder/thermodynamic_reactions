@@ -249,6 +249,8 @@ Since $\gamma_\pm < 1$ at nonzero ionic strength, $\mathrm{pH}_\text{neut} < 7$.
 The Davies equation gives the shift directly (@fig-pKw-shift):
 
 ```{code-cell} ipython3
+:tags: [remove-cell]
+
 A_davies = 0.509   # Davies constant at 25 °C, I in mol/L
 
 def log10_gamma_davies(I_mol_m3, z=1):
