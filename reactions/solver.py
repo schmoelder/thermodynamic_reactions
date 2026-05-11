@@ -124,6 +124,9 @@ def simulate(
         {species_name: float | callable(t) -> float}.
         Prescribed species are excluded from the ODE and held at their
         specified value throughout the integration.
+        Intended for parametric sweeps (e.g. fixing c_H+ to scan pH).
+        Solvent concentrations are handled by the ``Solution`` class,
+        which passes the appropriate entries here.
     n_points : int
         Number of output time points.
     rtol, atol : float
@@ -484,6 +487,8 @@ def solve_equilibrium(
         Species held fixed {species_name: float | callable(t) -> float}.
         These are excluded from the Newton iteration and held at their
         specified value (evaluated at t=0 for callables).
+        Intended for parametric sweeps (e.g. fixing c_H+ to scan pH).
+        Solvent concentrations are handled by the ``Solution`` class.
     max_iter : int
         Maximum Newton iterations.
     tol : float

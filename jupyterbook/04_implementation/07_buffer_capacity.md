@@ -29,7 +29,7 @@ C_REF = 1000.0  # mol/m³
 
 proton    = Component("proton",    [Species("H+",   charge=+1)])
 hydroxide = Component("hydroxide", [Species("OH-",  charge=-1)])
-water     = Component("water",     [Species("H2O",  charge=0)])
+water     = Component("water",     [Species("H2O",  charge=0, molar_mass=0.018015, density=1000.0)])
 ```
 
 ## Phosphate buffer: pH curve and β
@@ -83,7 +83,7 @@ def solve_at_pH(model, pH, c_tot):
         "PO4-3":  max(a3*c_tot, 1e-10),
         "H+": H, "OH-": OH,
     }
-    return solve_equilibrium(model, c0, T=298.15, prescribed={"H2O": C_REF})
+    return solve_equilibrium(model, c0, T=298.15, prescribed={"H2O": water.c_ref})
 
 
 pH_vals = np.linspace(3.0, 12.0, 200)
@@ -184,7 +184,7 @@ def solve_mixed_at_pH(pH):
         "PO4-3":  max(a3p*c_phos, 1e-10),
         "H+": H, "OH-": OH,
     }
-    return solve_equilibrium(model_mixed, c0, T=298.15, prescribed={"H2O": C_REF})
+    return solve_equilibrium(model_mixed, c0, T=298.15, prescribed={"H2O": water.c_ref})
 
 
 pH_mix  = np.linspace(3.0, 10.0, 150)
@@ -230,7 +230,7 @@ model_phos_davies = ReactionModel(
 # z=-3 γ correction overflows Newton above pH ≈ 11.5; outside IEX practical range
 pH_dav = np.linspace(3.0, 11.0, 180)
 H_dav = np.array([
-    solve_equilibrium(model_phos_davies, solve_at_pH(model_phos, pH, c_phos), T=298.15, prescribed={"H2O": C_REF})["H+"]
+    solve_equilibrium(model_phos_davies, solve_at_pH(model_phos, pH, c_phos), T=298.15, prescribed={"H2O": water.c_ref})["H+"]
     for pH in pH_dav
 ])
 pH_dav  = -np.log10(H_dav / C_REF)

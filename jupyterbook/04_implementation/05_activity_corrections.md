@@ -188,7 +188,7 @@ For aqueous electrolyte solutions the two built-in models cover the relevant ran
 ```{code-cell} ipython3
 proton    = Component("proton",    [Species("H+",  charge=+1)])
 hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-water     = Component("water",     [Species("H2O", charge=0)])
+water     = Component("water",     [Species("H2O", charge=0, molar_mass=0.018015, density=1000.0)])
 chloride  = Component("chloride",  [Species("Cl-", charge=-1)])
 sodium    = Component("sodium",    [Species("Na+", charge=+1)])
 ```
@@ -333,7 +333,7 @@ model = ReactionModel(
 )
 
 c0       = {"HA": 0.5, "A-": 0.5, "H+": 10**(-pKa_thermo) * C_REF, "OH-": 10**(-7) * C_REF}
-c_eq     = solve_equilibrium(model, c0, T=298.15, prescribed={"H2O": C_REF})
+c_eq     = solve_equilibrium(model, c0, T=298.15, prescribed={"H2O": water.c_ref})
 pH_eq    = -np.log10(c_eq["H+"] / C_REF)
 A_frac   = c_eq["A-"] / (c_eq["HA"] + c_eq["A-"])
 pKa_app  = pH_eq - np.log10(A_frac / (1 - A_frac))
@@ -376,7 +376,7 @@ for I_bg_mM in I_bg_range:
     for results, coeff in [(pKa_dh, ActivityCoefficientDebyeHuckel()),
                            (pKa_dav, ActivityCoefficientDavies())]:
         model_i = make_model(coeff, I_bg)
-        c_eq    = solve_equilibrium(model_i, c0_loop, T=298.15, prescribed={"H2O": C_REF})
+        c_eq    = solve_equilibrium(model_i, c0_loop, T=298.15, prescribed={"H2O": water.c_ref})
         pH_eq   = -np.log10(c_eq["H+"] / C_REF)
         A_frac  = c_eq["A-"] / (c_eq["HA"] + c_eq["A-"])
         results.append(pH_eq - np.log10(A_frac / (1 - A_frac)))

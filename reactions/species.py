@@ -64,13 +64,18 @@ class Species:
     name : str
     charge : int
         Ionic charge. Default 0.
-    c_ref : float
-        Standard-state concentration [mol/m³]. Default 1000.
-        Set to ``rho/M`` for solvents (e.g. 55500 mol/m³ for water)
-        so that activity ``a = gamma * c / c_ref`` approaches 1 in
-        dilute solution.
+    c_ref : float, optional
+        Standard-state concentration [mol/m³].
+        If not given and both ``density`` and ``molar_mass`` are set,
+        defaults to ``density / molar_mass`` (the pure-component molar
+        concentration, e.g. ~55 556 mol/m³ for water).
+        Otherwise defaults to 1000 mol/m³ (1 mol/L, the conventional
+        aqueous standard state for solutes).
     molar_mass : float, optional
         Molar mass [kg/mol].
+        Together with ``density``, marks this species as a volume-accounting
+        solvent: its concentration is derived from the remaining volume rather
+        than specified by the user.
     density : float, optional
         Pure-component density [kg/m³].
     heat_capacity : float, optional
@@ -81,10 +86,17 @@ class Species:
 
     name: str
     charge: int = 0
-    c_ref: float = 1000.0          # mol/m³ standard-state concentration
+    c_ref: Optional[float] = None
     molar_mass: Optional[float] = None
     density: Optional[float] = None
     heat_capacity: Optional[float] = None  # molar Cp [J/(mol·K)]
+
+    def __post_init__(self) -> None:
+        if self.c_ref is None:
+            if self.density is not None and self.molar_mass is not None:
+                self.c_ref = self.density / self.molar_mass
+            else:
+                self.c_ref = 1000.0
 
 
 class Component:
@@ -122,6 +134,34 @@ class Component:
         names = [s.name for s in self.species]
         if len(names) != len(set(names)):
             raise ValueError(f"Component '{self.name}' has duplicate species names.")
+
+    def _single_attr(self, attr: str):
+        if len(self.species) != 1:
+            raise AttributeError(
+                f"Component '{self.name}' has {len(self.species)} species; "
+                f"use .species[i].{attr} explicitly."
+            )
+        return getattr(self.species[0], attr)
+
+    @property
+    def charge(self) -> int:
+        return self._single_attr("charge")
+
+    @property
+    def c_ref(self) -> float:
+        return self._single_attr("c_ref")
+
+    @property
+    def molar_mass(self) -> Optional[float]:
+        return self._single_attr("molar_mass")
+
+    @property
+    def density(self) -> Optional[float]:
+        return self._single_attr("density")
+
+    @property
+    def heat_capacity(self) -> Optional[float]:
+        return self._single_attr("heat_capacity")
 
     def __repr__(self) -> str:
         return f"Component('{self.name}', species={[s.name for s in self.species]})"

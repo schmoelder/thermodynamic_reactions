@@ -74,7 +74,7 @@ $$
 Q_j(\mathbf{a}) = K_j(T).
 $$
 
-Kinetic and equilibrium modes are two closures of the same stoichiometric structure, selected by timescale separation: kinetic mode resolves the relaxation trajectory; equilibrium mode imposes $Q(\mathbf{a}, T) = K(T)$ directly.
+Kinetic and equilibrium modes are two variants of the same stoichiometric structure, selected by timescale separation: kinetic mode resolves the relaxation trajectory; equilibrium mode imposes $Q(\mathbf{a}, T) = K(T)$ directly.
 Thermodynamic consistency links both through $k^f(T)/k^r(T) = K(T)$.
 
 ## Building blocks
@@ -120,9 +120,9 @@ It exposes `residual(c, c_dot, T)` and `jacobian(c, c_dot, T)`, which implement 
 The `reactions.solver` module wraps these into a standalone prototype (`simulate()` for kinetic trajectories and `solve_equilibrium()` for steady states) used throughout Part 4 for development and verification outside CADET-Core.
 
 **Reaction classes** populate a `ReactionModel` and implement one of two constraint structures developed in Part 3.
-Stoichiometric reactions (a single extent $\xi$ relates all species changes; equilibrium means $Q = K$) are covered by two closures: `ThermodynamicReaction`, which enforces thermodynamic consistency $k^r(T) = k^f(T)/K(T)$, and `MassActionReaction`, which treats $k^r$ as a free parameter.
+Stoichiometric reactions (a single extent $\xi$ relates all species changes; equilibrium means $Q = K$) are covered by two classes: `ThermodynamicReaction`, which enforces thermodynamic consistency $k^r(T) = k^f(T)/K(T)$, and `MassActionReaction`, which treats $k^r$ as a free parameter.
 Finite-site reactions (a conserved pool of sites partitioned between occupied and free states, producing saturation kinetics) are covered by `EnzymaticReaction`.
-Phase equilibria (equality of chemical potentials across coexisting phases) are developed in Part 2 but are not implemented as reaction closures here.
+Phase equilibria (equality of chemical potentials across coexisting phases) are developed in Part 2 but are not implemented as reaction models here.
 
 ## `MassActionReaction` as starting point
 
@@ -136,7 +136,7 @@ MassActionReaction("A <-> B", kf=2.0, kr=0.5)
 At fixed temperature `MassActionReaction` is exact: $k^f/k^r$ directly sets the equilibrium composition, here $c_\text{B}/c_\text{A} = k^f/k^r = 4$.
 This ratio is a free parameter: nothing in the interface requires it to equal the equilibrium constant $K$ derived from $\Delta_r G^\circ = -RT \ln K$ (@equilibrium).
 When temperature changes, $K(T)$ shifts; `MassActionReaction` has no mechanism to follow it.
-Structurally, `MassActionReaction` is the unit-activity, free-$k^r$ limit of the stoichiometric closure: equivalent to `ThermodynamicReaction` with $\gamma_i = 1$ and $k^r$ treated as an independent parameter.
+Structurally, `MassActionReaction` is the unit-activity, free-$k^r$ limit of the stoichiometric framework: equivalent to `ThermodynamicReaction` with $\gamma_i = 1$ and $k^r$ treated as an independent parameter.
 `ThermodynamicReaction` restores thermodynamic consistency by enforcing $k^r(T) = k^f(T)/K(T)$ at every evaluation, so the long-time limit always tracks the correct equilibrium.
 
 ---

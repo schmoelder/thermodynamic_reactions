@@ -13,7 +13,7 @@ For enzyme-catalysed reactions the rate saturates because the enzyme active site
 
 This chapter is an orthogonal extension: it depends on the kinetic framework introduced in @implementation-kinetics, but is independent of the acid-base and activity chemistry in @implementation-activity through @implementation-buffer.
 `EnzymaticReaction` slots into the same $\mathbf{S}\boldsymbol{\varphi}$ framework as `ThermodynamicReaction`; only the rate closure $\varphi$ changes.
-This is a third closure class: `ThermodynamicReaction` closes via an equilibrium constraint, `MassActionReaction` via a linear rate law, and `EnzymaticReaction` via a saturating nonlinear closure.
+Three reaction classes cover the library: `ThermodynamicReaction` enforces an equilibrium or thermodynamic consistency constraint, `MassActionReaction` applies a linear rate law with a free reverse constant, and `EnzymaticReaction` accepts a custom rate closure.
 
 
 ## Saturation rate laws
