@@ -93,48 +93,6 @@ The ratio $\rho_k / M_k$ is the molar concentration of pure solvent [mol/m³]; m
 For pure water ($\rho = 1000\ \mathrm{kg/m^3}$, $M = 0.018\ \mathrm{kg/mol}$, $C_p = 75.3\ \mathrm{J/(mol\cdot K)}$), {eq}`eq-rhocp` gives $\rho C_p \approx 4.18 \times 10^6\ \mathrm{J/(m^3\cdot K)}$.
 
 
-## Temperature dependence of the reaction flux
-
-Appending $T$ to the concentration state vector requires the partial derivative $\partial\varphi_j/\partial T$ for each reaction:
-
-$$
-\frac{\partial\varphi_j}{\partial T}
-= \frac{d\ln k^f}{dT}\,\varphi_j
-+ k^r\,\frac{d\ln K}{dT}\,P^r_j.
-$$ (eq-dvarphi-dT)
-
-The first term scales the current flux by the logarithmic rate sensitivity; the second captures the shift in equilibrium.
-For `RateConstantArrhenius` and `EquilibriumConstantVantHoff`, both derivatives are analytic (@kinetics-temperature, @equilibrium-temperature).
-
-
-## Extended Jacobian structure
-
-With the state vector extended to $\mathbf{y} = [\mathbf{c},\,T]^\intercal$, and under the standard-state approximation ($\Delta_r H_j \approx \Delta_r H^\circ_j$) and adiabatic assumption ($\dot{Q}_\text{ext} = 0$), the full residual is
-
-$$
-\mathbf{F}(\mathbf{y},\dot{\mathbf{y}}) =
-\begin{pmatrix}
-\dot{\mathbf{c}} - \mathbf{S}\boldsymbol{\varphi}(\mathbf{c},T) \\
-\dot{T} + \bigl(\sum_j \Delta_r H^\circ_j\,\varphi_j\bigr)\!/\rho C_p
-\end{pmatrix}.
-$$
-
-The Jacobian retains block structure:
-
-$$
-J =
-\begin{pmatrix}
--\mathbf{S}\,\partial\boldsymbol{\varphi}/\partial\mathbf{c}
-  & -\mathbf{S}\,\partial\boldsymbol{\varphi}/\partial T \\
-\partial F_T/\partial\mathbf{c}
-  & \partial F_T/\partial T
-\end{pmatrix}.
-$$
-
-All blocks are analytic for structured models and are exposed through the corresponding `ReactionModel` derivative methods.
-`EquilibriumConstantCustom` and `EquilibriumConstantTabulated` substitute finite-difference estimates where needed; the remaining blocks stay analytic.
-
-
 ## Specifying solvent properties
 
 The energy balance requires $\rho C_p$ computed from the solvent species.
@@ -407,6 +365,49 @@ Right: temperature evolution and the time-varying $\rho C_p$ (dashed); as MeCN f
 
 `solvent_composition` cannot be combined with a callable $T(t)$ because both prescribe the thermal state externally.
 Passing both raises `ValueError`.
+
+
+## Temperature dependence of the reaction flux
+
+Appending $T$ to the concentration state vector requires the partial derivative $\partial\varphi_j/\partial T$ for each reaction:
+
+$$
+\frac{\partial\varphi_j}{\partial T}
+= \frac{d\ln k^f}{dT}\,\varphi_j
++ k^r\,\frac{d\ln K}{dT}\,P^r_j.
+$$ (eq-dvarphi-dT)
+
+The first term scales the current flux by the logarithmic rate sensitivity; the second captures the shift in equilibrium.
+For `RateConstantArrhenius` and `EquilibriumConstantVantHoff`, both derivatives are analytic (@kinetics-temperature, @equilibrium-temperature).
+
+
+## Extended Jacobian structure
+
+With the state vector extended to $\mathbf{y} = [\mathbf{c},\,T]^\intercal$, and under the standard-state approximation ($\Delta_r H_j \approx \Delta_r H^\circ_j$) and adiabatic assumption ($\dot{Q}_\text{ext} = 0$), the full residual is
+
+$$
+\mathbf{F}(\mathbf{y},\dot{\mathbf{y}}) =
+\begin{pmatrix}
+\dot{\mathbf{c}} - \mathbf{S}\boldsymbol{\varphi}(\mathbf{c},T) \\
+\dot{T} + \bigl(\sum_j \Delta_r H^\circ_j\,\varphi_j\bigr)\!/\rho C_p
+\end{pmatrix}.
+$$
+
+The Jacobian retains block structure:
+
+$$
+J =
+\begin{pmatrix}
+-\mathbf{S}\,\partial\boldsymbol{\varphi}/\partial\mathbf{c}
+  & -\mathbf{S}\,\partial\boldsymbol{\varphi}/\partial T \\
+\partial F_T/\partial\mathbf{c}
+  & \partial F_T/\partial T
+\end{pmatrix}.
+$$
+
+All blocks are analytic for structured models and are exposed through the corresponding `ReactionModel` derivative methods.
+`EquilibriumConstantCustom` and `EquilibriumConstantTabulated` substitute finite-difference estimates where needed; the remaining blocks stay analytic.
+
 
 ```{admonition} Scope: aqueous activity coefficients
 :class: warning

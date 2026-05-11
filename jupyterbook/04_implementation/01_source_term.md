@@ -137,7 +137,8 @@ At fixed temperature `MassActionReaction` is exact: $k^f/k^r$ directly sets the 
 This ratio is a free parameter: nothing in the interface requires it to equal the equilibrium constant $K$ derived from $\Delta_r G^\circ = -RT \ln K$ (@equilibrium).
 When temperature changes, $K(T)$ shifts; `MassActionReaction` has no mechanism to follow it.
 Structurally, `MassActionReaction` is the unit-activity, free-$k^r$ limit of the stoichiometric framework: equivalent to `ThermodynamicReaction` with $\gamma_i = 1$ and $k^r$ treated as an independent parameter.
-`ThermodynamicReaction` restores thermodynamic consistency by enforcing $k^r(T) = k^f(T)/K(T)$ at every evaluation, so the long-time limit always tracks the correct equilibrium.
+It is permissive by design: the appropriate choice when thermodynamic data are unavailable or when an empirical fit to rate data is the goal.
+`ThermodynamicReaction` enforces thermodynamic consistency by constraining $k^r(T) = k^f(T)/K(T)$ at every evaluation, so the long-time limit always tracks the correct equilibrium.
 
 ---
 

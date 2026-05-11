@@ -14,8 +14,10 @@ For enzyme-catalysed reactions the rate saturates because the enzyme active site
 This chapter is an orthogonal extension: it depends on the kinetic framework introduced in @implementation-kinetics, but is independent of the acid-base and activity chemistry in @implementation-activity through @implementation-buffer.
 `EnzymaticReaction` slots into the same $\mathbf{S}\boldsymbol{\varphi}$ framework as `ThermodynamicReaction`; only the rate closure $\varphi$ changes.
 Three reaction classes cover the library: `ThermodynamicReaction` enforces thermodynamic consistency ($k^r = k^f/K$ at every evaluation), `MassActionReaction` applies a linear rate law with a free reverse constant, and `EnzymaticReaction` accepts a custom rate closure.
-`EnzymaticReaction` does not enforce $k^r = k^f/K$: the rate closure is supplied by the user and may represent an empirical fit that is not thermodynamically reversible in the strict sense (@kinetics-reversibility).
+`EnzymaticReaction` does not enforce $k^r = k^f/K$: the rate closure is supplied by the user and may represent an empirical fit that is not thermodynamically reversible in the strict sense (@implementation-kinetics).
 This is appropriate for enzyme catalysis, where the Michaelis-Menten and Hill forms describe net forward flux under physiological conditions and the reverse reaction is typically negligible or absorbed into the effective parameters.
+The Michaelis-Menten form is not an arbitrary empirical fit: it emerges from a finite-site binding equilibrium (the enzyme-substrate complex) when that complex is not tracked as an explicit species — the same occupancy constraint that produces the Langmuir isotherm at equilibrium (@adsorption).
+The coarse-graining is in the elimination of the intermediate, not in the physics.
 
 
 ## Saturation rate laws
@@ -146,7 +148,122 @@ At high substrate ($[S] \gg K_m$) the rate is near $V_\text{max}$ and the trajec
 Below $K_m$ the rate drops into the linear regime and the approach to full conversion slows.
 The Hill model reaches full conversion more abruptly because the cooperative response maintains a high rate until $[S]$ falls close to $K_m$, then drops steeply.
 
+## Combined model: pH-dependent enzyme
+
+Enzyme active-site residues are often ionizable: the enzyme functions only when a specific residue is deprotonated and another is protonated.
+This produces a bell-shaped activity profile with a narrow optimal pH window.
+The coupling between proton-transfer equilibria and enzymatic kinetics is natural in the `ReactionModel` framework — both reaction types occupy the same model, driven by the same $\mathbf{S}\boldsymbol{\varphi}$ source term, without any additional machinery.
+
+A standard model for pH-dependent activity uses two ionizable residues with dissociation constants $K_{a1}$ and $K_{a2}$:
+
+$$
+f_\text{active}(a_{H^+})
+= \frac{K_{a1}\,a_{H^+}}{a_{H^+}^2 + K_{a1}\,a_{H^+} + K_{a1}\,K_{a2}},
+$$
+
+peaking at $\mathrm{pH}_\text{opt} = \tfrac{1}{2}(\mathrm{p}K_{a1} + \mathrm{p}K_{a2})$.
+The effective maximum rate is $V_\text{max,eff} = V_\text{max}\,f_\text{active}$.
+
+```{code-cell} ipython3
+from reactions.api import CustomRate
+from reactions.common import H_plus, OH_minus, water, autoionisation
+
+C_REF = 1000.0  # mol/m³
+pKa1, pKa2 = 5.5, 8.5
+Ka1_d = 10.0 ** (-pKa1)
+Ka2_d = 10.0 ** (-pKa2)
+Vmax_max = 1.0  # mol/(m³·s)  peak rate
+Km_enz = 200.0  # mol/m³
+
+
+def ph_enzyme_rate(state, species_index):
+    a_H = state.c[species_index["H+"]] / C_REF
+    S = state.c[species_index["S"]]
+    denom = a_H**2 + Ka1_d * a_H + Ka1_d * Ka2_d
+    return Vmax_max * (Ka1_d * a_H / denom) * S / (Km_enz + S)
+
+
+model_ph = ReactionModel(
+    components=[Component("S"), Component("P"), H_plus, OH_minus, water],
+    reactions=[
+        EnzymaticReaction("S -> P", rate=CustomRate(fn=ph_enzyme_rate)),
+        *autoionisation(),
+    ],
+)
+```
+
+```{code-cell} ipython3
+:tags: [remove-cell]
+:label: cell-ph-curve
+
+pH_arr = np.linspace(3, 12, 300)
+a_H_arr = 10.0 ** (-pH_arr)
+f_arr = Ka1_d * a_H_arr / (a_H_arr**2 + Ka1_d * a_H_arr + Ka1_d * Ka2_d)
+
+fig, ax = plt.subplots(figsize=(5, 3.2))
+ax.plot(pH_arr, f_arr, color="C2")
+ax.axvline(
+    0.5 * (pKa1 + pKa2),
+    ls="--",
+    color="gray",
+    lw=0.9,
+    label=rf"$\mathrm{{pH}}_\mathrm{{opt}} = {0.5 * (pKa1 + pKa2):.1f}$",
+)
+ax.set_xlabel("pH")
+ax.set_ylabel(r"$f_\mathrm{active}$")
+ax.legend()
+fig.tight_layout()
+```
+
+```{figure} #cell-ph-curve
+:name: fig-ph-curve
+
+Bell-shaped pH–activity profile for $\mathrm{p}K_{a1} = 5.5$ and $\mathrm{p}K_{a2} = 8.5$; optimum at pH 7.0.
+$f_\text{active}$ drops to half its maximum one unit away from either $\mathrm{p}K_a$.
+```
+
+Simulations at three prescribed pH values use the pH-stat pattern (@implementation-practical):
+
+```{code-cell} ipython3
+S0 = 600.0
+t_span = (0, 3000.0)
+
+results_ph = {}
+for pH in [5.0, 7.0, 9.0]:
+    c_H = 10.0 ** (-pH) * C_REF
+    c_OH = 1e-14 * C_REF**2 / c_H
+    results_ph[pH] = simulate(
+        model_ph,
+        c0={"S": S0, "H+": c_H, "OH-": c_OH},
+        t_span=t_span,
+        prescribed={"H+": c_H, "H2O": C_REF},
+    )
+```
+
+```{code-cell} ipython3
+:tags: [remove-cell]
+:label: cell-ph-enzyme-sim
+
+fig, ax = plt.subplots(figsize=(5, 3.5))
+for pH, result in results_ph.items():
+    ax.plot(result.t, result["S"], label=f"pH {pH:.0f}")
+ax.set_xlabel("time [s]")
+ax.set_ylabel(r"$c_S\ [\mathrm{mol/m^3}]$")
+ax.legend()
+fig.tight_layout()
+```
+
+```{figure} #cell-ph-enzyme-sim
+:name: fig-ph-enzyme-sim
+
+Substrate depletion at pH 5.0, 7.0, and 9.0 for the pH-sensitive enzyme ($V_\text{max} = 1\ \mathrm{mol/(m^3 \cdot s)}$, $K_m = 200\ \mathrm{mol/m^3}$, $[S]_0 = 600\ \mathrm{mol/m^3}$).
+At pH 7.0 (optimal) conversion is rapid; at pH 5.0 and 9.0 the enzyme is partially inactive and the rate drops substantially.
+```
+
+At the optimal pH, $f_\text{active} \approx 1$ and the enzyme operates near $V_\text{max}$; at pH 5.0 and 9.0, away from both pK$_a$ values, the active fraction falls to roughly 0.1 and the substrate depletes an order of magnitude more slowly.
+A `CustomRate` makes the rate closure available to the solver with no changes to the surrounding framework: the proton-transfer equilibrium (autoionisation) and the enzymatic kinetics are co-resident in the same `ReactionModel` and are handled uniformly.
+
 ---
 
-The kinetic framework is now complete: rate constants can be temperature-independent (`RateConstantFixed`), Arrhenius (`RateConstantArrhenius`), or replaced by saturation kinetics (`MichaelisMenten`, `HillRate`).
-The next chapter defines the integration contract between this library and CADET-Core: the residual and Jacobian that the solver calls at every step (@implementation-interface).
+The reaction framework covers mass-action kinetics (@implementation-kinetics), thermodynamic equilibria (@implementation-equilibrium), and saturation kinetics — all as composable elements of a single `ReactionModel`.
+The next chapter defines the integration contract that CADET-Core expects: the residual and Jacobian interface that links this prototype library to the production solver (@implementation-interface).

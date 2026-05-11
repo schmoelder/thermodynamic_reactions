@@ -439,4 +439,4 @@ A scalar `epsilon_r` value overrides the 25 °C constant with a fixed dielectric
 
 ---
 
-With activities and ionic strength in place, the next chapter applies the full equilibrium framework to acid-base chemistry: proton-transfer reactions as algebraic constraints, pH via $a_{\ce{H+}}$, and activity corrections shifting the apparent pKa (@implementation-acid-base).
+With activities and ionic strength in place, the next chapter collects the pre-built components, reaction factories, and convenience patterns that the acid-base and buffer chapters use directly (@implementation-practical).

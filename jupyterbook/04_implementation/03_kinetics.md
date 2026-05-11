@@ -325,6 +325,37 @@ The exothermic reaction loses product B as temperature rises, consistent with Le
 The trajectory tracks the moving equilibrium closely because $k^f$ is large relative to the ramp rate.
 A slower rate constant or a faster ramp would introduce a visible lag between the solid and dashed curves, showing that temperature-induced equilibrium shifts are rate-limited by kinetics, not instantaneous.
 
+
+## Structure of a reaction model
+
+Three chapters have now introduced three API classes — `MassActionReaction`, `ThermodynamicReaction(mode="equil")`, and `ThermodynamicReaction(mode="kinetic")` — that all reduce to the same source term $\mathbf{S}\boldsymbol{\varphi}$ but differ in what constrains $\varphi$.
+A reaction model is a composition of five independent layers:
+
+| Layer | What it specifies |
+| ----- | ----------------- |
+| **Stoichiometry** | $\nu_{ij}$, kinetic exponents $e^f_{ij}$, $e^r_{ij}$: which species participate and how |
+| **Equilibrium relation** | $K(T)$: the admissible long-run composition |
+| **Kinetic closure** | $k^f(T)$ and rate form: the relaxation timescale |
+| **Activity model** | $\gamma_i(c, I, T)$: replaces concentrations with activities |
+| **State dependencies** | how $T$ and $I$ enter the layers above |
+
+The three current classes occupy different positions along the first three layers:
+
+| Class | Equilibrium relation | Kinetic closure |
+| ----- | -------------------- | --------------- |
+| `MassActionReaction` | none — $k^r$ is a free parameter | mass-action polynomial |
+| `ThermodynamicReaction(mode="kinetic")` | $K(T)$ enforces $k^r = k^f/K$ automatically | Arrhenius, polynomial, tabulated, or custom |
+| `ThermodynamicReaction(mode="equil")` | $K(T)$ as an algebraic constraint | none — fast-reaction limit |
+| `EnzymaticReaction` *(introduced in @implementation-enzyme)* | none — reverse rate absent | custom saturating closure (MM, Hill, user-supplied) |
+
+The key distinction is whether a class carries an explicit equilibrium relation.
+`MassActionReaction` and `EnzymaticReaction` are siblings at the stoichiometry-plus-closure level: neither enforces thermodynamic consistency between forward and reverse rates.
+`MassActionReaction` is not a deficient form — it is permissive, empirical, and appropriate when thermodynamic parameters are unavailable or when the two rate constants are treated as independently fitted quantities.
+`ThermodynamicReaction` adds the equilibrium relation as an explicit layer; in kinetic mode that relation derives $k^r$ automatically so consistency is maintained across all temperatures, and in equilibrium mode the kinetic closure disappears entirely (the fast-reaction limit).
+
+The activity model and state dependency layers are orthogonal: they extend any of the four classes without changing stoichiometry, equilibrium relation, or kinetic closure.
+The remaining chapters of this part each extend exactly one layer.
+
 ---
 
 The kinetic and equilibrium frameworks are now complete for homogeneous reactions with ideal activities.

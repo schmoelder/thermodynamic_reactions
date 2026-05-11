@@ -56,6 +56,10 @@ Ionic strength $I = \tfrac{1}{2}\sum_i c_i z_i^2$ is computed once per time step
 The ionic strength model and activity coefficient model are decoupled at the API level and can be combined consistently within their validity ranges.
 
 All reactions are evaluated as $\varphi(\mathbf{a}, T)$; the rest of the API only determines how $\mathbf{a}$, $k^f$, and $K$ are computed.
+
+**Five independent layers.**
+Every reaction model composes five separable layers: stoichiometry, equilibrium relation, kinetic closure, activity model, and state dependencies.
+The chapters introduce these layers one at a time; the decomposition — and how the three reaction classes differ along each dimension — is stated formally in @implementation-kinetics.
 ```
 
 **Chapters in this part:**
@@ -65,7 +69,8 @@ All reactions are evaluated as $\varphi(\mathbf{a}, T)$; the rest of the API onl
 - @implementation-kinetics: kinetic mode, `RateConstantFixed` and `RateConstantArrhenius`; thermodynamic consistency across temperatures.
 - @implementation-energy-balance: coupled energy balance; temperature as a dynamic state; analytic $\partial\varphi/\partial T$ Jacobian. *(optional)*
 - @implementation-activity: activity corrections ($a_i = \gamma_i c_i/c^\circ$), ionic strength models, Debye-Hückel and Davies, temperature-dependent $A$ via $\varepsilon_r(T)$, and the apparent pKa shift.
-- @implementation-acid-base: pH, the `pKa` factory, water autoionisation, and Davies corrections.
-- @implementation-buffer: buffer capacity, mixed buffers, and ionic strength effects on $\beta$.
-- @implementation-enzyme: saturation kinetics (`MichaelisMenten`, `HillRate`) as the finite-site constraint expressed as a kinetic rate law.
+- @implementation-practical: pre-built components and reaction factories from `common.py`, the `pKa()` factory, the `Solution` class, `check_conservation`, mixed equil/kinetic models, and the pH-stat pattern.
+- @implementation-acid-base: acid-base speciation as a set of algebraic `ThermodynamicReaction` constraints; polyprotic systems; ionic strength corrections and the apparent pKw shift.
+- @implementation-buffer: buffer capacity as a derivative of the equilibrium solve; mixed buffers; ionic strength effects on $\beta$.
+- @implementation-enzyme: saturation kinetics (`MichaelisMenten`, `HillRate`) as the finite-site constraint expressed as a kinetic rate law; pH-dependent enzyme activity.
 - @implementation-interface: the residual/Jacobian contract and CADET-Core integration.

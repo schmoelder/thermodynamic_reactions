@@ -67,30 +67,34 @@ The following snippet verifies the analytic Jacobian against a finite-difference
 ```{code-cell} ipython3
 import numpy as np
 from reactions.api import (
-    Species, Component,
+    Species,
+    Component,
     EquilibriumConstant,
     RateConstantFixed,
-    MassActionReaction, ThermodynamicReaction,
-    ReactionModel, pKa,
+    MassActionReaction,
+    ThermodynamicReaction,
+    ReactionModel,
+    pKa,
 )
 
 
 def check_jacobian(model, c, label, T=298.15, tol=1e-4):
     c_dot = np.zeros(len(c))
     J_ana = model.jacobian(c, c_dot, T=T)
-    eps   = 1e-5
-    r0    = model.residual(c, c_dot, T=T)
-    n     = len(c)
-    J_fd  = np.zeros((n, n))
+    eps = 1e-5
+    r0 = model.residual(c, c_dot, T=T)
+    n = len(c)
+    J_fd = np.zeros((n, n))
     for k in range(n):
-        cp = c.copy(); cp[k] += eps
+        cp = c.copy()
+        cp[k] += eps
         J_fd[:, k] = (model.residual(cp, c_dot, T=T) - r0) / eps
-    err    = np.max(np.abs(J_ana - J_fd))
+    err = np.max(np.abs(J_ana - J_fd))
     status = "PASSED" if err < tol else "FAILED"
     print(f"  {label:<45}  max|J_ana - J_fd| = {err:.2e}  [{status}]")
 
 
-comp_ab  = Component("ab", [Species("A"), Species("B")])
+comp_ab = Component("ab", [Species("A"), Species("B")])
 model_ma = ReactionModel(
     components=[comp_ab],
     reactions=[MassActionReaction("A <-> B", kf=2.0, kr=0.5)],
@@ -107,26 +111,31 @@ model_td = ReactionModel(
     ],
 )
 
-acetate   = Component("acetate",   [Species("AcOH", charge=0),  Species("AcO-", charge=-1)])
-proton    = Component("proton",    [Species("H+", charge=+1)])
+acetate = Component("acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)])
+proton = Component("proton", [Species("H+", charge=+1)])
 hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-water     = Component("water",     [Species("H2O", charge=0)])
-model_ac  = ReactionModel(
+water = Component("water", [Species("H2O", charge=0)])
+model_ac = ReactionModel(
     components=[acetate, proton, hydroxide, water],
     reactions=[
-        ThermodynamicReaction("AcOH <-> AcO- + H+", mode="equil",
-                              equilibrium_constant=pKa(4.756)),
-        ThermodynamicReaction("H2O <-> H+ + OH-",   mode="equil",
-                              equilibrium_constant=EquilibriumConstant(1e-14)),
+        ThermodynamicReaction(
+            "AcOH <-> AcO- + H+", mode="equil", equilibrium_constant=pKa(4.756)
+        ),
+        ThermodynamicReaction(
+            "H2O <-> H+ + OH-",
+            mode="equil",
+            equilibrium_constant=EquilibriumConstant(1e-14),
+        ),
     ],
     T=298.15,
 )
 
 print("Analytic Jacobian verification:")
-check_jacobian(model_ma, np.array([1.0, 0.5]),       "A⇌B MassActionReaction")
-check_jacobian(model_td, np.array([500.0, 200.0]),   "A⇌B ThermodynamicReaction kinetic")
-check_jacobian(model_ac, np.array([10.0, 90.0, 6.3e-5, 1.6e-4, 1000.0]),
-               "Acetic acid (equil)")
+check_jacobian(model_ma, np.array([1.0, 0.5]), "A⇌B MassActionReaction")
+check_jacobian(model_td, np.array([500.0, 200.0]), "A⇌B ThermodynamicReaction kinetic")
+check_jacobian(
+    model_ac, np.array([10.0, 90.0, 6.3e-5, 1.6e-4, 1000.0]), "Acetic acid (equil)"
+)
 ```
 
 ---

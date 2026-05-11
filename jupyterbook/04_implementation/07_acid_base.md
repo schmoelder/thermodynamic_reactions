@@ -9,7 +9,7 @@ kernelspec:
 # pH and Acid-Base Speciation
 
 Proton-transfer reactions are always fast relative to chromatographic transport (@acid-base) and are treated throughout as algebraic constraints.
-The `pKa` factory, water autoionisation, and Davies activity corrections each introduced in earlier chapters now combine: solving a realistic buffer system requires all three simultaneously.
+The `pKa()` factory (@implementation-practical), water autoionisation, and Davies activity corrections now combine into a complete buffer model: solving a realistic system requires all three simultaneously.
 
 ```{code-cell} ipython3
 import numpy as np
@@ -26,28 +26,6 @@ from reactions.solver import solve_equilibrium
 ```
 
 
-## The pKa factory
-
-`pKa()` converts a p$K_a$ value measured at 25 °C into an equilibrium constant.
-Without `dH` the constant is temperature-independent:
-
-```{code-cell} ipython3
-k_acetic   = pKa(4.756)
-k_ammonium = pKa(9.245)
-
-print(f"Acetic acid  Ka(25 °C) = {k_acetic.K(298.15):.3e}  "
-      f"pKa = {-np.log10(k_acetic.K(298.15)):.3f}")
-print(f"Ammonium     Ka(25 °C) = {k_ammonium.K(298.15):.3e}  "
-      f"pKa = {-np.log10(k_ammonium.K(298.15)):.3f}")
-```
-
-Passing `dH` (J/mol) adds van't Hoff temperature dependence; the factory
-back-calculates $\Delta S^\circ$ so that $K(298.15\,\text{K}) = 10^{-\text{p}K_a}$
-exactly.
-The temperature-dependent form and its effect on $K(T)$ are demonstrated in
-@implementation-equilibrium.
-
-
 ## Monoprotic buffer: acetic acid
 
 A monoprotic weak acid establishes the pattern used throughout.
@@ -55,6 +33,7 @@ Acetic acid dissociates as $\ce{HAc <=> Ac- + H+}$; water autoionisation is incl
 
 ```{code-cell} ipython3
 acetic = Component("acetic", [Species("HAc", charge=0), Species("Ac-", charge=-1)])
+k_acetic = pKa(4.756)
 
 model_acetic = ReactionModel(
     components=[acetic, H_plus, OH_minus, water],
@@ -89,7 +68,7 @@ Water appears in the model so that the autoionisation constraint $\ce{H2O <=> H+
 The pre-built `water` component carries `molar_mass=0.018015` and `density=1000.0`, so `water.c_ref` $= \rho/M \approx 55{,}509\ \mathrm{mol/m^3}$ is the pure-component molar concentration of liquid water.
 Passing `prescribed={"H2O": water.c_ref}` fixes $c_{\ce{H2O}}$ at that value throughout the solve, giving $a_{\ce{H2O}} = c/c^\circ = 1$; no balance equation is written for it.
 With $a_{\ce{H2O}} = 1$ the equilibrium condition reduces to $a_{\ce{H+}}\,a_{\ce{OH-}} = K_w = 10^{-14}$, consistent with the dilute-solution convention under which $K_w$ is tabulated.
-In production the `Solution` class (@implementation-solution) handles solvent prescriptions automatically; the explicit call here makes the mechanism transparent.
+In production the `Solution` class (@implementation-practical) handles solvent prescriptions automatically; the explicit call here makes the mechanism transparent.
 
 `prescribed` is the mechanism for parametric sweeps: fixing $c_{\ce{H+}}$ at a target value turns `solve_equilibrium` into a speciation calculator at a given proton activity.
 Sweeping a sequence of fixed proton activities maps out equilibrium composition as a function of pH, equivalent to a pH-stat measurement; @implementation-buffer uses this pattern to compute buffer capacity numerically.
