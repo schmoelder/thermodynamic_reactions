@@ -7,6 +7,8 @@ project:
   license: CC-BY-4.0
   title: A Thermodynamic Introduction to Chemical Reactions in CADET
   open_access: true
+  github: https://github.com/schmoelder/thermodynamic-reactions
+  binder: https://mybinder.org
   numbering:
     equations: true
     figure:
