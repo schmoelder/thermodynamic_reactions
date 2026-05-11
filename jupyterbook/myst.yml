@@ -65,6 +65,8 @@ project:
         - file: api/06_rate_laws.md
         - file: api/07_reactions.md
         - file: api/08_solver.md
+        - file: api/09_formulation.md
+        - file: api/10_common.md
     - title: Appendix
       children:
         - file: notation.md

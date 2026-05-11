@@ -68,6 +68,7 @@ GROUPS = [
             ("reactions.api", "EquilibriumConstantVantHoffCp"),
             ("reactions.api", "EquilibriumConstantCustom"),
             ("reactions.api", "EquilibriumConstantTabulated"),
+            ("reactions.api", "EquilibriumConstantPolynomial"),
             ("reactions.api", "pKa"),
         ],
     ),
@@ -78,6 +79,7 @@ GROUPS = [
         [
             ("reactions.api", "RateConstantFixed"),
             ("reactions.api", "RateConstantArrhenius"),
+            ("reactions.api", "RateConstantPolynomial"),
             ("reactions.api", "RateConstantTabulated"),
         ],
     ),
@@ -99,6 +101,7 @@ GROUPS = [
             ("reactions.api", "MassActionReaction"),
             ("reactions.api", "ThermodynamicReaction"),
             ("reactions.api", "EnzymaticReaction"),
+            ("reactions.api", "CustomReaction"),
         ],
     ),
     (
@@ -109,6 +112,28 @@ GROUPS = [
             ("reactions.solver", "simulate"),
             ("reactions.solver", "solve_equilibrium"),
             ("reactions.solver", "SimulationResult"),
+        ],
+    ),
+    (
+        "09_formulation",
+        "Formulation",
+        "api-formulation",
+        [
+            ("reactions.api", "Solution"),
+        ],
+    ),
+    (
+        "10_common",
+        "Common Buffers",
+        "api-common",
+        [
+            ("reactions.common", "autoionisation"),
+            ("reactions.common", "acetic_acid_equilibria"),
+            ("reactions.common", "phosphate_equilibria"),
+            ("reactions.common", "citric_acid_equilibria"),
+            ("reactions.common", "tris_equilibria"),
+            ("reactions.common", "hepes_equilibria"),
+            ("reactions.common", "mops_equilibria"),
         ],
     ),
 ]
@@ -221,8 +246,8 @@ def render_index(groups) -> str:
         "**Modules in this reference:**",
         "",
     ]
-    for _, title, label, _ in groups:
-        lines.append(f"- @{label}: {title}")
+    for _, _, label, _ in groups:
+        lines.append(f"- @{label}")
     lines.append("")
     return "\n".join(lines)
 
