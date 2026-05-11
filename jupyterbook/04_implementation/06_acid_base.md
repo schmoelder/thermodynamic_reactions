@@ -17,18 +17,12 @@ import numpy as np
 from reactions.api import (
     Species, Component,
     ActivityCoefficientDavies,
-    EquilibriumConstant, EquilibriumConstantVantHoff,
     ThermodynamicReaction, ReactionModel,
     IonicStrengthBackground,
     pKa,
+    water, H_plus, OH_minus,
 )
 from reactions.solver import solve_equilibrium
-
-C_REF = 1000.0  # mol/m³
-
-proton    = Component("proton",    [Species("H+",   charge=+1)])
-hydroxide = Component("hydroxide", [Species("OH-",  charge=-1)])
-water     = Component("water",     [Species("H2O",  charge=0, molar_mass=0.018015, density=1000.0)])
 ```
 
 
@@ -63,7 +57,7 @@ Acetic acid dissociates as $\ce{HAc <=> Ac- + H+}$; water autoionisation is incl
 acetic = Component("acetic", [Species("HAc", charge=0), Species("Ac-", charge=-1)])
 
 model_acetic = ReactionModel(
-    components=[acetic, proton, hydroxide, water],
+    components=[acetic, H_plus, OH_minus, water],
     reactions=[
         ThermodynamicReaction(
             "HAc <-> Ac- + H+",
@@ -73,17 +67,17 @@ model_acetic = ReactionModel(
         ThermodynamicReaction(
             "H2O <-> H+ + OH-",
             mode="equil",
-            equilibrium_constant=EquilibriumConstant(1e-14),
+            equilibrium_constant=pKa(14.00),
         ),
     ],
     T=298.15,
 )
 
 c_tot = 100.0   # mol/m³ = 100 mM total acetate
-c0    = {"HAc": c_tot, "Ac-": 1e-6, "H+": 1e-4, "OH-": 1e-10 * C_REF}
+c0    = {"HAc": c_tot, "Ac-": 1e-6, "H+": 1e-4, "OH-": 1e-7}
 c_eq  = solve_equilibrium(model_acetic, c0, T=298.15, prescribed={"H2O": water.c_ref})
 
-pH    = -np.log10(c_eq["H+"] / C_REF)
+pH    = -np.log10(c_eq["H+"] / H_plus.c_ref)
 pKa_v = -np.log10(k_acetic.K(298.15))
 pH_HH = pKa_v + np.log10(c_eq["Ac-"] / c_eq["HAc"])
 
@@ -92,7 +86,7 @@ print(f"pH (Henderson-Hasselbalch) = {pH_HH:.4f}")
 ```
 
 Water appears in the model so that the autoionisation constraint $\ce{H2O <=> H+ + OH-}$ is stoichiometrically balanced.
-Setting `molar_mass=0.018015` and `density=1000.0` on the water species auto-computes $c^\circ_{\ce{H2O}} = \rho/M \approx 55{,}509\ \mathrm{mol/m^3}$, the pure-component molar concentration of liquid water.
+The pre-built `water` component carries `molar_mass=0.018015` and `density=1000.0`, so `water.c_ref` $= \rho/M \approx 55{,}509\ \mathrm{mol/m^3}$ is the pure-component molar concentration of liquid water.
 Passing `prescribed={"H2O": water.c_ref}` fixes $c_{\ce{H2O}}$ at that value throughout the solve, giving $a_{\ce{H2O}} = c/c^\circ = 1$; no balance equation is written for it.
 With $a_{\ce{H2O}} = 1$ the equilibrium condition reduces to $a_{\ce{H+}}\,a_{\ce{OH-}} = K_w = 10^{-14}$, consistent with the dilute-solution convention under which $K_w$ is tabulated.
 In production the `Solution` class (@implementation-solution) handles solvent prescriptions automatically; the explicit call here makes the mechanism transparent.
@@ -129,7 +123,7 @@ phosphate = Component("phosphate", [
 ])
 
 model_phosphate_ideal = ReactionModel(
-    components=[phosphate, proton, hydroxide, water],
+    components=[phosphate, H_plus, OH_minus, water],
     reactions=[
         ThermodynamicReaction("H3PO4 <-> H2PO4- + H+",  mode="equil",
                               equilibrium_constant=pKa(pKa1)),
@@ -138,7 +132,7 @@ model_phosphate_ideal = ReactionModel(
         ThermodynamicReaction("HPO4-2 <-> PO4-3 + H+",  mode="equil",
                               equilibrium_constant=pKa(pKa3)),
         ThermodynamicReaction("H2O <-> H+ + OH-",        mode="equil",
-                              equilibrium_constant=EquilibriumConstant(1e-14)),
+                              equilibrium_constant=pKa(14.00)),
     ],
     T=298.15,
 )
@@ -159,8 +153,8 @@ c_tot_phosphate = 100.0   # mol/m³
 print(f"{'pH':>6}  {'H3PO4 ana':>12}  {'H3PO4 num':>12}  {'error':>10}")
 for pH in [4.0, 7.2, 10.0]:
     a0, a1, a2, a3 = phosphate_fractions(pH, Ka1, Ka2, Ka3)
-    H  = 10.0**(-pH) * C_REF
-    OH = 1e-14 * C_REF**2 / H
+    H  = 10.0**(-pH) * H_plus.c_ref
+    OH = 1e-14 * H_plus.c_ref**2 / H
     c0 = {
         "H3PO4":  max(a0*c_tot_phosphate, 1e-10),
         "H2PO4-": max(a1*c_tot_phosphate, 1e-10),
@@ -181,7 +175,7 @@ Activity coefficients shift the apparent p$K_a$ values at nonzero ionic strength
 
 ```{code-cell} ipython3
 model_phosphate_davies = ReactionModel(
-    components=[phosphate, proton, hydroxide, water],
+    components=[phosphate, H_plus, OH_minus, water],
     reactions=[
         ThermodynamicReaction("H3PO4 <-> H2PO4- + H+",  mode="equil",
                               equilibrium_constant=pKa(pKa1),
@@ -193,7 +187,7 @@ model_phosphate_davies = ReactionModel(
                               equilibrium_constant=pKa(pKa3),
                               activity_coefficient=ActivityCoefficientDavies()),
         ThermodynamicReaction("H2O <-> H+ + OH-",        mode="equil",
-                              equilibrium_constant=EquilibriumConstant(1e-14),
+                              equilibrium_constant=pKa(14.00),
                               activity_coefficient=ActivityCoefficientDavies()),
     ],
     ionic_strength=IonicStrengthBackground(I_bg=150.0),
@@ -206,8 +200,8 @@ At physiological ionic strength ($I = 150\ \mathrm{mol/m}^3$), phosphate is part
 ```{code-cell} ipython3
 pH  = 7.2
 a0, a1, a2, a3 = phosphate_fractions(pH, Ka1, Ka2, Ka3)
-H   = 10.0**(-pH) * C_REF
-OH  = 1e-14 * C_REF**2 / H
+H   = 10.0**(-pH) * H_plus.c_ref
+OH  = 1e-14 * H_plus.c_ref**2 / H
 c0  = {
     "H3PO4":  max(a0*c_tot_phosphate, 1e-10),
     "H2PO4-": max(a1*c_tot_phosphate, 1e-10),

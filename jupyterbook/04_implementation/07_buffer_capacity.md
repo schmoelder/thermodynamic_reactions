@@ -18,18 +18,12 @@ import numpy as np
 from reactions.api import (
     Species, Component,
     ActivityCoefficientDavies,
-    EquilibriumConstant,
     IonicStrengthIdeal, IonicStrengthBackground,
     ThermodynamicReaction, ReactionModel,
     pKa,
+    water, H_plus, OH_minus,
 )
 from reactions.solver import solve_equilibrium
-
-C_REF = 1000.0  # mol/m³
-
-proton    = Component("proton",    [Species("H+",   charge=+1)])
-hydroxide = Component("hydroxide", [Species("OH-",  charge=-1)])
-water     = Component("water",     [Species("H2O",  charge=0, molar_mass=0.018015, density=1000.0)])
 ```
 
 ## Phosphate buffer: pH curve and β
@@ -51,7 +45,7 @@ phosphate = Component("phosphate", [
 ])
 
 model_phos = ReactionModel(
-    components=[phosphate, proton, hydroxide, water],
+    components=[phosphate, H_plus, OH_minus, water],
     reactions=[
         ThermodynamicReaction("H3PO4 <-> H2PO4- + H+",  mode="equil",
                               equilibrium_constant=pKa(pKa1)),
@@ -60,7 +54,7 @@ model_phos = ReactionModel(
         ThermodynamicReaction("HPO4-2 <-> PO4-3 + H+",  mode="equil",
                               equilibrium_constant=pKa(pKa3)),
         ThermodynamicReaction("H2O <-> H+ + OH-",        mode="equil",
-                              equilibrium_constant=EquilibriumConstant(1e-14)),
+                              equilibrium_constant=pKa(14.00)),
     ],
     T=298.15,
 )
@@ -74,8 +68,8 @@ def phosphate_fractions(pH):
 
 def solve_at_pH(model, pH, c_tot):
     a0, a1, a2, a3 = phosphate_fractions(pH)
-    H  = 10.0**(-pH) * C_REF
-    OH = 1e-14 * C_REF**2 / H
+    H  = 10.0**(-pH) * H_plus.c_ref
+    OH = 1e-14 * H_plus.c_ref**2 / H
     c0 = {
         "H3PO4":  max(a0*c_tot, 1e-10),
         "H2PO4-": max(a1*c_tot, 1e-10),
@@ -88,7 +82,7 @@ def solve_at_pH(model, pH, c_tot):
 
 pH_vals = np.linspace(3.0, 12.0, 200)
 H_conc  = np.array([solve_at_pH(model_phos, pH, c_phos)["H+"] for pH in pH_vals])
-pH_num  = -np.log10(H_conc / C_REF)
+pH_num  = -np.log10(H_conc / H_plus.c_ref)
 
 dpH = np.diff(pH_num)
 dH  = np.diff(H_conc)
@@ -140,7 +134,7 @@ c_cit  = 50.0    # mol/m³
 c_phos = 50.0    # mol/m³
 
 model_mixed = ReactionModel(
-    components=[citrate, phosphate, proton, hydroxide, water],
+    components=[citrate, phosphate, H_plus, OH_minus, water],
     reactions=[
         ThermodynamicReaction("H3Cit <-> H2Cit- + H+",  mode="equil",
                               equilibrium_constant=pKa(pKa_cit[0])),
@@ -155,7 +149,7 @@ model_mixed = ReactionModel(
         ThermodynamicReaction("HPO4-2 <-> PO4-3 + H+",  mode="equil",
                               equilibrium_constant=pKa(pKa3)),
         ThermodynamicReaction("H2O <-> H+ + OH-",        mode="equil",
-                              equilibrium_constant=EquilibriumConstant(1e-14)),
+                              equilibrium_constant=pKa(14.00)),
     ],
     T=298.15,
 )
@@ -171,8 +165,8 @@ def citrate_fractions(pH):
 def solve_mixed_at_pH(pH):
     a0c, a1c, a2c, a3c = citrate_fractions(pH)
     a0p, a1p, a2p, a3p = phosphate_fractions(pH)
-    H  = 10.0**(-pH) * C_REF
-    OH = 1e-14 * C_REF**2 / H
+    H  = 10.0**(-pH) * H_plus.c_ref
+    OH = 1e-14 * H_plus.c_ref**2 / H
     c0 = {
         "H3Cit":  max(a0c*c_cit,  1e-10),
         "H2Cit-": max(a1c*c_cit,  1e-10),
@@ -189,7 +183,7 @@ def solve_mixed_at_pH(pH):
 
 pH_mix  = np.linspace(3.0, 10.0, 150)
 H_mix   = np.array([solve_mixed_at_pH(pH)["H+"] for pH in pH_mix])
-pH_m    = -np.log10(H_mix / C_REF)
+pH_m    = -np.log10(H_mix / H_plus.c_ref)
 beta_m  = np.abs(np.diff(H_mix) / np.diff(pH_m)) / 1000.0
 pH_m_mid = 0.5 * (pH_m[:-1] + pH_m[1:])
 
@@ -210,7 +204,7 @@ This is outside the practical IEX range, so the truncation has no consequence he
 
 ```{code-cell} ipython3
 model_phos_davies = ReactionModel(
-    components=[phosphate, proton, hydroxide, water],
+    components=[phosphate, H_plus, OH_minus, water],
     reactions=[
         ThermodynamicReaction("H3PO4 <-> H2PO4- + H+",  mode="equil",
                               equilibrium_constant=pKa(pKa1),
@@ -222,7 +216,7 @@ model_phos_davies = ReactionModel(
                               equilibrium_constant=pKa(pKa3),
                               activity_coefficient=ActivityCoefficientDavies()),
         ThermodynamicReaction("H2O <-> H+ + OH-",        mode="equil",
-                              equilibrium_constant=EquilibriumConstant(1e-14),
+                              equilibrium_constant=pKa(14.00),
                               activity_coefficient=ActivityCoefficientDavies()),
     ],
     ionic_strength=IonicStrengthBackground(I_bg=150.0),
@@ -234,7 +228,7 @@ H_dav = np.array([
     solve_equilibrium(model_phos_davies, solve_at_pH(model_phos, pH, c_phos), T=298.15, prescribed={"H2O": water.c_ref})["H+"]
     for pH in pH_dav
 ])
-pH_dav  = -np.log10(H_dav / C_REF)
+pH_dav  = -np.log10(H_dav / H_plus.c_ref)
 beta_dav = np.abs(np.diff(H_dav) / np.diff(pH_dav)) / 1000.0
 
 idx_ideal  = np.argmax(beta_num)
