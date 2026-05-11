@@ -35,6 +35,11 @@ jobs:
       - uses: actions/setup-node@v6
       - name: Install Jupyter Book (via myst)
         run: npm install -g jupyter-book
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install Python dependencies
+        run: pip install -e . --group docs
       - name: Build HTML Assets
         run: cd jupyterbook && jupyter-book build --html --execute --ci
       - name: Upload artifact
