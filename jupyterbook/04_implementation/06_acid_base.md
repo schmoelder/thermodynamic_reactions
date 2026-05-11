@@ -246,7 +246,7 @@ $$
 $$
 
 Since $\gamma_\pm < 1$ at nonzero ionic strength, $\mathrm{pH}_\text{neut} < 7$.
-The Davies equation gives the shift directly:
+The Davies equation gives the shift directly (@fig-pKw-shift):
 
 ```{code-cell} ipython3
 A_davies = 0.509   # Davies constant at 25 °C, I in mol/L
@@ -256,15 +256,50 @@ def log10_gamma_davies(I_mol_m3, z=1):
     sI = np.sqrt(I)
     return -A_davies * z**2 * (sI / (1 + sI) - 0.3 * I)
 
-I_vals = np.array([0, 10, 25, 50, 100, 150, 200, 300, 500])
-pH_neutral = 7.0 + np.array([log10_gamma_davies(I) for I in I_vals])
+def log10_gamma_dh(I_mol_m3, z=1):
+    I = I_mol_m3 / 1000.0
+    sI = np.sqrt(I)
+    return -A_davies * z**2 * sI / (1 + sI)
 
-print(f"{'I (mol/m³)':>12}  {'γ±':>8}  {'pH_neutral':>12}  {'shift':>10}")
-for I, pH in zip(I_vals, pH_neutral):
-    print(f"{I:>12.0f}  {10**log10_gamma_davies(I):>8.4f}  {pH:>12.4f}  {pH - 7.0:>+10.4f}")
+I_range = np.linspace(0, 500, 400)
+pH_dav = 7.0 + np.array([log10_gamma_davies(I) for I in I_range])
+pH_dh  = 7.0 + np.array([log10_gamma_dh(I)     for I in I_range])
 ```
 
-At physiological ionic strength ($I = 150\ \mathrm{mol/m^3}$), neutral pH is approximately 6.88 — a 0.12 unit shift.
+```{code-cell} ipython3
+:tags: [remove-cell]
+:label: cell-pKw-shift
+
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(6, 3.5))
+ax.plot(I_range, pH_dav, color="C0", label="Davies")
+ax.plot(I_range, pH_dh,  color="C1", label="Debye–Hückel", ls="--")
+ax.axhline(7.0, color="gray", lw=0.8, ls=":", label="ideal ($\\gamma = 1$)")
+ax.axvline(150,  color="gray", lw=0.6, ls=":")
+pH_150 = 7.0 + log10_gamma_davies(150)
+ax.annotate(
+    f"pH = {pH_150:.2f}  at  $I = 150$",
+    xy=(150, pH_150),
+    xytext=(210, pH_150 + 0.025),
+    fontsize=8,
+    arrowprops=dict(arrowstyle="->", lw=0.8),
+)
+ax.set_xlabel(r"ionic strength $I$ [mol/m³]")
+ax.set_ylabel(r"$\mathrm{pH}_\mathrm{neut}$")
+ax.legend(fontsize=8)
+fig.tight_layout()
+```
+
+```{figure} #cell-pKw-shift
+:name: fig-pKw-shift
+
+Neutral pH as a function of ionic strength from the Davies (solid) and Debye--Hückel (dashed) equations.
+The dotted lines mark physiological ionic strength ($I = 150\ \mathrm{mol/m^3}$) and ideal neutral pH (7.00).
+Davies predicts a shift of 0.12 pH units at physiological conditions; Debye--Hückel overestimates the shift at high $I$ because it lacks the $-0.3I$ empirical correction.
+```
+
+At physiological ionic strength ($I = 150\ \mathrm{mol/m^3}$), Davies predicts neutral pH $\approx 6.88$ — a 0.12 unit shift.
 A solution prepared to pH 7.00 in high-salt media is slightly acidic relative to the true equal-activity midpoint.
 
 This effect requires two ingredients simultaneously.
