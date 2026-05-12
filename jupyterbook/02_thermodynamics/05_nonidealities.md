@@ -72,12 +72,13 @@ def P_vdw(Vm, T):
     return R * T / (Vm - b) - a / Vm**2
 
 
-def coexistence(T):
-    def dPdV(Vm):
-        return -R * T / (Vm - b) ** 2 + 2 * a / Vm**3
+def dPdVm(Vm, T):
+    return -R * T / (Vm - b) ** 2 + 2 * a / Vm**3
 
-    Vm_s1 = brentq(dPdV, b * 1.001, Vc * 0.9999)
-    Vm_s2 = brentq(dPdV, Vc * 1.0001, 20.0)
+
+def coexistence(T):
+    Vm_s1 = brentq(lambda V: dPdVm(V, T), b * 1.001, Vc * 0.9999)
+    Vm_s2 = brentq(lambda V: dPdVm(V, T), Vc * 1.0001, 20.0)
     P_min = P_vdw(Vm_s1, T)  # local pressure minimum (liquid spinodal)
     P_max = P_vdw(Vm_s2, T)  # local pressure maximum (vapor spinodal)
     V_hi = 500.0
@@ -98,32 +99,41 @@ def coexistence(T):
 
 
 def isotherm_start(T):
-    """Return Vm start, skipping the unphysical negative-P liquid branch when present."""
-
-    def dPdV(Vm):
-        return -R * T / (Vm - b) ** 2 + 2 * a / Vm**3
-
+    """Return Vm start, skipping the unphysical negative-P section when present."""
     try:
-        Vm_s1 = brentq(dPdV, b * 1.001, Vc * 0.9999)
+        Vm_s1 = brentq(lambda V: dPdVm(V, T), b * 1.001, Vc * 0.9999)
     except ValueError:
         return b * 1.005  # supercritical: no spinodal
     if P_vdw(Vm_s1, T) < 0:
-        Vm_s2 = brentq(dPdV, Vc * 1.0001, 20.0)
+        Vm_s2 = brentq(lambda V: dPdVm(V, T), Vc * 1.0001, 20.0)
         return brentq(lambda V: P_vdw(V, T), Vm_s1, Vm_s2)
     return b * 1.005
 
 
 XLIM1 = 0.8
-# Restrict saturation curve to T where Vv ≤ XLIM1 so dome outline closes at plot edge
+# T_cross: temperature where the saturated vapour volume equals the x-axis limit
 T_cross = brentq(lambda T: coexistence(T)[2] - XLIM1, 0.70 * Tc, 0.80 * Tc)
+
+# Visible dome: T_cross → Tc (vapour branch within plot bounds)
 T_coex1 = np.linspace(T_cross * 0.999, 0.998 * Tc, 80)
 coex1 = [coexistence(T) for T in T_coex1]
 Pc_1 = [c[0] for c in coex1]
 Vl_1 = [c[1] for c in coex1]
 Vv_1 = [c[2] for c in coex1]
 
+# Extended liquid branch: T_low → T_cross (vapour off-screen; only liquid side used)
+T_low = 0.45 * Tc
+T_coex2 = np.linspace(T_low, T_cross * 1.001, 60)
+coex2 = [coexistence(T) for T in T_coex2]
+Pc_2 = [c[0] for c in coex2]
+Vl_2 = [c[1] for c in coex2]
 
-def draw_fills(ax, Pc_arr, Vl_arr, Vv_arr, xlim):
+
+def draw_fills(ax, Pc_arr, Vl_arr, Vv_arr, xlim, Pc_ext=None, Vl_ext=None):
+    Pc_ext = list(Pc_ext) if Pc_ext is not None else []
+    Vl_ext = list(Vl_ext) if Vl_ext is not None else []
+    Vl_full = Vl_ext + Vl_arr
+    Pc_full = Pc_ext + Pc_arr
     # Gas: right of vapor branch down to dome bottom only (avoids linear artifact)
     ax.fill_betweenx(
         [Pc] + list(reversed(Pc_arr)),
@@ -132,28 +142,29 @@ def draw_fills(ax, Pc_arr, Vl_arr, Vv_arr, xlim):
         color="#fdae61",
         alpha=0.18,
     )
-    # Two-phase dome
+    # Two-phase dome: liquid side extended to include low-T arm
     ax.fill(
-        Vl_arr + [Vc] + list(reversed(Vv_arr)) + [Vv_arr[0], Vl_arr[0]],
-        Pc_arr + [Pc] + list(reversed(Pc_arr)) + [0.0, 0.0],
+        Vl_full + [Vc] + list(reversed(Vv_arr)) + [Vv_arr[0], Vl_full[0]],
+        Pc_full + [Pc] + list(reversed(Pc_arr)) + [0.0, 0.0],
         color="#888888",
         alpha=0.12,
     )
-    # Liquid: left of liquid branch, extend to axis
+    # Liquid: left of liquid branch including extended low-T arm
     ax.fill_betweenx(
-        [0.0] + Pc_arr + [Pc],
+        [0.0] + Pc_full + [Pc],
         0,
-        [Vl_arr[0]] + Vl_arr + [Vc],
+        [Vl_full[0]] + Vl_full + [Vc],
         color="#4393c3",
         alpha=0.18,
     )
-    # Saturation curve outline
+    # Saturation curve outline (extended liquid arm + dome)
     ax.plot(
-        Vl_arr + [Vc] + list(reversed(Vv_arr)),
-        Pc_arr + [Pc] + list(reversed(Pc_arr)),
+        Vl_ext + Vl_arr + [Vc] + list(reversed(Vv_arr)),
+        Pc_ext + Pc_arr + [Pc] + list(reversed(Pc_arr)),
         color="#888888",
         lw=1.4,
         ls="--",
+        zorder=3,
         label="saturation curve",
     )
 
@@ -177,7 +188,7 @@ for Tr in T_show:
         colors.append("black")
 
 fig, ax = setup_figure()
-draw_fills(ax, Pc_1, Vl_1, Vv_1, XLIM1)
+draw_fills(ax, Pc_1, Vl_1, Vv_1, XLIM1, Pc_ext=Pc_2, Vl_ext=Vl_2)
 
 Vm_base = np.linspace(b * 1.005, XLIM1 + 0.2, 6000)
 for Tr, col in zip(T_show, colors):
@@ -191,8 +202,17 @@ for Tr, col in zip(T_show, colors):
         color=col,
         lw=2.2 if Tr == 1.00 else 1.8,
         label=lbl,
+        zorder=1,
     )
     if Tr < 1.0:
+        try:
+            Vm_s1_iso = brentq(lambda V: dPdVm(V, Tr * Tc), b * 1.001, Vc * 0.9999)
+            if P_vdw(Vm_s1_iso, Tr * Tc) < 0:
+                Vm_z = brentq(lambda V: P_vdw(V, Tr * Tc), b * 1.001, Vm_s1_iso)
+                Vm_la = np.linspace(b * 1.005, Vm_z * 0.9995, 300)
+                ax.plot(Vm_la, P_vdw(Vm_la, Tr * Tc), color=col, lw=1.8, zorder=2)
+        except ValueError:
+            pass
         Pc_co, Vl_co, Vv_co = coexistence(Tr * Tc)
         ax.plot([Vl_co, Vv_co], [Pc_co, Pc_co], color=col, ls="--", lw=1.0, zorder=4)
         ax.plot([Vl_co, Vv_co], [Pc_co, Pc_co], "o", color=col, ms=4, zorder=5)
