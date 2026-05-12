@@ -138,7 +138,7 @@ $$
 [\ce{H+}] + c_b = [\ce{OH-}] + [\ce{A-}]
 $$
 
-Differentiating with respect to pH and using $d[\ce{H+}]/d(\text{pH}) = -\ln 10\cdot[\ce{H+}]$, $d[\ce{OH-}]/d(\text{pH}) = \ln 10\cdot[\ce{OH-}]$, and $d[\ce{A-}]/d(\text{pH}) = \ln 10\cdot c_\text{tot}\,f_{\ce{HA}}\,f_{\ce{A-}}$:
+Differentiating with respect to pH:
 
 $$
 \beta = \ln 10 \left(
@@ -251,7 +251,24 @@ The equilibrium constants in thermodynamic tables are based on activities.
 At nonzero ionic strength, activity coefficients shift the apparent constant that governs observable concentration ratios.
 
 The activity coefficients $\gamma_i(I, z_i)$ follow from Debye-Hückel or Davies theory (@nonidealities, @fig-activity).
-Starting from $K_a = K_a^\text{app}\cdot \gamma_{\ce{H+}}\gamma_{\ce{A-}}/\gamma_{\ce{HA}}$ and applying the Davies equation with the charge of the acid form denoted $z$:
+Substituting $a_i = \gamma_i c_i/c^\circ$ into $Q = \prod_i a_i^{\nu_i}$ factorises the reaction quotient as $Q = \bigl(\prod_i \gamma_i^{\nu_i}\bigr) K^\text{app}$, where $K^\text{app}$ collects the concentration-ratio terms.
+Setting $Q = K$ and taking $-\log_{10}$ gives the general result:
+
+$$
+\text{p}K_a^\text{app} = \text{p}K_a + \sum_i \nu_i \log_{10} \gamma_i
+$$
+
+where $\nu_i$ are the signed stoichiometric coefficients (negative for reactants).
+The Davies equation gives $\log_{10}\gamma_i = -Az_i^2\,f(I)$ with $f(I) = \frac{\sqrt{I}}{1+\sqrt{I}} - 0.3\,I$.
+Denoting the charge of the undissociated acid form as $z$, the three species in $\ce{HA <=> A- + H+}$ carry charges $z$, $z-1$, and $+1$, so the sum becomes:
+
+$$
+\sum_i \nu_i \log_{10}\gamma_i
+= A f(I)\bigl[z^2 - (z-1)^2 - 1\bigr]
+= -2A(1-z)\,f(I)
+$$
+
+Substituting:
 
 $$
 \text{p}K_a^\text{app} = \text{p}K_a
