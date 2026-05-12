@@ -72,4 +72,8 @@ mpl.rcParams.update({
     "axes.labelsize":    10,
     "xtick.labelsize":   9,
     "ytick.labelsize":   9,
+    # 96 DPI = CSS web standard (1 CSS px = 1/96 in).
+    # Wide figures (9 in) save at 864 px; typical column (~750 px) scales them
+    # to ~87 %, so specified font sizes map predictably to rendered sizes.
+    "savefig.dpi":       96,
 })
