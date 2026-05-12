@@ -57,6 +57,54 @@ where $c^\circ = 1\,\mathrm{mol/L}$ has been absorbed into $K_\text{ads}$.
 At low loading ($K_\text{ads} c \ll 1$) the denominator approaches unity and the isotherm is linear: $q \approx q_\text{max} K_\text{ads} c \equiv Hc$, with $H = q_\text{max} K_\text{ads}$ the Henry coefficient.
 At high loading ($K_\text{ads} c \gg 1$) the isotherm saturates at $q_\text{max}$, because all sites are occupied.
 The saturation is an equilibrium consequence of the finite-site constraint, not a kinetic phenomenon; $q_\text{max}$ is a thermodynamic capacity.
+@fig-langmuir shows the isotherm for two values of $K_\text{ads}$, with Henry tangents marking the linear limit.
+
+```{code-cell} ipython3
+:tags: [remove-cell]
+:label: cell-langmuir
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+q_max = 1.0
+c = np.linspace(0, 5.0, 500)
+K_vals = [0.5, 2.0]
+colors = ["#1c4f8a", "#b05c2e"]
+labels = [
+    r"$K_\mathrm{ads} = 0.5\ \mathrm{L\,mol^{-1}}$",
+    r"$K_\mathrm{ads} = 2.0\ \mathrm{L\,mol^{-1}}$",
+]
+
+fig, ax = plt.subplots(figsize=(6, 4))
+
+for K, color, lbl in zip(K_vals, colors, labels):
+    q = q_max * K * c / (1.0 + K * c)
+    ax.plot(c, q, color=color, linewidth=2.5, label=lbl, zorder=3)
+    c_h = np.array([0.0, 0.75 / K])
+    ax.plot(c_h, q_max * K * c_h, "--", color=color, linewidth=1.4, alpha=0.75, zorder=2)
+
+ax.axhline(q_max, color="gray", linewidth=1.0, linestyle=":", zorder=1)
+ax.text(0.12, q_max + 0.04, r"$q_\mathrm{max}$", fontsize=10, color="gray", va="bottom")
+
+ax.set_xlabel(r"Concentration, $c$ / mol$\,$L$^{-1}$")
+ax.set_ylabel(r"Loading, $q$")
+ax.set_xlim(0, 5)
+ax.set_ylim(0, 1.18)
+ax.set_yticks([0, 0.5, 1.0])
+ax.set_yticklabels(["$0$", r"$q_\mathrm{max}/2$", r"$q_\mathrm{max}$"])
+ax.legend(fontsize=9, framealpha=0.9, loc="lower right")
+
+fig.tight_layout()
+```
+
+```{figure} #cell-langmuir
+:name: fig-langmuir
+
+The Langmuir isotherm at two values of $K_\mathrm{ads}$.
+At low loading each curve follows its Henry tangent $q = Hc$ (dashed), where $H = q_\mathrm{max} K_\mathrm{ads}$.
+At high loading both saturate at $q_\mathrm{max}$ (dotted), regardless of concentration.
+A larger $K_\mathrm{ads}$ shifts the saturation onset to lower concentrations.
+```
 
 ```{admonition} Intuition
 :class: tip
