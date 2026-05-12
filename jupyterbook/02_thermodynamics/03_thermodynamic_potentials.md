@@ -231,122 +231,91 @@ When $\mu_i(\alpha) > \mu_i(\beta)$, species $i$ has a thermodynamic driving for
 
 The **common tangent construction** gives the criterion a geometric meaning: a straight line simultaneously tangent to $G(x)$ at two compositions $x^\alpha$ and $x^\beta$ identifies the coexistence compositions (@fig-common-tangent).
 Tangency at both points is the geometric statement of $\mu_i(\alpha) = \mu_i(\beta)$.
-Any overall composition lying between $x^\alpha$ and $x^\beta$ separates into the two coexisting phases; a phase is stable where $G$ is locally convex, and loss of convexity signals spontaneous phase separation.
 
+The geometric logic is as follows.
+Consider a system prepared at overall composition $x_0$ between $x^\alpha$ and $x^\beta$.
+It can either remain as a single phase (Gibbs energy $G(x_0)$, the point on the curve) or split into phase $\alpha$ at $x^\alpha$ and phase $\beta$ at $x^\beta$, with phase fractions fixed by the lever rule.
+The Gibbs energy of the two-phase mixture is a weighted average of $G(x^\alpha)$ and $G(x^\beta)$, which lies on the tangent line.
+Because the curve has a non-convex hump, the tangent lies *below* the single-phase curve for all $x_0 \in (x^\alpha, x^\beta)$: the two-phase state has lower $G$, and the gap $\Delta G$ is the thermodynamic driving force for phase separation.
+Outside $[x^\alpha, x^\beta]$, the curve is convex and lies below any chord, so the single phase is stable.
 
-todo: update figure.
 ```{code-cell} ipython3
 :tags: [remove-cell]
 :label: cell-common-tangent
 
 import numpy as np
 import matplotlib.pyplot as plt
-from reactions.plots import setup_figure, COLORS
 from scipy.optimize import brentq
 
+A = 2.5   # Flory–Huggins interaction parameter (> 2 gives phase separation)
+B = 0.0   # asymmetry (0 = symmetric double well)
 x = np.linspace(1e-4, 1 - 1e-4, 2000)
 
-A = 2.8  # interaction parameter; > 2 for phase separation
-B = 0.25  # asymmetry
-
-
 def G_f(xi):
-    return xi * np.log(xi) + (1 - xi) * np.log(1 - xi) + A * xi * (1 - xi) + B * xi
-
+    return xi*np.log(xi) + (1-xi)*np.log(1-xi) + A*xi*(1-xi) + B*xi
 
 def dG_f(xi):
-    return np.log(xi) - np.log(1 - xi) + A * (1 - 2 * xi) + B
+    return np.log(xi) - np.log(1-xi) + A*(1-2*xi) + B
 
+xa   = brentq(dG_f, 1e-3, 0.49)          # left coexistence composition
+xb   = brentq(dG_f, 0.51, 1 - 1e-3)     # right coexistence composition
+m_ct = (G_f(xb) - G_f(xa)) / (xb - xa)  # common tangent slope (≈ 0 for B=0)
 
-def residual(xa):
-    m = dG_f(xa)
-    try:
-        xb = brentq(lambda t: dG_f(t) - m, xa + 0.15, 1 - 1e-3)
-    except ValueError:
-        return 1.0
-    return (G_f(xb) - G_f(xa)) / (xb - xa) - m
-
-
-xa = brentq(residual, 0.04, 0.44)
-m_ct = dG_f(xa)
-xb = brentq(lambda t: dG_f(t) - m_ct, xa + 0.15, 1 - 1e-3)
-
-x_line = np.linspace(0, 1, 200)
-y_line = G_f(xa) + m_ct * (x_line - xa)
-
-x_mid = x[(x >= xa) & (x <= xb)]
-G_mid = G_f(x_mid)
+x_line  = np.linspace(-0.02, 1.02, 200)
+y_line  = G_f(xa) + m_ct * (x_line - xa)
+x_mid   = x[(x >= xa) & (x <= xb)]
+G_mid   = G_f(x_mid)
 tan_mid = G_f(xa) + m_ct * (x_mid - xa)
 
-fig, ax = setup_figure()
+x_ex    = 0.65
+G_ex    = G_f(x_ex)
+tan_ex  = G_f(xa) + m_ct * (x_ex - xa)
+f_alpha = (xb - x_ex) / (xb - xa)
+f_beta  = (x_ex - xa) / (xb - xa)
+
+fig, ax = plt.subplots(figsize=(6, 3.8))
 ax.plot(x, G_f(x), color="C0", lw=2.2)
 ax.plot(x_line, y_line, color="C2", lw=1.5, ls="--")
-ax.fill_between(x_mid, tan_mid, G_mid, alpha=0.12, color="C2")
+ax.fill_between(
+    x_mid, tan_mid, G_mid,
+    where=(G_mid >= tan_mid), alpha=0.15, color="C2",
+)
 ax.plot([xa, xb], [G_f(xa), G_f(xb)], "o", color="C2", ms=7, zorder=5)
-
 ax.text(
-    2 * (xa + xb) / 3,
-    2 * (G_f(xa) + G_f(xb)) / 3,
-    "two phases",
-    ha="center",
-    fontsize=9,
-    color="C2",
-    style="italic",
+    0.5, G_f(xa) + 0.010, "two phases",
+    ha="center", va="bottom", fontsize=9, color="C2", style="italic",
 )
 
-x_ex = 0.75
-G_ex = G_f(x_ex)
-tan_ex = G_f(xa) + m_ct * (x_ex - xa)
-ax.plot(x_ex, G_ex, "o", color="C3", ms=7, zorder=6)
+ax.plot(x_ex, G_ex,   "o", color="C3", ms=7, zorder=6)
 ax.plot(x_ex, tan_ex, "o", color="C3", ms=7, zorder=6, mfc="white", mew=1.5)
 ax.annotate(
-    "",
-    xy=(x_ex, tan_ex),
-    xytext=(x_ex, G_ex),
+    "", xy=(x_ex, tan_ex), xytext=(x_ex, G_ex),
     arrowprops=dict(arrowstyle="<->", color="C3", lw=1.4),
 )
 ax.text(
-    x_ex + 0.03,
-    (G_ex + tan_ex) / 2,
-    r"$\Delta G$",
-    color="C3",
-    fontsize=10,
-    va="center",
+    x_ex + 0.03, (G_ex + tan_ex) / 2, r"$\Delta G$",
+    color="C3", fontsize=10, va="center",
 )
 ax.axvline(x_ex, color="C3", lw=0.8, ls=":", ymax=0.92)
 
-# lever rule: two segments at tangent level, split at x_ex
-f_beta = (x_ex - xa) / (xb - xa)  # fraction of phase beta
-f_alpha = (xb - x_ex) / (xb - xa)  # fraction of phase alpha
+lev_y = tan_ex - 0.04
 ax.annotate(
-    "",
-    xy=(x_ex, tan_ex),
-    xytext=(xa, tan_ex),
+    "", xy=(x_ex, lev_y), xytext=(xa, lev_y),
     arrowprops=dict(arrowstyle="<->", color="C3", lw=1.0, linestyle="dashed"),
 )
 ax.annotate(
-    "",
-    xy=(xb, tan_ex),
-    xytext=(x_ex, tan_ex),
+    "", xy=(xb, lev_y), xytext=(x_ex, lev_y),
     arrowprops=dict(arrowstyle="<->", color="C3", lw=1.0, linestyle="dashed"),
 )
 ax.text(
-    (xa + x_ex) / 2,
-    tan_ex + 0.05,
-    rf"$f^\beta={f_beta:.2f}$",
-    ha="center",
-    va="top",
-    color="C3",
-    fontsize=8.5,
-)
-ax.text(
-    (x_ex + xb) / 2,
-    tan_ex + 0.05,
+    (xa + x_ex) / 2, lev_y - 0.012,
     rf"$f^\alpha={f_alpha:.2f}$",
-    ha="center",
-    va="top",
-    color="C3",
-    fontsize=8.5,
+    ha="center", va="top", color="C3", fontsize=8.5,
+)
+ax.text(
+    (x_ex + xb) / 2, lev_y - 0.012,
+    rf"$f^\beta={f_beta:.2f}$",
+    ha="center", va="top", color="C3", fontsize=8.5,
 )
 ax.axvline(xa, color="C3", lw=0.8, ls=":", ymax=0.92)
 ax.axvline(xb, color="C3", lw=0.8, ls=":", ymax=0.92)
@@ -354,19 +323,23 @@ ax.axvline(xb, color="C3", lw=0.8, ls=":", ymax=0.92)
 ax.set_xlabel("Composition $x$")
 ax.set_ylabel("Molar Gibbs energy $G$")
 ax.set_xlim(-0.02, 1.02)
-ax.set_xticks([0, xa, xb, 1])
-ax.set_xticklabels(["0", r"$x^\alpha$", r"$x^\beta$", "1"])
+ax.set_ylim(tan_ex - 0.09, G_f(0.01) * 0.35)
+ax.set_xticks([0, xa, x_ex, xb, 1])
+ax.set_xticklabels(["0", r"$x^\alpha$", r"$x_0$", r"$x^\beta$", "1"])
 ax.set_yticks([])
+ax.spines["top"].set_visible(False)
+ax.spines["right"].set_visible(False)
 fig.tight_layout()
 ```
 
 ```{figure} #cell-common-tangent
 :name: fig-common-tangent
 
-Common tangent construction for a binary mixture with a tendency to phase-separate.
-The molar Gibbs energy $G(x)$ has a non-convex region between $x^\alpha$ and $x^\beta$.
+Common tangent construction for a binary mixture with a tendency to phase-separate (Flory–Huggins model, $\chi = 2.5$).
+The molar Gibbs energy $G(x)$ has two minima at $x^\alpha$ and $x^\beta$ with a non-convex hump in between.
 The common tangent (dashed) simultaneously touches both coexistence compositions; tangency at both points is the geometric statement of $\mu_i(\alpha) = \mu_i(\beta)$.
-Any overall composition in the shaded region splits into the two coexisting phases.
+The overall composition $x_0$ marks the state of a system prepared inside the two-phase region.
+At $x_0$ the single-phase Gibbs energy (filled dot on the curve) lies above the two-phase value on the tangent (open dot); the system lowers its Gibbs energy by $\Delta G$ by splitting into two phases whose compositions are $x^\alpha$ and $x^\beta$, with phase fractions given by the lever rule.
 ```
 
 **Clausius-Clapeyron equation.**
