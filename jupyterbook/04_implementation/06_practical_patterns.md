@@ -12,17 +12,15 @@ This chapter collects self-contained idioms and pre-built components that reduce
 Each section covers one tool or one pattern with a minimal example; the chapter is a reference rather than a narrative.
 The chapter breaks the conceptual rhythm of the part intentionally; readers may navigate directly to the section they need without reading sequentially.
 
-```{code-cell} ipython3
-import numpy as np
-```
-
 
 ## Verifying conservation with `check_conservation`
 
 `ReactionModel.check_conservation()` verifies that the sum of species within each multi-species component is a conserved moiety of the reaction network — that is, the total amount of each component is unchanged by the reactions.
-The check operates on the stoichiometric matrix and works for kinetic, equilibrium, and mixed models alike.
+The check operates on the left null space of the stoichiometric matrix (@implementation-source-term) and works for kinetic, equilibrium, and mixed models alike.
 
 ```{code-cell} ipython3
+import numpy as np
+
 from reactions.species import Component, Species
 from reactions.model import ReactionModel
 from reactions.reaction import ThermodynamicReaction
@@ -84,7 +82,7 @@ model_mixed = ReactionModel(
     ],
 )
 
-result_mixed = simulate(model_mixed, c0={"A": 1000.0}, t_span=(0, 100.0))
+result_mixed = simulate(model_mixed, c0={"A": 1.0}, t_span=(0, 100.0))
 print(
     f"c_B / c_C  = {result_mixed['B'][-1] / result_mixed['C'][-1]:.4f}  (expect {1 / 3.0:.4f})"
 )
@@ -99,7 +97,7 @@ The `B⇌C` constraint is satisfied at every time step: $c_B/c_C = 1/K_{BC} = 1/
 `solve_equilibrium` uses Newton's method in log-space.
 Convergence is guaranteed only if the initial guess is close enough to the solution; a guess that places a concentration near zero or several orders of magnitude from equilibrium may fail or converge slowly.
 
-For acid-base systems, the Henderson-Hasselbalch equation provides a reliable starting guess.
+For acid-base systems, the Henderson-Hasselbalch equation (@acid-base) provides a reliable starting guess.
 At a target pH, the conjugate-acid/conjugate-base ratio follows:
 
 $$
@@ -138,6 +136,9 @@ Any species with a physically expected near-zero concentration should be set to 
 
 `reactions.common` provides `Component` instances for frequently used buffer species and the solvent.
 These are standalone objects with no reaction dependency; import them directly without constructing new `Component` instances.
+The acid components carry only `name` and `charge` on each species: no `molar_mass`, `density`, or `heat_capacity`.
+This is intentional: for dilute aqueous equilibria, solute molar masses are not needed (volume is accounted for by the solvent), and thermal properties require application-specific values.
+If a simulation needs physical properties on an acid species, construct a `Species` explicitly rather than patching the pre-defined component.
 
 ```{code-cell} ipython3
 from reactions.common import (
@@ -177,7 +178,7 @@ To use the coupled energy balance (@implementation-energy-balance), attach it ex
 ## The `pKa()` factory
 
 `pKa(value)` converts a thermodynamic pK$_a$ to an `EquilibriumConstant` such that $K(298.15\ \text{K}) = 10^{-\text{p}K_a}$ exactly.
-An optional `dH` argument adds van't Hoff temperature dependence with the standard-state enthalpy $\Delta H^\circ$ [J/mol]:
+An optional `dH` argument adds van't Hoff temperature dependence (@equilibrium-temperature) with the standard-state enthalpy $\Delta H^\circ$ [J/mol]:
 
 ```{code-cell} ipython3
 from reactions.equilibrium import pKa
@@ -268,6 +269,10 @@ Prescribing $[\text{H}^+]$ at a fixed target fixes the pH throughout an equilibr
 This is the pH-stat pattern: combine `prescribed={"H+": c_H}` with a sweep over a target pH array to compute speciation or rates as a function of pH.
 
 ```{code-cell} ipython3
+:tags: [remove-cell]
+:label: cell-phstat-speciation
+
+import matplotlib.pyplot as plt
 from reactions.common import (
     acetic_acid,
     H_plus,
@@ -277,6 +282,7 @@ from reactions.common import (
     autoionisation,
 )
 from reactions.ionic import IonicStrengthIdeal
+from reactions.plots import setup_figure
 from reactions.solver import solve_equilibrium
 
 model_stat = ReactionModel(
@@ -288,10 +294,10 @@ model_stat = ReactionModel(
     ionic_strength=IonicStrengthIdeal(),
 )
 
-pH_targets = np.linspace(3.0, 9.0, 7)
+pH_targets = np.linspace(3.0, 9.0, 40)
 f_Ac_neg = []
-H_CREF = H_plus.species[0].c_ref  # 1000 mol/m³  (default c_ref for H+)
-WATER_CREF = water.species[0].c_ref  # ≈ 55 509 mol/m³
+H_CREF = H_plus.species[0].c_ref
+WATER_CREF = water.species[0].c_ref
 
 for pH in pH_targets:
     c_H = 10.0 ** (-pH) * H_CREF
@@ -305,9 +311,25 @@ for pH in pH_targets:
     total = c_eq["HAc"] + c_eq["Ac-"]
     f_Ac_neg.append(c_eq["Ac-"] / total)
 
-print("pH  |  f(Ac-)")
-for pH, f in zip(pH_targets, f_Ac_neg):
-    print(f"{pH:.1f}  |  {f:.4f}")
+pKa_val = 4.756
+fig, ax = setup_figure()
+ax.plot(pH_targets, f_Ac_neg, color="C0", lw=2.0, label=r"$f_{\mathrm{Ac}^-}$")
+ax.plot(pH_targets, [1 - f for f in f_Ac_neg], color="C1", lw=2.0, label=r"$f_{\mathrm{HAc}}$")
+ax.axvline(pKa_val, color="gray", ls=":", lw=1.0)
+ax.text(pKa_val + 0.1, 0.52, rf"$\mathrm{{p}}K_a = {pKa_val}$", fontsize=9, color="gray")
+ax.set_xlabel("pH")
+ax.set_ylabel("Speciation fraction")
+ax.set_xlim(3, 9)
+ax.set_ylim(-0.02, 1.05)
+ax.legend(fontsize=10)
+fig.tight_layout()
+```
+
+```{figure} #cell-phstat-speciation
+:name: fig-phstat-speciation
+
+Speciation of acetic acid computed by the pH-stat pattern: $[\text{H}^+]$ is prescribed at each target pH and the equilibrium solve determines the remaining concentrations.
+The result is identical to the Bjerrum diagram (@fig-bjerrum-acetic), confirming that prescribing pH and solving for speciation is equivalent to the analytical Henderson-Hasselbalch expression.
 ```
 
 The `prescribed` dict overrides the equilibrium solve for the listed species: their concentrations are held fixed at the specified value while all others are solved freely.
