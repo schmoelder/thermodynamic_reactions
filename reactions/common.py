@@ -70,57 +70,80 @@ water = Component(
 # Proton carriers  (shared across buffer systems)
 # ---------------------------------------------------------------------------
 
-H_plus = Component("H+", [Species("H+", charge=1)])
-OH_minus = Component("OH-", [Species("OH-", charge=-1)])
+H_plus = Component("H+", [Species("H+", charge=1, molar_mass=1.008e-3)])
+OH_minus = Component("OH-", [Species("OH-", charge=-1, molar_mass=17.007e-3)])
 
 # ---------------------------------------------------------------------------
 # Buffer components
+# Molar masses [kg/mol] from IUPAC atomic weights (H=1.008, C=12.011,
+# N=14.007, O=15.999, P=30.974, S=32.06).  Each dissociation step loses
+# one H, so molar_mass decreases by _M_H = 1.008e-3 kg/mol per step.
 # ---------------------------------------------------------------------------
 
+_M_H = 1.008e-3  # kg/mol
+
 #: Acetic acid / acetate  (pKa = 4.756)
+#: C2H4O2 = 60.052 g/mol
 acetic_acid = Component(
     "acetic_acid",
-    [Species("HAc", charge=0), Species("Ac-", charge=-1)],
+    [
+        Species("HAc", charge=0,  molar_mass=60.052e-3),
+        Species("Ac-", charge=-1, molar_mass=60.052e-3 - _M_H),
+    ],
 )
 
 #: Phosphoric acid / phosphate  (pKa = 2.148, 7.198, 12.35)
+#: H3PO4 = 97.994 g/mol
 phosphate = Component(
     "phosphate",
     [
-        Species("H3PO4", charge=0),
-        Species("H2PO4-", charge=-1),
-        Species("HPO4-2", charge=-2),
-        Species("PO4-3", charge=-3),
+        Species("H3PO4",  charge=0,  molar_mass=97.994e-3),
+        Species("H2PO4-", charge=-1, molar_mass=97.994e-3 - _M_H),
+        Species("HPO4-2", charge=-2, molar_mass=97.994e-3 - 2 * _M_H),
+        Species("PO4-3",  charge=-3, molar_mass=97.994e-3 - 3 * _M_H),
     ],
 )
 
 #: Citric acid / citrate  (pKa = 3.128, 4.761, 6.396)
+#: C6H8O7 = 192.123 g/mol
 citric_acid = Component(
     "citric_acid",
     [
-        Species("H3Cit", charge=0),
-        Species("H2Cit-", charge=-1),
-        Species("HCit-2", charge=-2),
-        Species("Cit-3", charge=-3),
+        Species("H3Cit",  charge=0,  molar_mass=192.123e-3),
+        Species("H2Cit-", charge=-1, molar_mass=192.123e-3 - _M_H),
+        Species("HCit-2", charge=-2, molar_mass=192.123e-3 - 2 * _M_H),
+        Species("Cit-3",  charge=-3, molar_mass=192.123e-3 - 3 * _M_H),
     ],
 )
 
-#: Tris  (pKa = 8.072, ΔH° = −47.45 kJ/mol — strongly temperature-dependent)
+#: Tris  (pKa = 8.072, ΔH° = -47.45 kJ/mol; strongly temperature-dependent)
+#: C4H11NO3 = 121.136 g/mol (free base); TrisH+ = 122.144 g/mol
 tris = Component(
     "tris",
-    [Species("TrisH+", charge=1), Species("Tris", charge=0)],
+    [
+        Species("TrisH+", charge=1,  molar_mass=122.144e-3),
+        Species("Tris",   charge=0,  molar_mass=122.144e-3 - _M_H),
+    ],
 )
 
-#: HEPES  (pKa = 7.55; modelled as neutral ⇌ anionic zwitterion)
+#: HEPES  (pKa = 7.55; neutral zwitterion <=> anion)
+#: C8H18N2O4S = 238.302 g/mol (protonated form)
 hepes = Component(
     "hepes",
-    [Species("HEPESH", charge=0), Species("HEPES-", charge=-1)],
+    [
+        Species("HEPESH", charge=0,  molar_mass=238.302e-3),
+        Species("HEPES-", charge=-1, molar_mass=238.302e-3 - _M_H),
+    ],
 )
 
-#: MOPS  (pKa = 7.20; modelled as neutral ⇌ anionic zwitterion)
+#: MOPS  (pKa = 7.20; neutral zwitterion <=> anion)
+#: C7H15NO4S = 209.260 g/mol (protonated form)
 mops = Component(
     "mops",
-    [Species("MOPSH", charge=0), Species("MOPS-", charge=-1)],
+    [
+        Species("MOPSH", charge=0,  molar_mass=209.260e-3),
+        Species("MOPS-", charge=-1, molar_mass=209.260e-3 - _M_H),
+    ],
 )
 
 # ---------------------------------------------------------------------------

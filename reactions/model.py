@@ -268,15 +268,14 @@ class ReactionModel:
         c: np.ndarray,
     ) -> float:
         """
-        Volumetric heat capacity ρCp [J/(m³·K)] from species with all three
-        of molar_mass, density, and heat_capacity set.
+        Volumetric heat capacity ρCp [J/(m³·K)] from species with heat_capacity set.
 
         ρCp = Σ_k c_k · Cp_k
         where c_k [mol/m³] and Cp_k [J/(mol·K)].
         """
         thermal = [
             (i, sp) for i, sp in enumerate(self.species)
-            if None not in (sp.molar_mass, sp.density, sp.heat_capacity)
+            if sp.heat_capacity is not None
         ]
         if not thermal:
             raise ValueError(
