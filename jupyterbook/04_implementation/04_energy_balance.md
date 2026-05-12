@@ -170,7 +170,7 @@ print(f"T(end) = {result.T_profile[-1]:.3f} K")
 print(f"c_B(end) = {result['B'][-1]:.2f} mol/m³")
 ```
 
-The temperature rises by a few kelvin as the exothermic reaction produces B, then plateaus once equilibrium is reached.
+The temperature rises by a few kelvin as the exothermic reaction produces B, then plateaus once equilibrium is reached (@fig-adiabatic).
 
 
 ## Adiabatic simulation and conservation check
@@ -221,47 +221,85 @@ Left: concentrations; the exothermic reaction produces B while heating the fluid
 Right: temperature rises approximately $4\ \mathrm{K}$ as the reaction proceeds and levels off at equilibrium.
 ```
 
-A prescribed-temperature simulation at $T_0$ converges to a different equilibrium: without thermal feedback, the solver uses the fixed $K(T_0)$ throughout and overshoots the true adiabatic endpoint.
-
-```{code-cell} ipython3
-result_iso = simulate(
-    model,
-    c0={"A": c_tot, "B": 0.0},
-    t_span=(0, 5.0),
-    T=T0,
-)
-```
+To make the thermal effect visible, the comparison uses acetonitrile ($\rho C_p \approx 1.75 \times 10^6\ \mathrm{J/(m^3\cdot K)}$), whose lower heat capacity amplifies the adiabatic temperature rise to $\approx 10\ \mathrm{K}$, compared to $\approx 4\ \mathrm{K}$ in water.
+A prescribed-temperature simulation at $T_0$ then overshoots the true adiabatic endpoint by a clearly visible margin (@fig-comparison).
 
 ```{code-cell} ipython3
 :tags: [remove-cell]
 :label: cell-comparison
 
-fig, axes = setup_figure(1, 2)
+_MECN = Species(
+    name="MeCN",
+    molar_mass=0.041,
+    density=786.0,
+    heat_capacity=91.5,
+)
+_model_cmp = ReactionModel(
+    components=[
+        Component("A"),
+        Component("B"),
+        Component("MeCN", species=[_MECN]),
+    ],
+    reactions=[
+        ThermodynamicReaction(
+            "A <-> B",
+            mode="kinetic",
+            equilibrium_constant=K_vH,
+            rate_constant=kf_arr,
+        ),
+    ],
+)
+
+result_adi_cmp = simulate(
+    _model_cmp,
+    c0={"A": c_tot, "B": 0.0},
+    t_span=(0, 5.0),
+    T=T0,
+    solvent_composition={"MeCN": 1.0},
+)
+result_iso_cmp = simulate(
+    _model_cmp,
+    c0={"A": c_tot, "B": 0.0},
+    t_span=(0, 5.0),
+    T=T0,
+)
 
 K_T0 = K_vH.K(T0)
-T_final = float(result.T_profile[-1])
-K_Tf = K_vH.K(T_final)
+T_final_cmp = float(result_adi_cmp.T_profile[-1])
 c_B_iso_eq = c_tot * K_T0 / (1 + K_T0)
-c_B_adi_eq = c_tot * K_Tf / (1 + K_Tf)
+c_B_adi_eq = c_tot * K_vH.K(T_final_cmp) / (1 + K_vH.K(T_final_cmp))
 
-axes[0].plot(
-    result_iso.t, result_iso["B"], color="C1", ls="--", label="isothermal $T_0$"
+C_ADI = "C0"
+C_ISO = "C1"
+
+fig, axes = setup_figure(1, 2)
+
+axes[0].plot(result_iso_cmp.t, result_iso_cmp["B"], color=C_ISO, ls="--", label="isothermal $T_0$")
+axes[0].plot(result_adi_cmp.t, result_adi_cmp["B"], color=C_ADI, label="adiabatic")
+axes[0].axhline(c_B_iso_eq, color=C_ISO, lw=0.8, ls="--", alpha=0.5)
+axes[0].axhline(c_B_adi_eq, color=C_ADI, lw=0.8, ls=":", alpha=0.5)
+axes[0].text(
+    0.98, c_B_iso_eq, r"$c_{B,\mathrm{eq}}^{\mathrm{iso}}$",
+    transform=axes[0].get_yaxis_transform(),
+    ha="right", va="bottom", fontsize=11, color=C_ISO,
 )
-axes[0].plot(result.t, result["B"], color="C1", label="adiabatic")
-axes[0].axhline(c_B_iso_eq, color="C1", lw=0.8, ls=":")
-axes[0].axhline(c_B_adi_eq, color="C1", lw=0.8, ls=":")
+axes[0].text(
+    0.98, c_B_adi_eq, r"$c_{B,\mathrm{eq}}^{\mathrm{adi}}$",
+    transform=axes[0].get_yaxis_transform(),
+    ha="right", va="top", fontsize=11, color=C_ADI,
+)
 axes[0].set_xlabel("time [s]")
 axes[0].set_ylabel(r"$c_B$ [mol/m³]")
 axes[0].legend()
 
 axes[1].plot(
-    result_iso.t,
-    np.full_like(result_iso.t, T0) - 273.15,
-    color="C3",
+    result_iso_cmp.t,
+    np.full_like(result_iso_cmp.t, T0) - 273.15,
+    color=C_ISO,
     ls="--",
     label="isothermal $T_0$",
 )
-axes[1].plot(result.t, result.T_profile - 273.15, color="C3", label="adiabatic")
+axes[1].plot(result_adi_cmp.t, result_adi_cmp.T_profile - 273.15, color=C_ADI, label="adiabatic")
 axes[1].set_xlabel("time [s]")
 axes[1].set_ylabel(r"$T$ [°C]")
 axes[1].legend()
@@ -272,10 +310,10 @@ fig.tight_layout()
 ```{figure} #cell-comparison
 :name: fig-comparison
 
-Isothermal (dashed) vs adiabatic (solid) simulation of the same reaction.
+Isothermal (orange, dashed) vs adiabatic (blue, solid) simulation in acetonitrile ($\rho C_p \approx 1.75 \times 10^6\ \mathrm{J/(m^3\cdot K)}$); colors are consistent across both panels.
 Left: the isothermal model overestimates the long-time $c_B$ because it uses $K(T_0)$ throughout; the adiabatic model reaches a lower equilibrium as the rising temperature shifts $K$ via Le Chatelier.
-Dotted horizontal lines mark the respective equilibrium concentrations.
-Right: the isothermal model prescribes a flat temperature; the adiabatic model resolves the $\approx 4\ \mathrm{K}$ rise driven by the reaction heat.
+Faint horizontal lines mark the respective equilibrium concentrations; the gap between them is the error from prescribing temperature in a self-heating system.
+Right: the isothermal model prescribes a flat temperature; the adiabatic model resolves the $\approx 10\ \mathrm{K}$ rise, larger than in water because of acetonitrile's lower heat capacity.
 ```
 
 The gap between the two endpoints is the error introduced by prescribing temperature in a system that self-heats.
@@ -324,6 +362,8 @@ result_grad = simulate(
     },
 )
 ```
+
+The resulting concentration and temperature profiles are shown in @fig-gradient.
 
 ```{code-cell} ipython3
 :tags: [remove-cell]
