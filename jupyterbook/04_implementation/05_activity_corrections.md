@@ -338,13 +338,8 @@ print(f"pH from a(H+)      = {-np.log10(gamma_H * c_H / C_REF):.4f}")
 ## Apparent pKa
 
 The same activity correction shifts the observable pKa.
-For $\ce{HA <=> A- + H+}$, substituting activities into $Q(\mathbf{a}) = K$ with $Q = \prod_i a_i^{\nu_i}$ and taking logarithms gives (@speciation-buffers):
-
-$$
-\text{pKa}^\text{app} = \text{pKa} + \sum_i \nu_i \log_{10} \gamma_i.
-$$
-
-The neutral species $\ce{HA}$ has $\gamma_{\ce{HA}} \approx 1$, while $\ce{A-}$ and $\ce{H+}$ both have $\gamma_i < 1$ at finite $I$, so $\text{pKa}^\text{app} < \text{pKa}$ at any non-zero ionic strength.
+From the general result (@speciation-buffers), $\text{pKa}^\text{app} = \text{pKa} + \sum_i \nu_i \log_{10} \gamma_i$, and for a neutral acid ($z = 0$) at physiological ionic strength the shift is approximately $-0.24$.
+Since $\gamma_{\ce{HA}} \approx 1$ while $\gamma_{\ce{A-}}, \gamma_{\ce{H+}} < 1$ at finite $I$, the sum is negative and $\text{pKa}^\text{app} < \text{pKa}$ at any non-zero ionic strength.
 At 150 mM, typical of IEX loading conditions, the suppression reaches $\approx 0.25-0.35$ units (@fig-activity-pka):
 
 ```{code-cell} ipython3
