@@ -27,6 +27,7 @@ from reactions.api import (
     water,
     H_plus,
     OH_minus,
+    buffer_capacity,
 )
 from reactions.solver import solve_equilibrium
 ```
@@ -99,26 +100,19 @@ def solve_at_pH(model, pH, c_tot):
 
 ```{code-cell} ipython3
 pH_vals = np.linspace(3.0, 12.0, 200)
-H_conc = np.array([solve_at_pH(model_phos, pH, c_phos)["H+"] for pH in pH_vals])
-pH_num = -np.log10(H_conc / H_plus.c_ref)
+eq_phos = [solve_at_pH(model_phos, pH, c_phos) for pH in pH_vals]
+pH_num = np.array([-np.log10(r["H+"] / H_plus.c_ref) for r in eq_phos])
 
-beta_num = np.abs(np.diff(H_conc) / np.diff(pH_num)) / 1000.0  # mol/L per pH unit
+Q = np.array([r["H+"] - r["OH-"] - r["H2PO4-"] - 2*r["HPO4-2"] - 3*r["PO4-3"] for r in eq_phos])
+beta_num = np.abs(np.diff(Q) / np.diff(pH_num))
 pH_mid = 0.5 * (pH_num[:-1] + pH_num[1:])
 ```
 
 ```{code-cell} ipython3
 :tags: [remove-cell]
 
-def beta_analytical(pH):
-    h = 10.0 ** (-pH)
-    kw = 1e-14
-    a0, a1, a2, a3 = phosphate_fractions(pH)
-    beta_water = np.log(10) * (h + kw / h)
-    beta_buf = np.log(10) * c_phos / 1000 * (a0 * a1 + a1 * a2 * 4 + a2 * a3 * 9)
-    return beta_water + beta_buf
-
-
-beta_ana = np.array([beta_analytical(pH) for pH in pH_mid])
+_beta_lib = buffer_capacity(model_phos, {"phosphate": c_phos}, pH_mid)
+beta_ana = _beta_lib["phosphate"] + _beta_lib["water"]
 ```
 
 ```{code-cell} ipython3
@@ -146,7 +140,7 @@ for pKa_val, lbl in [
         va="top",
     )
 ax.set_xlabel("pH")
-ax.set_ylabel(r"$\beta$ / (mol L$^{-1}$ pH$^{-1}$)")
+ax.set_ylabel(r"$\beta$ / (mol m$^{-3}$ pH$^{-1}$)")
 ax.set_xlim(3, 12)
 ax.legend(fontsize=10)
 fig.tight_layout()
@@ -155,12 +149,13 @@ fig.tight_layout()
 ```{figure} #cell-beta-phosphate
 :name: fig-beta-phosphate
 
-Buffer capacity $\beta$ of 100 mol/m³ phosphate: numerical finite-difference (solid) versus the analytical formula from @speciation-buffers (dashed).
-Peaks appear at each p$K_a$; the coefficients 1, 4, 9 weighting the three terms are the squared charge changes $(\Delta z)^2$ between adjacent protonation states.
+Buffer capacity $\beta$ of 100 mol/m³ phosphate: numerical finite-difference (solid) versus `buffer_capacity` from `reactions.analysis` (dashed).
+All three peaks reach the same height because every adjacent phosphate transition is a unit charge step ($\Delta z = 1$), giving $\beta_\text{max} = \ln(10)\,c/4$ at each p$K_a$.
 Small deviations at the pH extremes arise from the finite-difference step size.
 ```
 
-The coefficients 1, 4, 9 in the analytical formula reflect $(\Delta z)^2$ for each transition: higher charge contrast produces a taller, sharper peak, so the p$K_{a2}$--p$K_{a3}$ step ($\Delta z = 2$) contributes four times more than the p$K_{a1}$--p$K_{a2}$ step ($\Delta z = 1$).
+The Van Slyke formula sums $(\Delta z)^2 \alpha_i \alpha_j$ over all species pairs; for phosphate every adjacent transition carries $\Delta z = 1$, so all three peaks are equal.
+A buffer with non-unit charge steps between adjacent forms — for example a species jumping directly from $z = 0$ to $z = -2$ — would produce a taller peak at that transition because $(\Delta z)^2 = 4$.
 
 ## Mixed buffer: citrate + phosphate
 
@@ -256,9 +251,15 @@ def solve_mixed_at_pH(pH):
 
 
 pH_mix = np.linspace(3.0, 10.0, 150)
-H_mix = np.array([solve_mixed_at_pH(pH)["H+"] for pH in pH_mix])
-pH_m = -np.log10(H_mix / H_plus.c_ref)
-beta_m = np.abs(np.diff(H_mix) / np.diff(pH_m)) / 1000.0
+eq_mix = [solve_mixed_at_pH(pH) for pH in pH_mix]
+pH_m = np.array([-np.log10(r["H+"] / H_plus.c_ref) for r in eq_mix])
+Q_mix = np.array([
+    r["H+"] - r["OH-"]
+    - r["H2Cit-"] - 2*r["HCit-2"] - 3*r["Cit-3"]
+    - r["H2PO4-"] - 2*r["HPO4-2"] - 3*r["PO4-3"]
+    for r in eq_mix
+])
+beta_m = np.abs(np.diff(Q_mix) / np.diff(pH_m))
 pH_m_mid = 0.5 * (pH_m[:-1] + pH_m[1:])
 ```
 
@@ -287,7 +288,7 @@ for pKa_val, lbl in [
         va="top",
     )
 ax.set_xlabel("pH")
-ax.set_ylabel(r"$\beta$ / (mol L$^{-1}$ pH$^{-1}$)")
+ax.set_ylabel(r"$\beta$ / (mol m$^{-3}$ pH$^{-1}$)")
 ax.set_xlim(3, 10)
 fig.tight_layout()
 ```
@@ -348,19 +349,18 @@ model_phos_davies = ReactionModel(
 :tags: [remove-cell]
 
 pH_dav = np.linspace(3.0, 11.0, 180)
-H_dav = np.array(
-    [
-        solve_equilibrium(
-            model_phos_davies,
-            solve_at_pH(model_phos, pH, c_phos),
-            T=298.15,
-            prescribed={"H2O": water.c_ref},
-        )["H+"]
-        for pH in pH_dav
-    ]
-)
-pH_dav = -np.log10(H_dav / H_plus.c_ref)
-beta_dav = np.abs(np.diff(H_dav) / np.diff(pH_dav)) / 1000.0
+eq_dav = [
+    solve_equilibrium(
+        model_phos_davies,
+        solve_at_pH(model_phos, pH, c_phos),
+        T=298.15,
+        prescribed={"H2O": water.c_ref},
+    )
+    for pH in pH_dav
+]
+pH_dav = np.array([-np.log10(r["H+"] / H_plus.c_ref) for r in eq_dav])
+Q_dav = np.array([r["H+"] - r["OH-"] - r["H2PO4-"] - 2*r["HPO4-2"] - 3*r["PO4-3"] for r in eq_dav])
+beta_dav = np.abs(np.diff(Q_dav) / np.diff(pH_dav))
 ```
 
 ```{code-cell} ipython3
@@ -370,7 +370,8 @@ beta_dav = np.abs(np.diff(H_dav) / np.diff(pH_dav)) / 1000.0
 from reactions.plots import setup_figure
 
 pH_dav_mid = 0.5 * (pH_dav[:-1] + pH_dav[1:])
-beta_ideal_dav = np.array([beta_analytical(pH) for pH in pH_dav_mid])
+_beta_lib_dav = buffer_capacity(model_phos, {"phosphate": c_phos}, pH_dav_mid)
+beta_ideal_dav = _beta_lib_dav["phosphate"] + _beta_lib_dav["water"]
 
 fig, ax = setup_figure()
 ax.plot(pH_dav_mid, beta_ideal_dav, color="C0", lw=2.0, label=r"ideal ($I = 0$)")
@@ -386,7 +387,7 @@ ax.text(
     va="top",
 )
 ax.set_xlabel("pH")
-ax.set_ylabel(r"$\beta$ / (mol L$^{-1}$ pH$^{-1}$)")
+ax.set_ylabel(r"$\beta$ / (mol m$^{-3}$ pH$^{-1}$)")
 ax.set_xlim(3, 11)
 ax.legend(fontsize=10)
 fig.tight_layout()
