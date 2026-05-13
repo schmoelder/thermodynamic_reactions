@@ -21,6 +21,7 @@ $$
 Each chapter adds one feature.
 `MassActionReaction` is the existing CADET interface and a special case of `ThermodynamicReaction` with $\gamma_i = 1$, $c^\circ = 1\ \text{M}$, and $k^r$ as a free parameter.
 Equilibrium (via $K(T)$) determines the admissible state; kinetics only sets how fast it is reached.
+The code cells throughout this part use the `reactions` library; install it once before running any chapter.
 
 ```{admonition} Install
 :class: note
@@ -30,6 +31,7 @@ Install the library once from the project root:
     pip install -e .
 ```
 
+Three design decisions recur in every chapter and are worth stating before the first one.
 
 ```{admonition} Key design decisions
 :class: tip
