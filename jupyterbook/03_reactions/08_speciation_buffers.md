@@ -75,20 +75,12 @@ Each transition produces one inflection point in the diagram at the correspondin
 import numpy as np
 import matplotlib.pyplot as plt
 from reactions.plots import setup_figure, COLORS
+from reactions.api import speciation_fractions
 
 pKa1, pKa2, pKa3 = 2.148, 7.198, 12.350
-Ka1 = 10 ** (-pKa1)
-Ka2 = 10 ** (-pKa2)
-Ka3 = 10 ** (-pKa3)
 
 pH = np.linspace(0, 14, 500)
-h = 10.0 ** (-pH)
-
-D = h**3 + Ka1 * h**2 + Ka1 * Ka2 * h + Ka1 * Ka2 * Ka3
-f0 = h**3 / D
-f1 = Ka1 * h**2 / D
-f2 = Ka1 * Ka2 * h / D
-f3 = Ka1 * Ka2 * Ka3 / D
+fracs = speciation_fractions(pH, [pKa1, pKa2, pKa3])
 
 fig, ax = setup_figure()
 labels = [
@@ -97,7 +89,7 @@ labels = [
     r"$\mathrm{HPO_4^{2-}}$",
     r"$\mathrm{PO_4^{3-}}$",
 ]
-for f, lbl, c in zip([f0, f1, f2, f3], labels, ["C0", "C1", "C2", "C3"]):
+for f, lbl, c in zip(fracs, labels, ["C0", "C1", "C2", "C3"]):
     ax.plot(pH, f, color=c, linewidth=2.0, label=lbl)
 for pka, lbl in zip(
     [pKa1, pKa2, pKa3],

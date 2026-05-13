@@ -25,6 +25,7 @@ from reactions.api import (
     water,
     H_plus,
     OH_minus,
+    speciation_fractions,
 )
 from reactions.solver import solve_equilibrium
 ```
@@ -132,34 +133,25 @@ print(model_phosphate_ideal)
 The analytic speciation fractions serve as both initial guesses for the Newton solver and a verification reference:
 
 ```{code-cell} ipython3
-def phosphate_fractions(pH, Ka1, Ka2, Ka3):
-    h = 10.0 ** (-pH)
-    D = h**3 + Ka1 * h**2 + Ka1 * Ka2 * h + Ka1 * Ka2 * Ka3
-    return h**3 / D, Ka1 * h**2 / D, Ka1 * Ka2 * h / D, Ka1 * Ka2 * Ka3 / D
-
-
-Ka1 = 10 ** (-pKa1)
-Ka2 = 10 ** (-pKa2)
-Ka3 = 10 ** (-pKa3)
 c_tot_phosphate = 100.0  # mol/m³
 
 print(f"{'pH':>6}  {'H3PO4 ana':>12}  {'H3PO4 num':>12}  {'error':>10}")
 for pH in [4.0, 7.2, 10.0]:
-    a0, a1, a2, a3 = phosphate_fractions(pH, Ka1, Ka2, Ka3)
+    f = speciation_fractions(pH, [pKa1, pKa2, pKa3])[:, 0]
     H = 10.0 ** (-pH) * H_plus.c_ref
     OH = 1e-14 * H_plus.c_ref**2 / H
     c0 = {
-        "H3PO4": max(a0 * c_tot_phosphate, 1e-10),
-        "H2PO4-": max(a1 * c_tot_phosphate, 1e-10),
-        "HPO4-2": max(a2 * c_tot_phosphate, 1e-10),
-        "PO4-3": max(a3 * c_tot_phosphate, 1e-10),
+        "H3PO4": max(f[0] * c_tot_phosphate, 1e-10),
+        "H2PO4-": max(f[1] * c_tot_phosphate, 1e-10),
+        "HPO4-2": max(f[2] * c_tot_phosphate, 1e-10),
+        "PO4-3": max(f[3] * c_tot_phosphate, 1e-10),
         "H+": H,
         "OH-": OH,
     }
     c_eq = solve_equilibrium(
         model_phosphate_ideal, c0, T=298.15, prescribed={"H2O": water.c_ref}
     )
-    ana = a0 * c_tot_phosphate
+    ana = f[0] * c_tot_phosphate
     print(
         f"{pH:>6.1f}  {ana:>12.4f}  {c_eq['H3PO4']:>12.4f}  {abs(c_eq['H3PO4'] - ana):>10.2e}"
     )
@@ -209,14 +201,14 @@ At physiological ionic strength ($I = 150\ \mathrm{mol/m}^3$), phosphate is part
 
 ```{code-cell} ipython3
 pH = 7.2
-a0, a1, a2, a3 = phosphate_fractions(pH, Ka1, Ka2, Ka3)
+f = speciation_fractions(pH, [pKa1, pKa2, pKa3])[:, 0]
 H = 10.0 ** (-pH) * H_plus.c_ref
 OH = 1e-14 * H_plus.c_ref**2 / H
 c0 = {
-    "H3PO4": max(a0 * c_tot_phosphate, 1e-10),
-    "H2PO4-": max(a1 * c_tot_phosphate, 1e-10),
-    "HPO4-2": max(a2 * c_tot_phosphate, 1e-10),
-    "PO4-3": max(a3 * c_tot_phosphate, 1e-10),
+    "H3PO4": max(f[0] * c_tot_phosphate, 1e-10),
+    "H2PO4-": max(f[1] * c_tot_phosphate, 1e-10),
+    "HPO4-2": max(f[2] * c_tot_phosphate, 1e-10),
+    "PO4-3": max(f[3] * c_tot_phosphate, 1e-10),
     "H+": H,
     "OH-": OH,
 }

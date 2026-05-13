@@ -28,8 +28,9 @@ from reactions.api import (
     H_plus,
     OH_minus,
     buffer_capacity,
+    speciation_fractions,
+    solve_equilibrium_sweep,
 )
-from reactions.solver import solve_equilibrium
 ```
 
 ## Phosphate buffer: pH curve and β
@@ -42,9 +43,6 @@ numerical differentiation of the proton balance yields $\beta$:
 :tags: [remove-cell]
 
 pKa1, pKa2, pKa3 = 2.148, 7.198, 12.350
-Ka1 = 10 ** (-pKa1)
-Ka2 = 10 ** (-pKa2)
-Ka3 = 10 ** (-pKa3)
 c_phos = 100.0  # mol/m³ total phosphate
 
 phosphate = Component(
@@ -76,34 +74,23 @@ model_phos = ReactionModel(
     T=298.15,
 )
 
-
-def phosphate_fractions(pH):
-    h = 10.0 ** (-pH)
-    D = h**3 + Ka1 * h**2 + Ka1 * Ka2 * h + Ka1 * Ka2 * Ka3
-    return h**3 / D, Ka1 * h**2 / D, Ka1 * Ka2 * h / D, Ka1 * Ka2 * Ka3 / D
-
-
-def solve_at_pH(model, pH, c_tot):
-    a0, a1, a2, a3 = phosphate_fractions(pH)
-    H = 10.0 ** (-pH) * H_plus.c_ref
-    OH = 1e-14 * H_plus.c_ref**2 / H
-    c0 = {
-        "H3PO4": max(a0 * c_tot, 1e-10),
-        "H2PO4-": max(a1 * c_tot, 1e-10),
-        "HPO4-2": max(a2 * c_tot, 1e-10),
-        "PO4-3": max(a3 * c_tot, 1e-10),
-        "H+": H,
-        "OH-": OH,
-    }
-    return solve_equilibrium(model, c0, T=298.15, prescribed={"H2O": water.c_ref})
+_f0 = speciation_fractions(3.0, [pKa1, pKa2, pKa3])[:, 0]
+c0_phos = {
+    "H3PO4":  max(_f0[0] * c_phos, 1e-10),
+    "H2PO4-": max(_f0[1] * c_phos, 1e-10),
+    "HPO4-2": max(_f0[2] * c_phos, 1e-10),
+    "PO4-3":  max(_f0[3] * c_phos, 1e-10),
+    "H+":  10.0**(-3.0) * H_plus.c_ref,
+    "OH-": 1e-14 * H_plus.c_ref**2 / (10.0**(-3.0) * H_plus.c_ref),
+}
 ```
 
 ```{code-cell} ipython3
 pH_vals = np.linspace(3.0, 12.0, 200)
-eq_phos = [solve_at_pH(model_phos, pH, c_phos) for pH in pH_vals]
-pH_num = np.array([-np.log10(r["H+"] / H_plus.c_ref) for r in eq_phos])
+eq_phos = solve_equilibrium_sweep(model_phos, pH_vals, c0_phos, prescribed={"H2O": water.c_ref})
+pH_num = -np.log10(eq_phos["H+"] / H_plus.c_ref)
 
-Q = np.array([r["H+"] - r["OH-"] - r["H2PO4-"] - 2*r["HPO4-2"] - 3*r["PO4-3"] for r in eq_phos])
+Q = eq_phos["H+"] - eq_phos["OH-"] - eq_phos["H2PO4-"] - 2*eq_phos["HPO4-2"] - 3*eq_phos["PO4-3"]
 beta_num = np.abs(np.diff(Q) / np.diff(pH_num))
 pH_mid = 0.5 * (pH_num[:-1] + pH_num[1:])
 ```
@@ -166,7 +153,6 @@ Citrate (three p$K_a$ values spanning pH 3--7) combined with phosphate gives a n
 :tags: [remove-cell]
 
 pKa_cit = [3.128, 4.761, 6.396]  # NIST
-Ka_cit = [10 ** (-p) for p in pKa_cit]
 c_cit = 50.0  # mol/m³
 c_phos = 50.0  # mol/m³
 
@@ -214,51 +200,29 @@ model_mixed = ReactionModel(
 ```{code-cell} ipython3
 :tags: [remove-cell]
 
-def citrate_fractions(pH):
-    h = 10.0 ** (-pH)
-    D = (
-        h**3
-        + Ka_cit[0] * h**2
-        + Ka_cit[0] * Ka_cit[1] * h
-        + Ka_cit[0] * Ka_cit[1] * Ka_cit[2]
-    )
-    return (
-        h**3 / D,
-        Ka_cit[0] * h**2 / D,
-        Ka_cit[0] * Ka_cit[1] * h / D,
-        Ka_cit[0] * Ka_cit[1] * Ka_cit[2] / D,
-    )
-
-
-def solve_mixed_at_pH(pH):
-    a0c, a1c, a2c, a3c = citrate_fractions(pH)
-    a0p, a1p, a2p, a3p = phosphate_fractions(pH)
-    H = 10.0 ** (-pH) * H_plus.c_ref
-    OH = 1e-14 * H_plus.c_ref**2 / H
-    c0 = {
-        "H3Cit": max(a0c * c_cit, 1e-10),
-        "H2Cit-": max(a1c * c_cit, 1e-10),
-        "HCit-2": max(a2c * c_cit, 1e-10),
-        "Cit-3": max(a3c * c_cit, 1e-10),
-        "H3PO4": max(a0p * c_phos, 1e-10),
-        "H2PO4-": max(a1p * c_phos, 1e-10),
-        "HPO4-2": max(a2p * c_phos, 1e-10),
-        "PO4-3": max(a3p * c_phos, 1e-10),
-        "H+": H,
-        "OH-": OH,
-    }
-    return solve_equilibrium(model_mixed, c0, T=298.15, prescribed={"H2O": water.c_ref})
-
+_fc0 = speciation_fractions(3.0, pKa_cit)[:, 0]
+_fp0 = speciation_fractions(3.0, [pKa1, pKa2, pKa3])[:, 0]
+c0_mixed = {
+    "H3Cit":  max(_fc0[0] * c_cit,  1e-10),
+    "H2Cit-": max(_fc0[1] * c_cit,  1e-10),
+    "HCit-2": max(_fc0[2] * c_cit,  1e-10),
+    "Cit-3":  max(_fc0[3] * c_cit,  1e-10),
+    "H3PO4":  max(_fp0[0] * c_phos, 1e-10),
+    "H2PO4-": max(_fp0[1] * c_phos, 1e-10),
+    "HPO4-2": max(_fp0[2] * c_phos, 1e-10),
+    "PO4-3":  max(_fp0[3] * c_phos, 1e-10),
+    "H+":  10.0**(-3.0) * H_plus.c_ref,
+    "OH-": 1e-14 * H_plus.c_ref**2 / (10.0**(-3.0) * H_plus.c_ref),
+}
 
 pH_mix = np.linspace(3.0, 10.0, 150)
-eq_mix = [solve_mixed_at_pH(pH) for pH in pH_mix]
-pH_m = np.array([-np.log10(r["H+"] / H_plus.c_ref) for r in eq_mix])
-Q_mix = np.array([
-    r["H+"] - r["OH-"]
-    - r["H2Cit-"] - 2*r["HCit-2"] - 3*r["Cit-3"]
-    - r["H2PO4-"] - 2*r["HPO4-2"] - 3*r["PO4-3"]
-    for r in eq_mix
-])
+eq_mix = solve_equilibrium_sweep(model_mixed, pH_mix, c0_mixed, prescribed={"H2O": water.c_ref})
+pH_m = -np.log10(eq_mix["H+"] / H_plus.c_ref)
+Q_mix = (
+    eq_mix["H+"] - eq_mix["OH-"]
+    - eq_mix["H2Cit-"] - 2*eq_mix["HCit-2"] - 3*eq_mix["Cit-3"]
+    - eq_mix["H2PO4-"] - 2*eq_mix["HPO4-2"] - 3*eq_mix["PO4-3"]
+)
 beta_m = np.abs(np.diff(Q_mix) / np.diff(pH_m))
 pH_m_mid = 0.5 * (pH_m[:-1] + pH_m[1:])
 ```
@@ -348,18 +312,10 @@ model_phos_davies = ReactionModel(
 ```{code-cell} ipython3
 :tags: [remove-cell]
 
-pH_dav = np.linspace(3.0, 11.0, 180)
-eq_dav = [
-    solve_equilibrium(
-        model_phos_davies,
-        solve_at_pH(model_phos, pH, c_phos),
-        T=298.15,
-        prescribed={"H2O": water.c_ref},
-    )
-    for pH in pH_dav
-]
-pH_dav = np.array([-np.log10(r["H+"] / H_plus.c_ref) for r in eq_dav])
-Q_dav = np.array([r["H+"] - r["OH-"] - r["H2PO4-"] - 2*r["HPO4-2"] - 3*r["PO4-3"] for r in eq_dav])
+pH_dav_vals = np.linspace(3.0, 11.0, 180)
+eq_dav = solve_equilibrium_sweep(model_phos_davies, pH_dav_vals, c0_phos, prescribed={"H2O": water.c_ref})
+pH_dav = -np.log10(eq_dav["H+"] / H_plus.c_ref)
+Q_dav = eq_dav["H+"] - eq_dav["OH-"] - eq_dav["H2PO4-"] - 2*eq_dav["HPO4-2"] - 3*eq_dav["PO4-3"]
 beta_dav = np.abs(np.diff(Q_dav) / np.diff(pH_dav))
 ```
 
