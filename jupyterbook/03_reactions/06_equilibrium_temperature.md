@@ -50,7 +50,7 @@ Differentiating $\ln K = -\Delta_r G^\circ / RT$ with respect to $T$:
 
 $$\frac{d \ln K}{dT} = \frac{\Delta_r H^\circ}{RT^2}$$
 
-This is the **van't Hoff equation**.
+This is the **van't Hoff equation** {cite:p}`vanthoff1884`.
 In integrated form, assuming $\Delta_r H^\circ$ is approximately constant over the temperature range:
 
 $$\ln \frac{K(T_2)}{K(T_1)} = -\frac{\Delta_r H^\circ}{R}\left(\frac{1}{T_2} - \frac{1}{T_1}\right)$$

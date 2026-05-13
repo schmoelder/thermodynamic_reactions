@@ -14,7 +14,7 @@ The difference is that Langmuir describes the equilibrium occupation fraction, w
 
 ## Michaelis-Menten kinetics
 
-**Mechanism.** The substrate S binds reversibly to enzyme E, forming complex ES, which releases product P:
+**Mechanism** {cite:p}`michaelis1913,michaelis2011`**.** The substrate S binds reversibly to enzyme E, forming complex ES, which releases product P:
 
 $$
 \ce{E + S <=>[$k_1$][$k_{-1}$] ES ->[$k_2$] E + P}
@@ -117,7 +117,7 @@ In that limit the mathematical form becomes identical to Langmuir: site occupanc
 
 ## Hill equation
 
-Some enzymes show a sigmoidal rate-concentration curve steeper than Michaelis-Menten, arising when binding at one active site alters the affinity at another.
+Some enzymes show a sigmoidal rate-concentration curve steeper than Michaelis-Menten, arising when binding at one active site alters the affinity at another {cite:p}`hill1910`.
 The Hill equation captures this phenomenologically:
 
 $$
@@ -137,7 +137,7 @@ The mechanistic basis, whether conformational coupling (Monod-Wyman-Changeux), s
 
 ## Monod equation
 
-An empirically identical form describes the growth rate of microorganisms limited by a single nutrient S:
+An empirically identical form describes the growth rate of microorganisms limited by a single nutrient S {cite:p}`monod1949`:
 
 $$
 \mu_g = \frac{\mu_{g,\text{max}}[\ce{S}]}{K_s + [\ce{S}]}
@@ -150,7 +150,7 @@ The mathematical equivalence with Michaelis-Menten reflects the same physical id
 (enzyme-ph-activity)=
 ## pH-dependent enzyme activity
 
-Many enzymes require a specific protonation state at the active site to function.
+Many enzymes require a specific protonation state at the active site to function {cite:p}`dixon1953`.
 The standard model considers two ionizable residues: one must be deprotonated to bind substrate (controlling $\text{p}K_{a1}$) and one must remain protonated to stabilise the transition state (controlling $\text{p}K_{a2}$).
 Three enzyme states result from sequential proton loss:
 

@@ -93,7 +93,7 @@ $$
 \text{pH} = \text{p}K_a + \log_{10}\!\frac{[\ce{A-}]}{[\ce{HA}]}
 $$
 
-This is the **Henderson-Hasselbalch equation**.
+This is the **Henderson-Hasselbalch equation** {cite:p}`henderson1908,hasselbalch1916`.
 At $\text{pH} = \text{p}K_a$ the two forms are present in equal amounts.
 The ratio $[\ce{A-}]/[\ce{HA}]$ changes by a factor of ten for each pH unit.
 

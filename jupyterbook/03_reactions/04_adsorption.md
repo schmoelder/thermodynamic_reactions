@@ -36,7 +36,7 @@ This finite-site constraint has no counterpart in stoichiometric equilibria, whe
 
 ## The Langmuir isotherm
 
-Write the adsorption step explicitly as a reaction between mobile solute $\ce{A}$ and a free site $\ce{S}$:
+{cite:t}`langmuir1918` derived this isotherm by treating adsorption as a surface reaction between mobile solute and a free site $\ce{S}$:
 
 $$\ce{A_{mobile} + S_{free} <=> AS_{occupied}}$$
 

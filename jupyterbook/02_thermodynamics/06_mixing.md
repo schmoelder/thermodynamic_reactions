@@ -239,7 +239,7 @@ Models such as NRTL and UNIQUAC (non-electrolyte mixtures) and Pitzer (concentra
 ## Debye-Hückel theory for electrolyte solutions
 
 For ionic solutions, the dominant source of $G^E$ is long-range electrostatic interactions between ions.
-Debye and Hückel derived the electrostatic contribution to $G^E$ by modelling the **ionic atmosphere**: each ion is surrounded by a diffuse cloud of oppositely charged ions that partially screens its charge.
+{cite:t}`debye1923` derived the electrostatic contribution to $G^E$ by modelling the **ionic atmosphere**: each ion is surrounded by a diffuse cloud of oppositely charged ions that partially screens its charge.
 Solving the linearised Poisson-Boltzmann equation gives an electrostatic potential that decays as $e^{-\kappa r}/r$, where $\kappa^{-1}$ is the **Debye length**:
 
 $$
@@ -263,7 +263,7 @@ where $A \approx 0.509\ \mathrm{mol^{-1/2}\,L^{1/2}}$ at 25 °C.
 The law is exact as $I \to 0$ and accurate to $I \approx 0.1\ \mathrm{mol/L}$.
 
 At higher ionic strengths the point-charge approximation breaks down.
-The **Davies equation** adds an empirical linear correction that extends the useful range to $I \approx 0.5\ \mathrm{mol/L}$:
+The **Davies equation** {cite:p}`davies1938` adds an empirical linear correction that extends the useful range to $I \approx 0.5\ \mathrm{mol/L}$:
 
 $$
 \log_{10} \gamma_i = -A z_i^2 \left(\frac{\sqrt{I}}{1 + \sqrt{I}} - 0.3\,I\right)

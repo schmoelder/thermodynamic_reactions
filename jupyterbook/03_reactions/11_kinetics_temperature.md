@@ -106,7 +106,7 @@ This is the microscopic origin of the observation that reaction rates increase w
 
 ## Arrhenius equation
 
-Svante Arrhenius (1889) recognised that rate constants follow:
+Svante Arrhenius {cite:p}`arrhenius1889` recognised that rate constants follow:
 
 $$
 k = A\,e^{-E_a/RT}
@@ -169,7 +169,7 @@ Each curve is linear with slope $-E_a/R$; steeper slopes indicate stronger tempe
 
 ## Transition State Theory
 
-The pre-exponential factor $A$ receives a mechanistic interpretation in Transition State Theory (TST, Eyring-Evans-Polanyi, 1935).
+The pre-exponential factor $A$ receives a mechanistic interpretation in Transition State Theory (TST; {cite:t}`eyring1935`).
 TST postulates a quasi-equilibrium between reactants and an activated complex at the transition state:
 
 $$

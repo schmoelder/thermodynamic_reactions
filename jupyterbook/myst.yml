@@ -6,6 +6,7 @@ project:
       affiliation: "Forschungszentrum Jülich, IBG-1: Biotechnology, Germany"
   license: CC-BY-4.0
   title: A Thermodynamic Introduction to Chemical Reactions in CADET
+  bibliography: references.bib
   open_access: true
   github: https://github.com/schmoelder/thermodynamic-reactions
   binder: https://mybinder.org
@@ -72,5 +73,6 @@ project:
       children:
         - file: notation.md
         - file: glossary.md
+        - file: bibliography.md
 site:
   title: A Thermodynamic Introduction to Chemical Reactions

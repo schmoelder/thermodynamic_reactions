@@ -464,7 +464,7 @@ $$
 For water, $\varepsilon_r$ decreases from 88 at 0 °C to 56 at 100 °C, so $A$ grows above ambient temperature: ions interact more strongly because thermal motion weakens the dielectric screening.
 Passing `epsilon_r=None` (the default) uses the stored 25 °C value $A = 0.509$ at all temperatures and emits a `UserWarning` when $|T - 298.15| > 5\,\mathrm{K}$.
 
-The library provides `_water_epsilon_r`, a Malmberg-Maryott (1956) correlation valid from 0 to 100 °C, as a ready-made callable:
+The library provides `_water_epsilon_r`, a {cite:t}`malmberg1956` correlation valid from 0 to 100 °C, as a ready-made callable:
 
 ```{code-cell} ipython3
 import warnings
