@@ -38,6 +38,8 @@ Sweeping over target proton activities and re-solving equilibrium at each point 
 numerical differentiation of the proton balance yields $\beta$:
 
 ```{code-cell} ipython3
+:tags: [remove-cell]
+
 pKa1, pKa2, pKa3 = 2.148, 7.198, 12.350
 Ka1 = 10 ** (-pKa1)
 Ka2 = 10 ** (-pKa2)
@@ -93,18 +95,19 @@ def solve_at_pH(model, pH, c_tot):
         "OH-": OH,
     }
     return solve_equilibrium(model, c0, T=298.15, prescribed={"H2O": water.c_ref})
+```
 
-
+```{code-cell} ipython3
 pH_vals = np.linspace(3.0, 12.0, 200)
 H_conc = np.array([solve_at_pH(model_phos, pH, c_phos)["H+"] for pH in pH_vals])
 pH_num = -np.log10(H_conc / H_plus.c_ref)
 
-dpH = np.diff(pH_num)
-dH = np.diff(H_conc)
-beta_num = np.abs(dH / dpH) / 1000.0  # mol/L per pH unit
-
+beta_num = np.abs(np.diff(H_conc) / np.diff(pH_num)) / 1000.0  # mol/L per pH unit
 pH_mid = 0.5 * (pH_num[:-1] + pH_num[1:])
+```
 
+```{code-cell} ipython3
+:tags: [remove-cell]
 
 def beta_analytical(pH):
     h = 10.0 ** (-pH)
@@ -116,29 +119,61 @@ def beta_analytical(pH):
 
 
 beta_ana = np.array([beta_analytical(pH) for pH in pH_mid])
-
-print(f"{'pH':>6}  {'β num (mol/L/pH)':>18}  {'β ana':>10}  {'rel. diff':>10}")
-for i, pH in enumerate(pH_mid[::20]):
-    idx = np.searchsorted(pH_mid, pH)
-    if idx < len(beta_num):
-        diff = abs(beta_num[idx] - beta_ana[idx]) / beta_ana[idx]
-        print(
-            f"{pH:>6.2f}  {beta_num[idx]:>18.4f}  {beta_ana[idx]:>10.4f}  {diff:>10.3f}"
-        )
 ```
 
-The numerical curve matches the analytical formula from @speciation-buffers; small deviations arise from finite-difference step size at the extremes of the pH range.
-In the analytical expression, the coefficients 1, 4, 9 are the squared charge changes $(\Delta z)^2$ between successive protonation states; higher charges amplify the sensitivity of charge redistribution to proton activity.
+```{code-cell} ipython3
+:tags: [remove-cell]
+:label: cell-beta-phosphate
+
+from reactions.plots import setup_figure
+
+fig, ax = setup_figure()
+ax.plot(pH_mid, beta_num, color="C0", lw=2.0, label="numerical")
+ax.plot(pH_mid, beta_ana, color="C1", lw=1.5, ls="--", label="analytical")
+for pKa_val, lbl in [
+    (pKa1, r"p$K_{a1}$"),
+    (pKa2, r"p$K_{a2}$"),
+    (pKa3, r"p$K_{a3}$"),
+]:
+    ax.axvline(pKa_val, color="gray", ls=":", lw=0.8)
+    ax.text(
+        pKa_val + 0.08,
+        0.95,
+        lbl,
+        fontsize=8,
+        color="gray",
+        transform=ax.get_xaxis_transform(),
+        va="top",
+    )
+ax.set_xlabel("pH")
+ax.set_ylabel(r"$\beta$ / (mol L$^{-1}$ pH$^{-1}$)")
+ax.set_xlim(3, 12)
+ax.legend(fontsize=10)
+fig.tight_layout()
+```
+
+```{figure} #cell-beta-phosphate
+:name: fig-beta-phosphate
+
+Buffer capacity $\beta$ of 100 mol/m³ phosphate: numerical finite-difference (solid) versus the analytical formula from @speciation-buffers (dashed).
+Peaks appear at each p$K_a$; the coefficients 1, 4, 9 weighting the three terms are the squared charge changes $(\Delta z)^2$ between adjacent protonation states.
+Small deviations at the pH extremes arise from the finite-difference step size.
+```
+
+The coefficients 1, 4, 9 in the analytical formula reflect $(\Delta z)^2$ for each transition: higher charge contrast produces a taller, sharper peak, so the p$K_{a2}$--p$K_{a3}$ step ($\Delta z = 2$) contributes four times more than the p$K_{a1}$--p$K_{a2}$ step ($\Delta z = 1$).
 
 ## Mixed buffer: citrate + phosphate
 
 No single buffer covers a wide pH range with flat capacity.
-Citrate (three p$K_a$ values spanning pH 3--7) combined with phosphate gives a nearly flat $\beta$ from pH 3 to 8.
-The apparent additivity holds because the two acid systems couple only weakly through the shared proton reservoir; the full equilibrium solve captures the residual coupling:
+Citrate (three p$K_a$ values spanning pH 3--7) combined with phosphate gives a nearly flat $\beta$ from pH 3 to 8:
 
 ```{code-cell} ipython3
+:tags: [remove-cell]
+
 pKa_cit = [3.128, 4.761, 6.396]  # NIST
 Ka_cit = [10 ** (-p) for p in pKa_cit]
+c_cit = 50.0  # mol/m³
+c_phos = 50.0  # mol/m³
 
 citrate = Component(
     "citrate",
@@ -149,21 +184,20 @@ citrate = Component(
         Species("Cit-3", charge=-3),
     ],
 )
+```
 
-c_cit = 50.0  # mol/m³
-c_phos = 50.0  # mol/m³
-
+```{code-cell} ipython3
 model_mixed = ReactionModel(
     components=[citrate, phosphate, H_plus, OH_minus, water],
     reactions=[
         ThermodynamicReaction(
-            "H3Cit <-> H2Cit- + H+", mode="equil", equilibrium_constant=pKa(pKa_cit[0])
+            "H3Cit <-> H2Cit- + H+", mode="equil", equilibrium_constant=pKa(3.128)
         ),
         ThermodynamicReaction(
-            "H2Cit- <-> HCit-2 + H+", mode="equil", equilibrium_constant=pKa(pKa_cit[1])
+            "H2Cit- <-> HCit-2 + H+", mode="equil", equilibrium_constant=pKa(4.761)
         ),
         ThermodynamicReaction(
-            "HCit-2 <-> Cit-3 + H+", mode="equil", equilibrium_constant=pKa(pKa_cit[2])
+            "HCit-2 <-> Cit-3 + H+", mode="equil", equilibrium_constant=pKa(6.396)
         ),
         ThermodynamicReaction(
             "H3PO4 <-> H2PO4- + H+", mode="equil", equilibrium_constant=pKa(pKa1)
@@ -180,7 +214,10 @@ model_mixed = ReactionModel(
     ],
     T=298.15,
 )
+```
 
+```{code-cell} ipython3
+:tags: [remove-cell]
 
 def citrate_fractions(pH):
     h = 10.0 ** (-pH)
@@ -223,12 +260,46 @@ H_mix = np.array([solve_mixed_at_pH(pH)["H+"] for pH in pH_mix])
 pH_m = -np.log10(H_mix / H_plus.c_ref)
 beta_m = np.abs(np.diff(H_mix) / np.diff(pH_m)) / 1000.0
 pH_m_mid = 0.5 * (pH_m[:-1] + pH_m[1:])
-
-print("Mixed citrate + phosphate buffer capacity:")
-print(f"{'pH':>6}  {'β (mol/L/pH)':>14}")
-for pH, b in zip(pH_m_mid[::15], beta_m[::15]):
-    print(f"{pH:>6.2f}  {b:>14.4f}")
 ```
+
+```{code-cell} ipython3
+:tags: [remove-cell]
+:label: cell-beta-mixed
+
+from reactions.plots import setup_figure
+
+fig, ax = setup_figure()
+ax.plot(pH_m_mid, beta_m, color="C0", lw=2.0)
+for pKa_val, lbl in [
+    (pKa_cit[0], r"p$K_{a1}^{\rm cit}$"),
+    (pKa_cit[1], r"p$K_{a2}^{\rm cit}$"),
+    (pKa_cit[2], r"p$K_{a3}^{\rm cit}$"),
+    (pKa2, r"p$K_{a2}^{\rm phos}$"),
+]:
+    ax.axvline(pKa_val, color="gray", ls=":", lw=0.8)
+    ax.text(
+        pKa_val + 0.06,
+        0.95,
+        lbl,
+        fontsize=7,
+        color="gray",
+        transform=ax.get_xaxis_transform(),
+        va="top",
+    )
+ax.set_xlabel("pH")
+ax.set_ylabel(r"$\beta$ / (mol L$^{-1}$ pH$^{-1}$)")
+ax.set_xlim(3, 10)
+fig.tight_layout()
+```
+
+```{figure} #cell-beta-mixed
+:name: fig-beta-mixed
+
+Buffer capacity of a mixed citrate (50 mol/m³) and phosphate (50 mol/m³) system.
+The three citrate p$K_a$ values (pH 3.1, 4.8, 6.4) and the second phosphate p$K_a$ (pH 7.2) produce overlapping peaks that yield nearly flat $\beta$ from pH 3 to 8.
+```
+
+The apparent additivity of the two buffer systems holds because citrate and phosphate couple only weakly through the shared proton reservoir; the full equilibrium solve captures the residual coupling.
 
 ## Ionic strength effect on β
 
@@ -271,6 +342,10 @@ model_phos_davies = ReactionModel(
     ionic_strength=IonicStrengthBackground(I_bg=150.0),
     T=298.15,
 )
+```
+
+```{code-cell} ipython3
+:tags: [remove-cell]
 
 pH_dav = np.linspace(3.0, 11.0, 180)
 H_dav = np.array(
@@ -286,22 +361,45 @@ H_dav = np.array(
 )
 pH_dav = -np.log10(H_dav / H_plus.c_ref)
 beta_dav = np.abs(np.diff(H_dav) / np.diff(pH_dav)) / 1000.0
-
-idx_ideal = np.argmax(beta_num)
-idx_davies = np.argmax(beta_dav)
-print(
-    f"Peak β (ideal):  {beta_num[idx_ideal]:.4f} mol/L/pH  at pH {pH_mid[idx_ideal]:.2f}"
-)
-print(
-    f"Peak β (Davies): {beta_dav[idx_davies]:.4f} mol/L/pH  at pH {0.5 * (pH_dav[idx_davies] + pH_dav[idx_davies + 1]):.2f}"
-)
 ```
 
-The Davies correction shifts the peak by roughly $0.1$--$0.3$ pH units at
-physiological ionic strength.
-In IEX gradient design this shift is not negligible: a buffer prepared at low ionic
-strength will deliver a different pH on-column once the salt gradient is applied
-(@case-ph-gradient).
+```{code-cell} ipython3
+:tags: [remove-cell]
+:label: cell-beta-davies
+
+from reactions.plots import setup_figure
+
+pH_dav_mid = 0.5 * (pH_dav[:-1] + pH_dav[1:])
+beta_ideal_dav = np.array([beta_analytical(pH) for pH in pH_dav_mid])
+
+fig, ax = setup_figure()
+ax.plot(pH_dav_mid, beta_ideal_dav, color="C0", lw=2.0, label=r"ideal ($I = 0$)")
+ax.plot(pH_dav_mid, beta_dav, color="C1", lw=2.0, label=r"Davies ($I = 150\ \mathrm{mM}$)")
+ax.axvline(pKa2, color="gray", ls=":", lw=0.8)
+ax.text(
+    pKa2 + 0.08,
+    0.95,
+    r"p$K_{a2}$",
+    fontsize=8,
+    color="gray",
+    transform=ax.get_xaxis_transform(),
+    va="top",
+)
+ax.set_xlabel("pH")
+ax.set_ylabel(r"$\beta$ / (mol L$^{-1}$ pH$^{-1}$)")
+ax.set_xlim(3, 11)
+ax.legend(fontsize=10)
+fig.tight_layout()
+```
+
+```{figure} #cell-beta-davies
+:name: fig-beta-davies
+
+Ionic strength effect on buffer capacity for 50 mol/m³ phosphate: ideal ($I = 0$) versus Davies correction at physiological ionic strength ($I = 150\ \mathrm{mM}$).
+The activity correction shifts the p$K_{a2}$ peak to lower pH by roughly $0.1$--$0.3$ units and reduces the peak height slightly.
+```
+
+In IEX gradient design this shift is not negligible: a buffer prepared at low ionic strength will deliver a different pH on-column once the salt gradient is applied (@case-ph-gradient).
 
 ---
 
