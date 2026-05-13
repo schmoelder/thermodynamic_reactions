@@ -30,6 +30,7 @@ Install the library once from the project root:
     pip install -e .
 ```
 
+
 ```{admonition} Key design decisions
 :class: tip
 **One object, three knobs.**
