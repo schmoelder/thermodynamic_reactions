@@ -49,28 +49,30 @@ y = np.concatenate([y_left, y_right[1:]])
 fig, ax = setup_figure()
 ax.plot(x, y, color=COLORS["primary"], linewidth=2.5)
 
-ax.hlines(0.0, -0.1, 0.32, colors="gray", linestyles="--", linewidth=1.0)
-ax.hlines(drH, 0.68, 1.1, colors="gray", linestyles="--", linewidth=1.0)
+ax.hlines(0.0, -0.1, 0.5, colors="gray", linestyles="--", linewidth=1.0)
+ax.hlines(drH, 0.5, 1.1, colors="gray", linestyles="--", linewidth=1.0)
+
+x_arr = 0.5
 
 ax.annotate(
     "",
-    xy=(0.30, Ea_fwd),
-    xytext=(0.30, 0.0),
+    xy=(x_arr, Ea_fwd),
+    xytext=(x_arr, 0.0),
     arrowprops=dict(arrowstyle="<->", color="C1", lw=1.5),
 )
-ax.text(0.28, Ea_fwd / 2, r"$E_a$", ha="right", va="center", fontsize=12, color="C1")
+ax.text(x_arr - 0.03, Ea_fwd / 2, r"$E_a$", ha="right", va="center", fontsize=12, color="C1")
 
 ax.annotate(
     "",
-    xy=(0.70, drH),
-    xytext=(0.70, 0.0),
+    xy=(x_arr, 0.0),
+    xytext=(x_arr, drH),
     arrowprops=dict(arrowstyle="<->", color="C2", lw=1.5),
 )
 ax.text(
-    0.72,
+    x_arr - 0.03,
     drH / 2,
     r"$\Delta_r H^\circ$",
-    ha="left",
+    ha="right",
     va="center",
     fontsize=11,
     color="C2",
@@ -79,8 +81,8 @@ ax.text(
 ax.text(
     0.5, Ea_fwd + 3, r"$[\mathrm{AB}]^\ddagger$", ha="center", va="bottom", fontsize=12
 )
-ax.text(-0.05, 2, "Reactants", ha="right", va="bottom", fontsize=10, color="gray")
-ax.text(1.05, drH + 2, "Products", ha="left", va="bottom", fontsize=10, color="gray")
+ax.text(0.05, 2, "Reactants", ha="right", va="bottom", fontsize=10, color="gray")
+ax.text(0.95, drH + 2, "Products", ha="left", va="bottom", fontsize=10, color="gray")
 
 ax.set_xlim(-0.18, 1.18)
 ax.set_ylim(drH - 15, Ea_fwd + 18)
