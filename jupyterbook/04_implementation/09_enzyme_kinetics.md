@@ -90,6 +90,7 @@ ax.axhline(Vmax, color="gray", lw=0.8, ls="--", label=r"$V_\mathrm{max}$")
 ax.axvline(Km, color="gray", lw=0.8, ls="-.", label=r"$K_m$")
 ax.set_xlabel(r"$[S]\ [\mathrm{mol/m^3}]$")
 ax.set_ylabel(r"$v\ [\mathrm{mol/(m^3 \cdot s)}]$")
+ax.set_ylim(0, 1.5)
 ax.legend()
 fig.tight_layout()
 ```
@@ -152,19 +153,8 @@ The Hill model reaches full conversion more abruptly because the cooperative res
 
 ## Combined model: pH-dependent enzyme
 
-Enzyme active-site residues are often ionizable: the enzyme functions only when a specific residue is deprotonated and another is protonated.
-This produces a bell-shaped activity profile with a narrow optimal pH window.
-The coupling between proton-transfer equilibria and enzymatic kinetics is natural in the `ReactionModel` framework — both reaction types occupy the same model, driven by the same $\mathbf{S}\boldsymbol{\varphi}$ source term, without any additional machinery.
-
-A standard model for pH-dependent activity uses two ionizable residues with dissociation constants $K_{a1}$ and $K_{a2}$:
-
-$$
-f_\text{active}(a_{H^+})
-= \frac{K_{a1}\,a_{H^+}}{a_{H^+}^2 + K_{a1}\,a_{H^+} + K_{a1}\,K_{a2}},
-$$
-
-peaking at $\mathrm{pH}_\text{opt} = \tfrac{1}{2}(\mathrm{p}K_{a1} + \mathrm{p}K_{a2})$.
-The effective maximum rate is $V_\text{max,eff} = V_\text{max}\,f_\text{active}$.
+The three-state protonation model (@enzyme-ph-activity) gives $f_\text{active}$ as the middle Bjerrum fraction of the enzyme active site.
+The coupling between proton-transfer equilibria and saturating kinetics is natural in the `ReactionModel` framework: both reaction types occupy the same model, driven by the same $\mathbf{S}\boldsymbol{\varphi}$ source term, without any additional machinery.
 
 ```{code-cell} ipython3
 from reactions.api import CustomRate
@@ -194,35 +184,8 @@ model_ph = ReactionModel(
 )
 ```
 
-```{code-cell} ipython3
-:tags: [remove-cell]
-:label: cell-ph-curve
-
-pH_arr = np.linspace(3, 12, 300)
-a_H_arr = 10.0 ** (-pH_arr)
-f_arr = Ka1_d * a_H_arr / (a_H_arr**2 + Ka1_d * a_H_arr + Ka1_d * Ka2_d)
-
-fig, ax = plt.subplots(figsize=(5, 3.2))
-ax.plot(pH_arr, f_arr, color="C2")
-ax.axvline(
-    0.5 * (pKa1 + pKa2),
-    ls="--",
-    color="gray",
-    lw=0.9,
-    label=rf"$\mathrm{{pH}}_\mathrm{{opt}} = {0.5 * (pKa1 + pKa2):.1f}$",
-)
-ax.set_xlabel("pH")
-ax.set_ylabel(r"$f_\mathrm{active}$")
-ax.legend()
-fig.tight_layout()
-```
-
-```{figure} #cell-ph-curve
-:name: fig-ph-curve
-
-Bell-shaped pH–activity profile for $\mathrm{p}K_{a1} = 5.5$ and $\mathrm{p}K_{a2} = 8.5$; optimum at pH 7.0.
-$f_\text{active}$ drops to half its maximum one unit away from either $\mathrm{p}K_a$.
-```
+The profile (@fig-ph-bell) shows that $f_\text{active}$ enters as a multiplicative prefactor on $V_\text{max}$.
+Simulations at pH 4 (well below $\text{p}K_{a1}$, $f_\text{active} \approx 0.03$), pH 7 (optimal, $f_\text{active} \approx 1$), and pH 9 (above $\text{p}K_{a2}$, $f_\text{active} \approx 0.24$) sample three distinct regions of the bell.
 
 Simulations at three prescribed pH values use the pH-stat pattern (@implementation-practical):
 
@@ -231,7 +194,7 @@ S0 = 600.0
 t_span = (0, 3000.0)
 
 results_ph = {}
-for pH in [5.0, 7.0, 9.0]:
+for pH in [4.0, 7.0, 9.0]:
     c_H = 10.0 ** (-pH) * C_REF
     c_OH = 1e-14 * C_REF**2 / c_H
     results_ph[pH] = simulate(
@@ -258,11 +221,11 @@ fig.tight_layout()
 ```{figure} #cell-ph-enzyme-sim
 :name: fig-ph-enzyme-sim
 
-Substrate depletion at pH 5.0, 7.0, and 9.0 for the pH-sensitive enzyme ($V_\text{max} = 1\ \mathrm{mol/(m^3 \cdot s)}$, $K_m = 200\ \mathrm{mol/m^3}$, $[S]_0 = 600\ \mathrm{mol/m^3}$).
-At pH 7.0 (optimal) conversion is rapid; at pH 5.0 and 9.0 the enzyme is partially inactive and the rate drops substantially.
+Substrate depletion at pH 4.0, 7.0, and 9.0 ($V_\text{max} = 1\ \mathrm{mol/(m^3 \cdot s)}$, $K_m = 200\ \mathrm{mol/m^3}$, $[S]_0 = 600\ \mathrm{mol/m^3}$).
+At pH 7.0 (optimal) conversion is rapid; at pH 9.0 the active fraction is $\approx 0.24$ and the rate is substantially reduced; at pH 4.0 the enzyme is nearly inactive ($f_\text{active} \approx 0.03$) and the substrate barely depletes on this timescale.
 ```
 
-At the optimal pH, $f_\text{active} \approx 1$ and the enzyme operates near $V_\text{max}$; at pH 5.0 and 9.0, away from both pK$_a$ values, the active fraction falls to roughly 0.1 and the substrate depletes an order of magnitude more slowly.
+At the optimal pH, $f_\text{active} \approx 1$ and the enzyme operates near $V_\text{max}$; the difference between pH 9.0 and pH 4.0 reflects the asymmetry of the bell: pH 4.0 is well below $\text{p}K_{a1} = 5.5$, suppressing activity far more than the equivalent distance above $\text{p}K_{a2} = 8.5$.
 A `CustomRate` makes the rate closure available to the solver with no changes to the surrounding framework: the proton-transfer equilibrium (autoionisation) and the enzymatic kinetics are co-resident in the same `ReactionModel` and are handled uniformly.
 
 ---
