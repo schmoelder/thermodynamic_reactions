@@ -11,6 +11,7 @@ All symbols are defined in their own submodules:
     reactions.rate       — RateConstant*, RateBase, MichaelisMenten, HillRate, CustomRate
     reactions.reaction   — parse_stoichiometry, ReactionBase, Thermodynamic/MassAction/...
     reactions.model      — ConservationReport, ReactionModel
+    reactions.analysis   — buffer_capacity
 
 Units (SI throughout)
 ---------------------
@@ -89,6 +90,7 @@ from .common import (
     tris_equilibria,
     water,
 )
+from .analysis import buffer_capacity
 from .formulation import Solution
 from .species import (
     KB,
@@ -153,6 +155,8 @@ __all__ = [
     # model
     "ConservationReport",
     "ReactionModel",
+    # analysis
+    "buffer_capacity",
     # formulation
     "Solution",
     # common components and reaction factories
