@@ -23,18 +23,15 @@ Each chapter adds one feature.
 Equilibrium (via $K(T)$) determines the admissible state; kinetics only sets how fast it is reached.
 The code cells throughout this part use the `reactions` library; install it once before running any chapter.
 
-```{admonition} Install
-:class: note
-
-Install the library once from the project root:
-
-    pip install -e .
+```bash
+pip install -e .
 ```
 
 Three design decisions recur in every chapter and are worth stating before the first one.
 
 ```{admonition} Key design decisions
 :class: tip
+
 **One object, three knobs.**
 `ThermodynamicReaction` is the central object.
 Every chapter in this part configures one of three independent arguments:
