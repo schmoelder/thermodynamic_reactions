@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import numpy as np
 
-__all__ = ["buffer_capacity"]
+__all__ = ["buffer_capacity", "speciation_fractions", "solve_equilibrium_sweep"]
 
 
 def buffer_capacity(
@@ -83,6 +83,125 @@ def buffer_capacity(
                 dz = charges[i] - charges[j]
                 beta += dz ** 2 * alpha[i] * alpha[j]
         result[component.name] = np.log(10) * c_tot * beta
+
+    return result
+
+
+def speciation_fractions(
+    pH,
+    pKa_list: list[float],
+) -> np.ndarray:
+    """
+    Analytical Bjerrum speciation fractions for a polyprotic acid.
+
+    Parameters
+    ----------
+    pH : array-like
+        pH values at which to evaluate the fractions.
+    pKa_list : list[float]
+        pKa values in dissociation order (Ka1, Ka2, …).
+        Length n gives n+1 species: fully protonated (index 0)
+        through fully deprotonated (index n).
+
+    Returns
+    -------
+    np.ndarray, shape (n_species, len(pH))
+        ``fractions[k]`` is the mole fraction of the species that has
+        donated k protons relative to the fully protonated form.
+
+    Examples
+    --------
+    Monoprotic (acetic acid, pKa = 4.756):
+
+    >>> f = speciation_fractions([4.756], [4.756])
+    >>> f[:, 0]          # at pH = pKa both fractions are 0.5
+    array([0.5, 0.5])
+
+    Phosphate (three pKa values):
+
+    >>> f = speciation_fractions(np.linspace(0, 14, 500), [2.148, 7.198, 12.350])
+    >>> f.shape
+    (4, 500)
+    """
+    pH = np.atleast_1d(np.asarray(pH, dtype=float))
+    n = len(pKa_list)
+    h = 10.0 ** (-pH)
+    Ka = [10.0 ** (-pk) for pk in pKa_list]
+
+    weights = np.zeros((n + 1, len(h)))
+    K_prod = 1.0
+    for k in range(n + 1):
+        weights[k] = K_prod * h ** (n - k)
+        if k < n:
+            K_prod *= Ka[k]
+
+    D = weights.sum(axis=0)
+    return weights / D
+
+
+def solve_equilibrium_sweep(
+    model,
+    pH,
+    c0: dict[str, float],
+    prescribed: dict | None = None,
+    T: float = 298.15,
+) -> dict[str, np.ndarray]:
+    """
+    Solve equilibrium across a pH range by prescribing [H⁺] at each point.
+
+    At each step [H⁺] = 10^(−pH) · c_ref is added to ``prescribed`` and
+    passed to ``solve_equilibrium``.  The result of each solve is used as
+    the warm-start for the next point, so only the first pH point requires
+    a reasonable ``c0``; the rest follow automatically.
+
+    Parameters
+    ----------
+    model : ReactionModel
+    pH : array-like
+        pH values to sweep over.
+    c0 : dict[str, float]
+        Initial concentration guess for the first pH point [mol/m³].
+    prescribed : dict, optional
+        Additional species to hold fixed throughout the sweep (e.g.
+        ``{"H2O": water.c_ref}``).  H⁺ is always added automatically.
+    T : float
+        Temperature [K].
+
+    Returns
+    -------
+    dict[str, np.ndarray]
+        Equilibrium concentrations [mol/m³] for every species, each an
+        array of length ``len(pH)``.  Points where the solver did not
+        converge are filled with ``np.nan``.
+
+    Notes
+    -----
+    Prescribing [H⁺] is equivalent to the pH-stat pattern
+    (@implementation-practical): speciation adjusts freely while pH is
+    held fixed.  This is more robust than providing Henderson–Hasselbalch
+    initial guesses at every pH because the warm-start propagates the
+    previous equilibrium state across the sweep.
+    """
+    from .solver import solve_equilibrium
+
+    pH = np.asarray(pH, dtype=float)
+    h_name, h_cref = _find_proton(model)
+    species_names = [sp.name for sp in model.species]
+
+    result = {name: np.full(len(pH), np.nan) for name in species_names}
+    c_curr = dict(c0)
+
+    for i, ph in enumerate(pH):
+        c_H = 10.0 ** (-ph) * h_cref
+        c_curr[h_name] = c_H
+        step_prescribed = {h_name: c_H, **(prescribed or {})}
+        try:
+            c_eq = solve_equilibrium(model, c_curr, T=T, prescribed=step_prescribed)
+            for name in species_names:
+                result[name][i] = c_eq.get(name, np.nan)
+            c_curr = dict(c_eq)
+        except RuntimeError:
+            pass  # NaN already filled; warm-start from last successful result
 
     return result
 

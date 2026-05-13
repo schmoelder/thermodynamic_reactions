@@ -1,5 +1,6 @@
 """
-Tests for reactions.analysis.buffer_capacity().
+Tests for reactions.analysis: buffer_capacity, speciation_fractions,
+solve_equilibrium_sweep.
 All expected values are derived analytically; no fitting.
 
 Van Slyke formula: β = ln(10) · c · Σ_{i<j} (z_i − z_j)² · α_i · α_j
@@ -12,7 +13,7 @@ import math
 import numpy as np
 import pytest
 
-from reactions.analysis import buffer_capacity
+from reactions.analysis import buffer_capacity, speciation_fractions, solve_equilibrium_sweep
 from reactions.common import H_plus, OH_minus, water
 from reactions.equilibrium import pKa
 from reactions.model import ReactionModel
@@ -197,3 +198,114 @@ def test_kw_not_confused_with_ka1():
     assert beta["water"][0] < 1.0, (
         f"β_water={beta['water'][0]:.2e} suggests Kw was misidentified as Ka1"
     )
+
+
+# ===========================================================================
+# speciation_fractions
+# ===========================================================================
+
+
+def test_speciation_fractions_monoprotic_at_pKa():
+    """At pH = pKa both fractions are exactly 0.5."""
+    pKa_val = 4.756
+    f = speciation_fractions([pKa_val], [pKa_val])
+    assert pytest.approx(f[0, 0], abs=1e-12) == 0.5
+    assert pytest.approx(f[1, 0], abs=1e-12) == 0.5
+
+
+def test_speciation_fractions_monoprotic_sum_to_one():
+    """Fractions sum to 1 at every pH."""
+    pH = np.linspace(1.0, 10.0, 100)
+    f = speciation_fractions(pH, [4.756])
+    np.testing.assert_allclose(f.sum(axis=0), 1.0, atol=1e-12)
+
+
+def test_speciation_fractions_monoprotic_limits():
+    """Far below pKa → fully protonated; far above → fully deprotonated."""
+    f_low = speciation_fractions([1.0], [4.756])   # pH 1 ≪ pKa
+    f_high = speciation_fractions([10.0], [4.756])  # pH 10 ≫ pKa
+    assert f_low[0, 0] > 0.999
+    assert f_high[1, 0] > 0.999
+
+
+def test_speciation_fractions_polyprotic_shape():
+    """Phosphate: shape is (4, n_pH)."""
+    pH = np.linspace(0, 14, 200)
+    f = speciation_fractions(pH, [2.148, 7.198, 12.350])
+    assert f.shape == (4, 200)
+
+
+def test_speciation_fractions_polyprotic_sum_to_one():
+    """Phosphate fractions sum to 1 at every pH."""
+    pH = np.linspace(0, 14, 500)
+    f = speciation_fractions(pH, [2.148, 7.198, 12.350])
+    np.testing.assert_allclose(f.sum(axis=0), 1.0, atol=1e-12)
+
+
+def test_speciation_fractions_crossings_at_pKa():
+    """Adjacent fractions are equal (both 0.5) at each pKa."""
+    pKas = [2.148, 7.198, 12.350]
+    for i, pk in enumerate(pKas):
+        f = speciation_fractions([pk], pKas)
+        assert pytest.approx(f[i, 0], rel=1e-4) == f[i + 1, 0]
+
+
+def test_speciation_fractions_scalar_pH():
+    """Scalar pH input is handled without error."""
+    f = speciation_fractions(4.756, [4.756])
+    assert f.shape == (2, 1)
+
+
+# ===========================================================================
+# solve_equilibrium_sweep
+# ===========================================================================
+
+
+def _acetic_sweep_model():
+    acetic = Component("acetic", [Species("HAc", charge=0), Species("Ac-", charge=-1)])
+    return ReactionModel(
+        components=[acetic, H_plus, OH_minus, water],
+        reactions=[
+            ThermodynamicReaction("HAc <-> Ac- + H+", mode="equil", equilibrium_constant=pKa(4.756)),
+            ThermodynamicReaction("H2O <-> H+ + OH-", mode="equil", equilibrium_constant=pKa(14.00)),
+        ],
+    )
+
+
+def test_sweep_prescribed_pH_matches_target():
+    """Solved [H+] matches the prescribed value at every pH point."""
+    model = _acetic_sweep_model()
+    pH_vals = np.linspace(3.0, 8.0, 20)
+    c0 = {"HAc": 50.0, "Ac-": 50.0, "H+": 1e-4, "OH-": 1e-10}
+    result = solve_equilibrium_sweep(model, pH_vals, c0, prescribed={"H2O": water.c_ref})
+
+    c_ref = H_plus.species[0].c_ref
+    pH_actual = -np.log10(result["H+"] / c_ref)
+    np.testing.assert_allclose(pH_actual, pH_vals, atol=1e-8)
+
+
+def test_sweep_speciation_matches_henderson_hasselbalch():
+    """Solved speciation matches HH at each pH (ideal model, monoprotic)."""
+    pKa_val = 4.756
+    c_tot = 100.0
+    model = _acetic_sweep_model()
+    pH_vals = np.linspace(3.0, 7.0, 15)
+    c0 = {"HAc": c_tot / 2, "Ac-": c_tot / 2, "H+": 1e-4, "OH-": 1e-10}
+    result = solve_equilibrium_sweep(model, pH_vals, c0, prescribed={"H2O": water.c_ref})
+
+    f = speciation_fractions(pH_vals, [pKa_val])
+    np.testing.assert_allclose(result["Ac-"], f[1] * c_tot, rtol=1e-4)
+    np.testing.assert_allclose(result["HAc"], f[0] * c_tot, rtol=1e-4)
+
+
+def test_sweep_returns_arrays_for_all_species():
+    """Result contains an array for every species in the model."""
+    model = _acetic_sweep_model()
+    pH_vals = np.linspace(4.0, 6.0, 10)
+    c0 = {"HAc": 50.0, "Ac-": 50.0, "H+": 1e-4, "OH-": 1e-10}
+    result = solve_equilibrium_sweep(model, pH_vals, c0, prescribed={"H2O": water.c_ref})
+
+    expected_species = {"HAc", "Ac-", "H+", "OH-", "H2O"}
+    assert expected_species.issubset(result.keys())
+    for arr in result.values():
+        assert arr.shape == (10,)
