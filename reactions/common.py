@@ -15,7 +15,7 @@ Usage pattern::
         H_plus,
         OH_minus,
         acetic_acid,
-        autoionisation,
+        autoionization,
         acetic_acid_equilibria,
     )
     from reactions.activity import ActivityCoefficientDavies
@@ -28,7 +28,7 @@ Usage pattern::
         components=[acetic_acid, H_plus, OH_minus, water],
         reactions=[
             *acetic_acid_equilibria(activity_coefficient=davies),
-            *autoionisation(activity_coefficient=davies),
+            *autoionization(activity_coefficient=davies),
         ],
         ionic_strength=IonicStrengthIdeal(),
     )
@@ -52,7 +52,7 @@ __all__ = [
     "tris",
     "hepes",
     "mops",
-    "autoionisation",
+    "autoionization",
     "acetic_acid_equilibria",
     "phosphate_equilibria",
     "citric_acid_equilibria",
@@ -157,9 +157,9 @@ mops = Component(
 # is always *factory(...) regardless of how many reactions a system has.
 
 
-def autoionisation(activity_coefficient=None) -> list[ThermodynamicReaction]:
+def autoionization(activity_coefficient=None) -> list[ThermodynamicReaction]:
     """
-    Water autoionisation: ``H2O <-> H+ + OH-``  (pKw = 14.00, ΔH° = 55.8 kJ/mol).
+    Water autoionization: ``H2O <-> H+ + OH-``  (pKw = 14.00, ΔH° = 55.8 kJ/mol).
 
     Requires components: ``water``, ``H_plus``, ``OH_minus``.
     """

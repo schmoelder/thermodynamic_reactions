@@ -219,11 +219,11 @@ Finite-site constraint
 
 Fugacity
 : The effective pressure $f$ of a real gas, defined so that $\mu = \mu^\circ + RT\ln(f/P^\circ)$ holds exactly.
-  The fugacity coefficient $\varphi = f/P$ measures deviation from ideal behaviour; $\varphi \to 1$ as $P \to 0$.
+  The fugacity coefficient $\varphi = f/P$ measures deviation from ideal behavior; $\varphi \to 1$ as $P \to 0$.
   Introduced in @nonidealities.
 
 Fugacity coefficient
-: $\varphi = f/P$: the ratio of fugacity to pressure, measuring how much a real gas deviates from ideal behaviour.
+: $\varphi = f/P$: the ratio of fugacity to pressure, measuring how much a real gas deviates from ideal behavior.
   Introduced in @nonidealities.
 
 Fundamental relation
@@ -236,7 +236,7 @@ Gas constant
   The per-mole version of the Boltzmann constant; appears in the ideal gas law $PV = nRT$ and the ideal chemical potential.
 
 Gibbs free energy
-: $G = U - TS + PV$: the thermodynamic potential minimised at constant temperature and pressure.
+: $G = U - TS + PV$: the thermodynamic potential minimized at constant temperature and pressure.
   Satisfies $G = \sum_i \mu_i n_i$ as an identity; $dG = -S\,dT + V\,dP + \sum_i \mu_i\,dn_i$.
   Introduced in @thermodynamic-potentials.
 
@@ -266,7 +266,7 @@ Heat capacity
   Introduced in @thermodynamic-potentials.
 
 Helmholtz energy
-: $A = U - TS$: the thermodynamic potential minimised at constant temperature and volume.
+: $A = U - TS$: the thermodynamic potential minimized at constant temperature and volume.
   Natural setting for molecular simulation; not used further in this book, where pressure (not volume) is the controlled variable.
   Introduced in @thermodynamic-potentials.
 
@@ -283,7 +283,7 @@ Ideal mixing
 Internal energy
 : $U$: the total microscopic energy of a system.
   For an ideal gas, purely kinetic; in general, includes potential energy from intermolecular interactions.
-  The natural potential minimised at constant entropy and volume.
+  The natural potential minimized at constant entropy and volume.
   Introduced in @particles.
 
 Ionic strength
@@ -358,8 +358,8 @@ Mass density
   Introduced in @ideal-gas.
 
 Maximum entropy principle
-: In an isolated system with fixed $U$, $V$, and $N$, the equilibrium macrostate is the one that maximises the entropy $\mathcal{H} = \ln \Omega$.
-  Equivalently, it maximises the Gibbs/Shannon form $\mathcal{H} = -\sum_i p_i \ln p_i$ subject to constraints.
+: In an isolated system with fixed $U$, $V$, and $N$, the equilibrium macrostate is the one that maximizes the entropy $\mathcal{H} = \ln \Omega$.
+  Equivalently, it maximizes the Gibbs/Shannon form $\mathcal{H} = -\sum_i p_i \ln p_i$ subject to constraints.
   Introduced in @entropy.
 
 Mechanical equilibrium
@@ -368,13 +368,13 @@ Mechanical equilibrium
   Introduced in @thermodynamic-potentials.
 
 Michaelis constant
-: $K_m = (k_{-1} + k_2)/k_1$: the substrate concentration at which an enzyme-catalysed reaction proceeds at half its maximum rate.
+: $K_m = (k_{-1} + k_2)/k_1$: the substrate concentration at which an enzyme-catalyzed reaction proceeds at half its maximum rate.
   Sets the transition between first-order (substrate-limited) and zeroth-order (enzyme-saturated) kinetic regimes.
   Introduced in @saturation.
 
 Michaelis-Menten kinetics
-: The rate law $r = V_\text{max}[\ce{S}]/(K_m + [\ce{S}])$ for enzyme-catalysed reactions, derived from a quasi-steady-state approximation on the enzyme-substrate complex.
-  Exhibits first-order behaviour at low substrate and zeroth-order saturation at high substrate, independent of the reaction stoichiometry.
+: The rate law $r = V_\text{max}[\ce{S}]/(K_m + [\ce{S}])$ for enzyme-catalyzed reactions, derived from a quasi-steady-state approximation on the enzyme-substrate complex.
+  Exhibits first-order behavior at low substrate and zeroth-order saturation at high substrate, independent of the reaction stoichiometry.
   Introduced in @saturation.
 
 Microstate
@@ -509,11 +509,11 @@ Solvent
   Introduced in @mixing.
 
 Solute
-: A minor component dissolved in a solvent, characterised by a Henry-law reference state ($\gamma_i \to \gamma_i^\infty$ as $x_i \to 0$).
+: A minor component dissolved in a solvent, characterized by a Henry-law reference state ($\gamma_i \to \gamma_i^\infty$ as $x_i \to 0$).
   Introduced in @mixing.
 
 Spontaneous process
-: A process that proceeds without external driving force, characterised by $\Delta G < 0$ at constant $T$ and $P$.
+: A process that proceeds without external driving force, characterized by $\Delta G < 0$ at constant $T$ and $P$.
   A negative $\Delta G$ establishes thermodynamic possibility; rate is a separate question governed by kinetics.
   Introduced in @chemical-potential.
 
@@ -555,7 +555,7 @@ Thermal equilibrium
 
 Thermodynamic equilibrium
 : The state in which all three equilibrium conditions hold simultaneously: thermal, mechanical, and chemical equilibrium.
-  The relevant thermodynamic potential is minimised.
+  The relevant thermodynamic potential is minimized.
   Introduced in @thermodynamic-potentials.
 
 Third law of thermodynamics

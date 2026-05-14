@@ -106,7 +106,7 @@ This is the microscopic origin of the observation that reaction rates increase w
 
 ## Arrhenius equation
 
-Svante Arrhenius {cite:p}`arrhenius1889` recognised that rate constants follow:
+Svante Arrhenius {cite:p}`arrhenius1889` recognized that rate constants follow:
 
 $$
 k = A\,e^{-E_a/RT}

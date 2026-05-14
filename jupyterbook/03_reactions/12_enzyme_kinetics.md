@@ -106,7 +106,7 @@ Enzyme kinetics combine reversible binding with an irreversible conversion step.
 At low substrate concentration most enzymes are free, and the reaction rate increases approximately linearly with $[\mathrm{S}]$.
 As substrate increases, more enzymes form the intermediate complex $\mathrm{ES}$, and the availability of free enzyme becomes limiting.
 At high substrate concentration nearly all enzymes are bound, and the rate approaches a maximum set by the turnover number $k_2$, which governs how fast the bound complex converts product.
-The Michaelis constant $K_m$ characterises the balance between binding and conversion; smaller values indicate that saturation is reached at lower substrate concentrations.
+The Michaelis constant $K_m$ characterizes the balance between binding and conversion; smaller values indicate that saturation is reached at lower substrate concentrations.
 ```
 
 **Kinetic vs. equilibrium $K_m$.**

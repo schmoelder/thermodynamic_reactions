@@ -7,7 +7,7 @@ kernelspec:
 (maxwell-boltzmann)=
 # The Maxwell-Boltzmann Distribution
 
-The previous chapter established that the equilibrium distribution is the one that maximises $\mathcal{H} = \ln \Omega$.
+The previous chapter established that the equilibrium distribution is the one that maximizes $\mathcal{H} = \ln \Omega$.
 There are two complementary routes to finding it: a symmetry argument due to Maxwell, and a direct entropy maximisation.
 Both arrive at the same answer.
 
@@ -40,7 +40,7 @@ $$
 p(v) \propto v^2\, \exp\!\left(-\frac{v^2}{2\sigma^2}\right)
 $$
 
-This is the **Maxwell speed distribution** (see @fig-mb-derivation, centre panel).
+This is the **Maxwell speed distribution** (see @fig-mb-derivation, center panel).
 
 **From speed to energy.**
 Setting $\varepsilon = \frac{1}{2}mv^2$, so $v = \sqrt{2\varepsilon/m}$, the Jacobian $dv/d\varepsilon = 1/(mv)$ gives:
@@ -275,7 +275,7 @@ Right: the corresponding energy landmarks, plus an activation energy threshold $
 ```
 
 **Why this shape and not another.**
-The Maxwell-Boltzmann distribution is the *unique* distribution that maximises $\mathcal{H}$ subject to fixed $N$ and $U$.
+The Maxwell-Boltzmann distribution is the *unique* distribution that maximizes $\mathcal{H}$ subject to fixed $N$ and $U$.
 Any other distribution has lower $\mathcal{H}$ and is driven toward this shape by collisions.
 The simulation in @collisions is a direct demonstration: starting from a spike ($\mathcal{H} = 0$), the system explores microstates and converges to the maximum-entropy distribution.
 

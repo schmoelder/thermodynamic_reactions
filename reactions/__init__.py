@@ -16,6 +16,6 @@ from reactions.rate import RateConstantFixed, RateConstantArrhenius, MichaelisMe
 from reactions.reaction import MassActionReaction, ThermodynamicReaction, EnzymaticReaction
 from reactions.model import ReactionModel, ConservationReport
 from reactions.formulation import Solution
-from reactions.common import water, H_plus, OH_minus, autoionisation, acetic_acid_equilibria
+from reactions.common import water, H_plus, OH_minus, autoionization, acetic_acid_equilibria
 from reactions.solver import simulate, solve_equilibrium, SimulationResult
 """

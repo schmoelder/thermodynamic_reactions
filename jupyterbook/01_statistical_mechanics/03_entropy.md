@@ -69,7 +69,7 @@ def log_W(occupations):
 macrostates = [
     [0, 20, 0, 0, 0],  # spike: Omega=1
     [15, 0, 0, 0, 5],  # bimodal extremes
-    [10, 0, 10, 0, 0],  # bimodal centre
+    [10, 0, 10, 0, 0],  # bimodal center
     [12, 2, 2, 2, 2],  # concentrated with equal tails
     [10, 4, 3, 2, 1],  # Boltzmann-like (exponential decrease)
 ]
@@ -122,7 +122,7 @@ An isolated system evolves by moving between microstates.
 If all microstates are equally likely (which follows from the symmetry of the laws of mechanics), the system spends most of its time in the macrostates with the most microstates, i.e., those with the highest $\mathcal{H}$.
 This is the statistical foundation of the second law of thermodynamics:
 
-> An isolated system at equilibrium is in the macrostate that maximises $\mathcal{H}$.
+> An isolated system at equilibrium is in the macrostate that maximizes $\mathcal{H}$.
 
 The initial state from the previous chapter, where every particle has the same energy, has $\mathcal{H} = 0$.
 Any redistribution of energy among particles increases $\mathcal{H}$.
@@ -134,7 +134,7 @@ $\mathcal{H}$ is dimensionless and unit-free.
 We can use it to define temperature directly from the statistics, before introducing any units.
 
 Consider two systems that can exchange energy, with fixed total energy $U_1 + U_2$.
-At equilibrium, total entropy is maximised.
+At equilibrium, total entropy is maximized.
 Transferring a small amount $\delta U$ from system 2 to system 1 (so $\delta U_1 = -\delta U_2 = \delta U$) must leave total entropy unchanged to first order:
 
 $$

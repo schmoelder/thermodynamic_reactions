@@ -60,7 +60,7 @@ A van't Hoff plot of $\ln K$ versus $1/T$ has slope $-\Delta_r H^\circ / R$, whi
 
 ```{admonition} Intuition
 :class: tip
-The van't Hoff equation links temperature to the position of equilibrium: heating favours the endothermic direction, cooling the exothermic one.
+The van't Hoff equation links temperature to the position of equilibrium: heating favors the endothermic direction, cooling the exothermic one.
 The Haber process ($\ce{N2 + 3 H2 <=> 2 NH3}$, $\Delta_r H^\circ = -92\,\mathrm{kJ/mol}$) illustrates the scale: between 25 °C and 500 °C, $K$ drops by several orders of magnitude, drastically reducing equilibrium yield.
 Industrial plants operate at 400--500 °C as a compromise between reaction rate and equilibrium yield.
 The same equation governs $K_\text{ads}$ for adsorption (@adsorption) and $K_a$ for acid-base equilibria (@acid-base), with each reaction's $\Delta_r H^\circ$ setting the slope.

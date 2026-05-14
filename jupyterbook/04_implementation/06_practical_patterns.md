@@ -209,7 +209,7 @@ The `*factory()` unpacking idiom passes the list directly into `reactions=[...]`
 
 ```{code-cell} ipython3
 from reactions.common import (
-    autoionisation,
+    autoionization,
     acetic_acid_equilibria,
     phosphate_equilibria,
     citric_acid_equilibria,
@@ -222,7 +222,7 @@ from reactions.activity import ActivityCoefficientDavies
 davies = ActivityCoefficientDavies()
 
 reactions = [
-    *autoionisation(activity_coefficient=davies),  # pKw = 14.00, ΔH° = +55.8 kJ/mol
+    *autoionization(activity_coefficient=davies),  # pKw = 14.00, ΔH° = +55.8 kJ/mol
     *acetic_acid_equilibria(activity_coefficient=davies),  # pKa = 4.756
     *phosphate_equilibria(activity_coefficient=davies),  # pKa = 2.148 / 7.198 / 12.35
 ]
@@ -237,7 +237,7 @@ The temperature-sensitive systems are:
 
 | Factory                    | pKa      | ΔH° [kJ/mol] | dpKa/dT [pH/°C]  |
 |----------------------------|----------|--------------|------------------|
-| `autoionisation()`         | 14.00    | +55.8        | −0.033           |
+| `autoionization()`         | 14.00    | +55.8        | −0.033           |
 | `tris_equilibria()`        | 8.072    | −47.45       | +0.028           |
 | All others                 | —        | —            | ≈ 0              |
 
@@ -279,7 +279,7 @@ from reactions.common import (
     OH_minus,
     water,
     acetic_acid_equilibria,
-    autoionisation,
+    autoionization,
 )
 from reactions.ionic import IonicStrengthIdeal
 from reactions.plots import setup_figure
@@ -289,7 +289,7 @@ model_stat = ReactionModel(
     components=[acetic_acid, H_plus, OH_minus, water],
     reactions=[
         *acetic_acid_equilibria(),
-        *autoionisation(),
+        *autoionization(),
     ],
     ionic_strength=IonicStrengthIdeal(),
 )

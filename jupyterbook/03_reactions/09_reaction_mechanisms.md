@@ -81,7 +81,7 @@ $$
 (\text{CH}_3)_3\text{C}^+ + \text{OH}^- \xrightarrow{k_2,\;\text{fast}} (\text{CH}_3)_3\text{COH}
 $$
 
-The first step (ionisation) is rate-determining; the carbocation is consumed almost instantly.
+The first step (ionization) is rate-determining; the carbocation is consumed almost instantly.
 The observed rate law is:
 
 $$

@@ -126,7 +126,7 @@ GROUPS = [
         "Common Buffers",
         "api-common",
         [
-            ("reactions.common", "autoionisation"),
+            ("reactions.common", "autoionization"),
             ("reactions.common", "acetic_acid_equilibria"),
             ("reactions.common", "phosphate_equilibria"),
             ("reactions.common", "citric_acid_equilibria"),

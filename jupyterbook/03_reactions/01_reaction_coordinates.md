@@ -7,7 +7,7 @@ kernelspec:
 (reaction-coordinates)=
 # Reaction Coordinates and Stoichiometry
 
-@thermodynamic-potentials established that the Gibbs energy $G$ is minimised at equilibrium under constant $T$ and $P$.
+@thermodynamic-potentials established that the Gibbs energy $G$ is minimized at equilibrium under constant $T$ and $P$.
 @chemical-potential showed that $G = \sum_i \mu_i n_i$ and that $\mu_i = \mu_i^\circ + RT \ln a_i$ encodes how $G$ responds to changes in composition.
 Applying these results to a chemical reaction requires first describing how the composition itself changes.
 

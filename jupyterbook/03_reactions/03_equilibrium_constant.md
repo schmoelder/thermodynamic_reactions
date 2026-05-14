@@ -33,8 +33,8 @@ In dilute ideal solution $a_i = c_i/c^\circ$, recovering the familiar concentrat
 ```{admonition} Sign and direction
 :class: note
 
-$\Delta_r G^\circ < 0$ gives $K > 1$: products are favoured at equilibrium.
-$\Delta_r G^\circ > 0$ gives $K < 1$: reactants are favoured.
+$\Delta_r G^\circ < 0$ gives $K > 1$: products are favored at equilibrium.
+$\Delta_r G^\circ > 0$ gives $K < 1$: reactants are favored.
 $\Delta_r G^\circ$ fixes the equilibrium position; $\Delta_r G$ determines the direction of evolution at any given composition.
 ```
 
@@ -43,7 +43,7 @@ $\Delta_r G^\circ$ fixes the equilibrium position; $\Delta_r G$ determines the d
 
 The same $RT$ scale from @chemical-potential now controls the equilibrium position: each $5.7\ \mathrm{kJ/mol}$ of $|\Delta_r G^\circ|$ shifts $K$ by one order of magnitude.
 A reaction with $\Delta_r G^\circ = -11.4\ \mathrm{kJ/mol}$ has $K \approx 100$; one with $\Delta_r G^\circ = -57\ \mathrm{kJ/mol}$ (typical of ATP hydrolysis) has $K \approx 10^{10}$.
-The logarithmic compression means that even modest free energy differences produce dramatically product-favoured or reactant-favoured equilibria.
+The logarithmic compression means that even modest free energy differences produce dramatically product-favored or reactant-favored equilibria.
 ```
 
 

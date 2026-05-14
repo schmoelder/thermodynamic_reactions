@@ -37,7 +37,7 @@ def buffer_capacity(
     dict[str, np.ndarray]
         β [mol/(m³·pH)] for each multi-species component that has a
         complete proton-transfer ladder, plus a ``"water"`` key for the
-        water/autoionisation contribution.
+        water/autoionization contribution.
 
     Notes
     -----
@@ -230,7 +230,7 @@ def _beta_water(
     """
     β_water = ln(10) · ([H⁺] + [OH⁻]).
 
-    Kw is taken from the autoionisation reaction if present (enabling
+    Kw is taken from the autoionization reaction if present (enabling
     van't Hoff temperature dependence); otherwise falls back to
     Kw = 10⁻¹⁴ at 298.15 K, converted to mol²/m⁶.
     """
@@ -245,7 +245,7 @@ def _find_kw(model, h_name: str, h_cref: float, T: float) -> float:
 
     Looks for a reaction where a solvent species (density set) is the
     sole reactant and H⁺ plus exactly one charge-(-1) species are the
-    products — the autoionisation pattern.  Discriminating on the
+    products — the autoionization pattern.  Discriminating on the
     reactant having density set distinguishes H₂O → H⁺ + OH⁻ from
     acid dissociation reactions such as H₃PO₄ → H₂PO₄⁻ + H⁺, where
     H₂PO₄⁻ also carries charge −1.

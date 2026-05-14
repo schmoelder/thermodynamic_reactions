@@ -9,7 +9,7 @@ kernelspec:
 # pH and Acid-Base Speciation
 
 Proton-transfer reactions are always fast relative to chromatographic transport (@acid-base) and are treated throughout as algebraic constraints.
-The `pKa()` factory (@implementation-practical), water autoionisation, and Davies activity corrections now combine into a complete buffer model: solving a realistic system requires all three simultaneously.
+The `pKa()` factory (@implementation-practical), water autoionization, and Davies activity corrections now combine into a complete buffer model: solving a realistic system requires all three simultaneously.
 
 ```{code-cell} ipython3
 import numpy as np
@@ -34,7 +34,7 @@ from reactions.solver import solve_equilibrium
 ## Monoprotic buffer: acetic acid
 
 A monoprotic weak acid establishes the pattern used throughout.
-Acetic acid dissociates as $\ce{HAc <=> Ac- + H+}$; water autoionisation is included as a second constraint so that pH is exact near neutrality:
+Acetic acid dissociates as $\ce{HAc <=> Ac- + H+}$; water autoionization is included as a second constraint so that pH is exact near neutrality:
 
 ```{code-cell} ipython3
 acetic = Component("acetic", [Species("HAc", charge=0), Species("Ac-", charge=-1)])
@@ -69,7 +69,7 @@ print(f"pH (numerical)          = {pH:.4f}")
 print(f"pH (Henderson-Hasselbalch) = {pH_HH:.4f}")
 ```
 
-Water appears in the model so that the autoionisation constraint $\ce{H2O <=> H+ + OH-}$ is stoichiometrically balanced.
+Water appears in the model so that the autoionization constraint $\ce{H2O <=> H+ + OH-}$ is stoichiometrically balanced.
 The pre-built `water` component carries `molar_mass=0.018015` and `density=1000.0`, so `water.c_ref` $= \rho/M \approx 55{,}509\ \mathrm{mol/m^3}$ is the pure-component molar concentration of liquid water.
 Passing `prescribed={"H2O": water.c_ref}` fixes $c_{\ce{H2O}}$ at that value throughout the solve, giving $a_{\ce{H2O}} = c/c^\circ = 1$; no balance equation is written for it.
 With $a_{\ce{H2O}} = 1$ the equilibrium condition reduces to $a_{\ce{H+}}\,a_{\ce{OH-}} = K_w = 10^{-14}$, consistent with the dilute-solution convention under which $K_w$ is tabulated.

@@ -12,7 +12,7 @@ from reactions.common import (
     OH_minus,
     acetic_acid,
     acetic_acid_equilibria,
-    autoionisation,
+    autoionization,
     water,
 )
 from reactions.equilibrium import EquilibriumConstant, pKa
@@ -266,7 +266,7 @@ def test_equilibrium_conservation_pure_weak_acid():
     """
     model = ReactionModel(
         components=[acetic_acid, H_plus, OH_minus, water],
-        reactions=[*acetic_acid_equilibria(), *autoionisation()],
+        reactions=[*acetic_acid_equilibria(), *autoionization()],
         ionic_strength=IonicStrengthIdeal(),
     )
     sol = Solution(water, solutes={"HAc": 100.0, "Ac-": 1e-6, "H+": 1e-4, "OH-": 1e-7})
@@ -285,7 +285,7 @@ def test_equilibrium_conservation_independent_of_initial_oh():
     """
     model = ReactionModel(
         components=[acetic_acid, H_plus, OH_minus, water],
-        reactions=[*acetic_acid_equilibria(), *autoionisation()],
+        reactions=[*acetic_acid_equilibria(), *autoionization()],
         ionic_strength=IonicStrengthIdeal(),
     )
     c_base = {"HAc": 100.0, "Ac-": 1e-6, "H+": 1e-4, "H2O": water.c_ref}

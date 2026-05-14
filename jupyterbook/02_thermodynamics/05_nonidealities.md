@@ -8,9 +8,9 @@ kernelspec:
 # Pure-Fluid Non-Ideality: Equations of State and Fugacity
 
 Non-ideality has two conceptually distinct origins.
-Even a pure fluid can deviate from ideal behaviour because intermolecular interactions alter the equation of state; this is captured by **fugacity**, which replaces pressure in the chemical potential.
+Even a pure fluid can deviate from ideal behavior because intermolecular interactions alter the equation of state; this is captured by **fugacity**, which replaces pressure in the chemical potential.
 Mixtures introduce a second, independent layer: the interactions between unlike species can differ from those in the pure components, producing excess mixing properties and activity coefficients.
-Fugacity handles non-ideal state behaviour; activity coefficients handle non-ideal mixing behaviour.
+Fugacity handles non-ideal state behavior; activity coefficients handle non-ideal mixing behavior.
 The two corrections are independent: a mixture of ideal gases has fugacity coefficients of unity but can still have non-unity activity coefficients, and a pure non-ideal fluid has a fugacity correction but no mixing non-ideality.
 
 This chapter addresses the first source: pure-fluid departures from the ideal equation of state.
@@ -283,7 +283,7 @@ $$
 $$
 
 It has units of pressure and can be thought of as an effective pressure that accounts for intermolecular interactions.
-The ratio $\varphi = f/P$ is the **fugacity coefficient**: it measures how far the gas deviates from ideal behaviour.
+The ratio $\varphi = f/P$ is the **fugacity coefficient**: it measures how far the gas deviates from ideal behavior.
 By construction, $\varphi \to 1$ as $P \to 0$ (all gases become ideal at low pressure), so $f \to P$ in the dilute limit.
 
 For the van der Waals gas, the fugacity coefficient can be derived analytically.

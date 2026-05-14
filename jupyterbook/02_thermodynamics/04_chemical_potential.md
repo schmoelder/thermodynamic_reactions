@@ -7,7 +7,7 @@ kernelspec:
 (chemical-potential)=
 # Gibbs Energy and Chemical Potential
 
-@thermodynamic-potentials established that the Gibbs free energy $G$ is minimised at equilibrium under constant temperature and pressure.
+@thermodynamic-potentials established that the Gibbs free energy $G$ is minimized at equilibrium under constant temperature and pressure.
 There $G$ was a structural object, a Legendre transform adapted to constant $T$ and $P$, but its operational meaning was left open.
 This chapter develops what $G$ actually tells us: first as a criterion for spontaneity, then through its structure as a sum of per-species contributions.
 
@@ -302,4 +302,4 @@ As $c \to 0$, $\mu \to -\infty$: an infinitely dilute species has an infinitely 
 
 ---
 
-The next chapter introduces the first source of non-ideal behaviour: departures from the ideal equation of state and the fugacity correction that makes the chemical potential exact for real gases.
+The next chapter introduces the first source of non-ideal behavior: departures from the ideal equation of state and the fugacity correction that makes the chemical potential exact for real gases.

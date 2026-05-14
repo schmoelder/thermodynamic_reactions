@@ -138,8 +138,8 @@ $$
 \right)
 $$
 
-The first two terms arise from water autoionisation and dominate at extreme pH.
-The buffer term $c_\text{tot}\,f_{\ce{HA}}\,f_{\ce{A-}}$ is maximised when $f_{\ce{HA}} = f_{\ce{A-}} = \tfrac{1}{2}$, i.e. at $\text{pH} = \text{p}K_a$:
+The first two terms arise from water autoionization and dominate at extreme pH.
+The buffer term $c_\text{tot}\,f_{\ce{HA}}\,f_{\ce{A-}}$ is maximized when $f_{\ce{HA}} = f_{\ce{A-}} = \tfrac{1}{2}$, i.e. at $\text{pH} = \text{p}K_a$:
 
 $$
 \beta_\text{max} = \frac{\ln 10}{4}\,c_\text{tot} \approx 0.576\,c_\text{tot}

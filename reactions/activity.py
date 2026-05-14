@@ -121,7 +121,7 @@ class ActivityCoefficientDebyeHuckel(ActivityCoefficientBase):
                     f"ActivityCoefficientDebyeHuckel: T={T:.1f} K deviates more than "
                     "5 K from 298.15 K and epsilon_r was not provided. "
                     "A and B are fixed at 25 °C water values. "
-                    "Pass epsilon_r=_water_epsilon_r for T-dependent behaviour.",
+                    "Pass epsilon_r=_water_epsilon_r for T-dependent behavior.",
                     UserWarning,
                     stacklevel=2,
                 )
@@ -172,7 +172,7 @@ class ActivityCoefficientDavies(ActivityCoefficientBase):
                     f"ActivityCoefficientDavies: T={T:.1f} K deviates more than "
                     "5 K from 298.15 K and epsilon_r was not provided. "
                     "A is fixed at the 25 °C water value. "
-                    "Pass epsilon_r=_water_epsilon_r for T-dependent behaviour.",
+                    "Pass epsilon_r=_water_epsilon_r for T-dependent behavior.",
                     UserWarning,
                     stacklevel=2,
                 )

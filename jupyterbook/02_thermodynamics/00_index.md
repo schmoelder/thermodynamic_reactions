@@ -24,7 +24,7 @@ For chemistry, where temperature and pressure are typically imposed externally, 
 
 The ideal gas law $PV = nRT$ is the empirical entry point.
 From it, the laws of thermodynamics establish the constraints on how energy flows and how equilibrium is reached.
-Combining the first and second laws yields the fundamental relation $dU = TdS - PdV + \sum_i \mu_i\, dn_i$, from which the Gibbs energy $G$ emerges as the natural potential at constant temperature and pressure: at equilibrium, $G$ is minimised.
+Combining the first and second laws yields the fundamental relation $dU = TdS - PdV + \sum_i \mu_i\, dn_i$, from which the Gibbs energy $G$ emerges as the natural potential at constant temperature and pressure: at equilibrium, $G$ is minimized.
 This part can be read independently of Part 1; @ideal-gas introduces $PV = nRT$ from historical experiments, and the statistical foundation of entropy is not required.
 
 The central quantity is the **chemical potential** $\mu_i = \partial G / \partial n_i$: the Gibbs energy change per mole of species $i$ added at fixed $T$, $P$, and composition.

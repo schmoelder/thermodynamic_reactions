@@ -4,7 +4,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import cycler
 
-# Named colour palette — consistent across all figures
+# Named color palette — consistent across all figures
 COLORS = {
     "primary": "#1c4f8a",  # deep blue — main curve
     "secondary": "#e07b39",  # warm orange — contrast series

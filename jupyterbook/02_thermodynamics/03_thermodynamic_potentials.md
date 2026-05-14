@@ -69,7 +69,7 @@ This produces the thermodynamic potentials $H$, $A$, and $G$, shown in @fig-pote
 
 The four thermodynamic potentials as Legendre transforms of $U$.
 Each arrow swaps one extensive natural variable for its conjugate intensive one.
-$G$ is the potential for chemistry: it is minimised at the constant $T$ and $P$ conditions of a laboratory.
+$G$ is the potential for chemistry: it is minimized at the constant $T$ and $P$ conditions of a laboratory.
 ```
 
 The definitions and natural variables of each potential are summarised in the table below.
@@ -173,7 +173,7 @@ consistent with the direct differential form.
 
 ## Thermodynamic equilibrium
 
-Each thermodynamic potential is minimised under its own set of natural constraints: $dU = 0$ at fixed $S$ and $V$, $dH = 0$ at fixed $S$ and $P$, $dA = 0$ at fixed $T$ and $V$, and $dG = 0$ at fixed $T$ and $P$.
+Each thermodynamic potential is minimized under its own set of natural constraints: $dU = 0$ at fixed $S$ and $V$, $dH = 0$ at fixed $S$ and $P$, $dA = 0$ at fixed $T$ and $V$, and $dG = 0$ at fixed $T$ and $P$.
 A system is in **thermodynamic equilibrium** when the relevant potential reaches this minimum.
 In a laboratory, $T$ and $P$ are controlled, so $dG = 0$ is the operative condition; the choice of $G$ follows from the experimental constraints, not from any special property of $G$ itself.
 Three conditions must hold simultaneously:
@@ -201,9 +201,9 @@ Equilibrium conditions also determine how a system responds to external perturba
 
 > **Le Chatelier's principle:** a perturbation in an intensive variable induces a shift in the system that reduces the resulting change in the corresponding conjugate extensive variable.
 
-This behaviour follows directly from the conjugate structure of the fundamental relation:
+This behavior follows directly from the conjugate structure of the fundamental relation:
 
-- **Temperature** ($T$, conjugate to $S$): increasing temperature shifts equilibrium toward states of higher entropy, typically corresponding to the endothermic direction ($\Delta_r H > 0$), while decreasing temperature favours the exothermic direction.
+- **Temperature** ($T$, conjugate to $S$): increasing temperature shifts equilibrium toward states of higher entropy, typically corresponding to the endothermic direction ($\Delta_r H > 0$), while decreasing temperature favors the exothermic direction.
 - **Pressure** ($P$, conjugate to $V$): increasing pressure shifts equilibrium toward states of lower volume.
 For gas-phase reactions, this often corresponds to a reduction in the number of moles of gas.
 - **Chemical potential** ($\mu_i$, conjugate to $n_i$): increasing $\mu_i$ (e.g. by adding species $i$) drives the system to reduce its chemical potential by consuming it.
@@ -219,7 +219,7 @@ Before the operational use of $G$ is developed in @chemical-potential, one concr
 
 This section extends the Gibbs framework to the comparison of multiple thermodynamic states.
 Phase equilibrium is a global minimisation problem: different phases correspond to distinct thermodynamic manifolds, each with its own Gibbs energy surface, and the stable state is the one with the lowest $G$ at given $(T,P,\{n_i\})$.
-Each phase corresponds to a distinct branch of $G$ as a function of composition; the stable state at any given composition is the phase, or mixture of phases, that minimises $G$ globally.
+Each phase corresponds to a distinct branch of $G$ as a function of composition; the stable state at any given composition is the phase, or mixture of phases, that minimizes $G$ globally.
 The goal here is not a full treatment of phase diagrams but the minimal variational structure needed to interpret coexistence as equality of chemical potentials.
 
 A **phase** is a homogeneous region of matter with uniform composition and physical state, separated from other regions by a phase boundary.

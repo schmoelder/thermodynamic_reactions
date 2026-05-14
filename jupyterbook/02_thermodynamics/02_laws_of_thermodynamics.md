@@ -19,7 +19,7 @@ The **zeroth law of thermodynamics** provides this foundation: if system A is in
 This transitivity is what makes a thermometer meaningful and what allows temperature to be assigned to a system rather than only to a pair of systems.
 In @entropy, temperature emerged from the condition $\partial S_1/\partial U_1 = \partial S_2/\partial U_2$ for two systems sharing energy; the zeroth law guarantees that this condition is consistent across any number of systems in contact.
 Without it, the concept of a uniform temperature throughout a system would have no logical foundation.
-The law was recognised after the first and second laws were already named, hence the retroactive numbering.
+The law was recognized after the first and second laws were already named, hence the retroactive numbering.
 
 ## The first law
 

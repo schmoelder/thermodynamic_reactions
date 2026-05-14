@@ -357,7 +357,7 @@ $$r = \frac{V_\text{max}[\ce{S}]}{K_m + [\ce{S}]}$$
 
 $$K_a = \frac{[\ce{H+}][\ce{A-}]}{[\ce{HA}]}, \qquad \text{p}K_a = -\log_{10} K_a$$
 
-**Water autoionisation**
+**Water autoionization**
 
 $$K_w = [\ce{H+}][\ce{OH-}] = 1.01\times10^{-14} \text{ at } 25^\circ\text{C}$$
 

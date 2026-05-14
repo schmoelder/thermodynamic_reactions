@@ -31,7 +31,7 @@ A strong acid (p$K_a \ll 0$, e.g. HCl) is essentially fully dissociated.
 A weak acid (p$K_a > 0$, e.g. acetic acid) exists in partial equilibrium.
 
 "Strong" does not mean "concentrated."
-At $c = 10^{-8}$ mol/L, HCl contributes only $10^{-8}$ mol/L of H$^+$, while water autoionisation contributes $\approx 10^{-7}$ mol/L.
+At $c = 10^{-8}$ mol/L, HCl contributes only $10^{-8}$ mol/L of H$^+$, while water autoionization contributes $\approx 10^{-7}$ mol/L.
 The resulting pH is $\approx 6.98$, not 8.
 Neglecting the water equilibrium at very low concentrations of strong acids is a common source of error.
 ```

@@ -63,7 +63,7 @@ In any real gas, particles interact: they collide, exchange energy, and continuo
 Each elastic collision conserves total momentum and kinetic energy: $\varepsilon_1' + \varepsilon_2' = \varepsilon_1 + \varepsilon_2$.
 The individual energies are free to change, so each collision genuinely redistributes energy between the two particles.
 The model randomises the direction of the relative velocity uniformly over all angles while keeping its magnitude fixed.
-This preserves both conservation laws exactly: the centre-of-mass velocity $\mathbf{v}_\text{cm} = (\mathbf{v}_1 + \mathbf{v}_2)/2$ is unchanged (momentum conserved, component by component), and the relative speed $|\mathbf{v}_1 - \mathbf{v}_2|$ is unchanged (kinetic energy conserved).
+This preserves both conservation laws exactly: the center-of-mass velocity $\mathbf{v}_\text{cm} = (\mathbf{v}_1 + \mathbf{v}_2)/2$ is unchanged (momentum conserved, component by component), and the relative speed $|\mathbf{v}_1 - \mathbf{v}_2|$ is unchanged (kinetic energy conserved).
 Repeated many times across all particle pairs, this gradually spreads the initial spike across a broad range of energies.
 
 Collisions immediately begin spreading energy away from the initial spike.
@@ -90,7 +90,7 @@ def simulate_collisions_with_snapshots(
 
     Particles start with 3-D velocities of magnitude v0 in random directions.
     Each collision randomises the relative-velocity direction while conserving
-    both total momentum (centre-of-mass velocity unchanged) and kinetic energy
+    both total momentum (center-of-mass velocity unchanged) and kinetic energy
     (relative speed unchanged).
 
     Returns a dict mapping each value in step_counts to an array of per-particle
@@ -169,5 +169,5 @@ Most particles carry modest energy; very energetic ones are rare, but the tail n
 
 The starting configuration does not matter: any initial distribution converges to the same outcome.
 Why is this particular shape the unique attractor?
-That is what the next chapters answer: the next chapter introduces a way to count microscopic arrangements, and @maxwell-boltzmann uses it to show that the MB distribution is the only one that maximises entropy under fixed energy and particle number.
+That is what the next chapters answer: the next chapter introduces a way to count microscopic arrangements, and @maxwell-boltzmann uses it to show that the MB distribution is the only one that maximizes entropy under fixed energy and particle number.
 

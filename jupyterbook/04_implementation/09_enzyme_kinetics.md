@@ -9,7 +9,7 @@ kernelspec:
 # Enzyme Kinetics
 
 Mass action kinetics are unbounded in substrate concentration in the model form: the rate is linear or polynomial in concentration with no ceiling.
-For enzyme-catalysed reactions the rate saturates because the enzyme active site becomes limiting; under quasi-steady-state or rapid equilibrium assumptions, this produces Michaelis-Menten kinetics: the same finite-site saturation that produces the Langmuir isotherm at equilibrium (@adsorption, @saturation).
+For enzyme-catalyzed reactions the rate saturates because the enzyme active site becomes limiting; under quasi-steady-state or rapid equilibrium assumptions, this produces Michaelis-Menten kinetics: the same finite-site saturation that produces the Langmuir isotherm at equilibrium (@adsorption, @saturation).
 
 This chapter is an orthogonal extension: it depends on the kinetic framework introduced in @implementation-kinetics, but is independent of the acid-base and activity chemistry in @implementation-activity through @implementation-buffer.
 `EnzymaticReaction` slots into the same $\mathbf{S}\boldsymbol{\varphi}$ framework as `ThermodynamicReaction`; only the rate closure $\varphi$ changes.
@@ -158,7 +158,7 @@ The coupling between proton-transfer equilibria and saturating kinetics is natur
 
 ```{code-cell} ipython3
 from reactions.api import CustomRate
-from reactions.common import H_plus, OH_minus, water, autoionisation
+from reactions.common import H_plus, OH_minus, water, autoionization
 
 C_REF = 1000.0  # mol/m³  # todo: let's check all uses of C_REF again. do we still *need* it?
 pKa1, pKa2 = 5.5, 8.5
@@ -179,7 +179,7 @@ model_ph = ReactionModel(
     components=[Component("S"), Component("P"), H_plus, OH_minus, water],
     reactions=[
         EnzymaticReaction("S -> P", rate=CustomRate(fn=ph_enzyme_rate)),
-        *autoionisation(),
+        *autoionization(),
     ],
 )
 ```
@@ -226,7 +226,7 @@ At pH 7.0 (optimal) conversion is rapid; at pH 9.0 the active fraction is $\appr
 ```
 
 At the optimal pH, $f_\text{active} \approx 1$ and the enzyme operates near $V_\text{max}$; the difference between pH 9.0 and pH 4.0 reflects the asymmetry of the bell: pH 4.0 is well below $\text{p}K_{a1} = 5.5$, suppressing activity far more than the equivalent distance above $\text{p}K_{a2} = 8.5$.
-A `CustomRate` makes the rate closure available to the solver with no changes to the surrounding framework: the proton-transfer equilibrium (autoionisation) and the enzymatic kinetics are co-resident in the same `ReactionModel` and are handled uniformly.
+A `CustomRate` makes the rate closure available to the solver with no changes to the surrounding framework: the proton-transfer equilibrium (autoionization) and the enzymatic kinetics are co-resident in the same `ReactionModel` and are handled uniformly.
 
 ---
 
