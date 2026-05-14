@@ -514,7 +514,7 @@ class EnzymaticReaction(ReactionBase):
         species_index: dict[str, int],
     ) -> float:
         """Net rate from the supplied RateBase instance."""
-        return self.rate(state, species_index)
+        return self.rate(state, aux, species_index)
 
     def residual(
         self,

@@ -76,6 +76,17 @@ from .ionic import (
     IonicStrengthIdeal,
 )
 from .model import ConservationReport, ReactionModel
+from .modulator import (
+    ArrheniusModulator,
+    BellModulator,
+    ConstantModulator,
+    ExponentialModulator,
+    LinearModulator,
+    ModulatedRate,
+    PowerLawModulator,
+    SigmoidalModulator,
+    StateModulatorBase,
+)
 from .rate import (
     CustomRate,
     HillRate,
@@ -144,6 +155,16 @@ __all__ = [
     "RateConstantArrhenius",
     "RateConstantPolynomial",
     "RateConstantTabulated",
+    # state modulators
+    "StateModulatorBase",
+    "ConstantModulator",
+    "LinearModulator",
+    "PowerLawModulator",
+    "ExponentialModulator",
+    "SigmoidalModulator",
+    "ArrheniusModulator",
+    "BellModulator",
+    "ModulatedRate",
     # enzymatic rate laws
     "RateBase",
     "MichaelisMenten",
