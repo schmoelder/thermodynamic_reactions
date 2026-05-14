@@ -1,5 +1,5 @@
 """
-ReactionModel API
+ReactionModel API.
 =================
 Public-facing re-export facade.
 
@@ -26,15 +26,36 @@ Activities are a_i = γ_i · c_i / c_ref_i where c_ref_i is per-species (Species
 default 1000 mol/m³).
 """
 
+from typing import NoReturn
+
 from .activity import (
+    _DH_A_CONST,
+    _DH_B_L_CONST,
     ActivityCoefficientBase,
     ActivityCoefficientCustom,
     ActivityCoefficientDavies,
     ActivityCoefficientDebyeHuckel,
     ActivityCoefficientIdeal,
-    _DH_A_CONST,
-    _DH_B_L_CONST,
     _water_epsilon_r,
+)
+from .analysis import buffer_capacity, solve_equilibrium_sweep, speciation_fractions
+from .common import (
+    H_plus,
+    OH_minus,
+    acetic_acid,
+    acetic_acid_equilibria,
+    autoionisation,
+    citric_acid,
+    citric_acid_equilibria,
+    hepes,
+    hepes_equilibria,
+    mops,
+    mops_equilibria,
+    phosphate,
+    phosphate_equilibria,
+    tris,
+    tris_equilibria,
+    water,
 )
 from .equilibrium import (
     EquilibriumConstant,
@@ -46,6 +67,7 @@ from .equilibrium import (
     EquilibriumConstantVantHoffCp,
     pKa,
 )
+from .formulation import Solution
 from .ionic import (
     IonicStrengthBackground,
     IonicStrengthBase,
@@ -72,30 +94,10 @@ from .reaction import (
     ThermodynamicReaction,
     parse_stoichiometry,
 )
-from .common import (
-    H_plus,
-    OH_minus,
-    acetic_acid,
-    acetic_acid_equilibria,
-    autoionisation,
-    citric_acid,
-    citric_acid_equilibria,
-    hepes,
-    hepes_equilibria,
-    mops,
-    mops_equilibria,
-    phosphate,
-    phosphate_equilibria,
-    tris,
-    tris_equilibria,
-    water,
-)
-from .analysis import buffer_capacity, speciation_fractions, solve_equilibrium_sweep
-from .formulation import Solution
 from .species import (
+    H_PLANCK,
     KB,
     R_GAS,
-    H_PLANCK,
     Component,
     PhysicalState,
     Species,
@@ -186,7 +188,7 @@ __all__ = [
 # ---------------------------------------------------------------------------
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> NoReturn:
     if name == "C_REF":
         raise AttributeError(
             "'C_REF' has been removed from reactions.api. "

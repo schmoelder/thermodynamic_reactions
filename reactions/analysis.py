@@ -1,6 +1,4 @@
-"""
-Analytical post-processing of ReactionModel equilibria.
-"""
+"""Analytical post-processing of ReactionModel equilibria."""
 
 from __future__ import annotations
 
@@ -81,7 +79,7 @@ def buffer_capacity(
         for j in range(n):
             for i in range(j):
                 dz = charges[i] - charges[j]
-                beta += dz ** 2 * alpha[i] * alpha[j]
+                beta += dz**2 * alpha[i] * alpha[j]
         result[component.name] = np.log(10) * c_tot * beta
 
     return result
@@ -114,7 +112,7 @@ def speciation_fractions(
     Monoprotic (acetic acid, pKa = 4.756):
 
     >>> f = speciation_fractions([4.756], [4.756])
-    >>> f[:, 0]          # at pH = pKa both fractions are 0.5
+    >>> f[:, 0]  # at pH = pKa both fractions are 0.5
     array([0.5, 0.5])
 
     Phosphate (three pKa values):
@@ -266,8 +264,8 @@ def _find_kw(model, h_name: str, h_cref: float, T: float) -> float:
             continue
         other_name = next(iter(other_products))
         if _species_charge(model, other_name) == -1:
-            return rxn.equilibrium_constant.K(T) * h_cref ** 2
-    return 1e-14 * h_cref ** 2
+            return rxn.equilibrium_constant.K(T) * h_cref**2
+    return 1e-14 * h_cref**2
 
 
 def _k_ladder(model, species_sorted: list, h_name: str, T: float) -> list | None:
@@ -285,7 +283,11 @@ def _k_ladder(model, species_sorted: list, h_name: str, T: float) -> list | None
         K = None
         for rxn in model.reactions:
             nu = rxn.nu
-            if nu.get(sp_from, 0) < 0 and nu.get(sp_to, 0) > 0 and nu.get(h_name, 0) > 0:
+            if (
+                nu.get(sp_from, 0) < 0
+                and nu.get(sp_to, 0) > 0
+                and nu.get(h_name, 0) > 0
+            ):
                 K = rxn.equilibrium_constant.K(T)
                 break
         if K is None:

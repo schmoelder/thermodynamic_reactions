@@ -1,6 +1,4 @@
-"""
-Reaction classes: parse_stoichiometry, ReactionBase and subclasses.
-"""
+"""Reaction classes: parse_stoichiometry, ReactionBase and subclasses."""
 
 from __future__ import annotations
 
@@ -328,7 +326,7 @@ class ThermodynamicReaction(ReactionBase):
         eps: float = 1e-6,
     ) -> float:
         """
-        d(phi_j)/dT using the analytic formula:
+        d(phi_j)/dT using the analytic formula.
 
             dphi/dT = (d ln kf / dT) * phi  +  kr * (d ln K / dT) * P_bwd
 

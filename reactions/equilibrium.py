@@ -1,6 +1,4 @@
-"""
-Equilibrium constant models: K(T).
-"""
+"""Equilibrium constant models: K(T)."""
 
 from __future__ import annotations
 
@@ -50,7 +48,7 @@ class EquilibriumConstantBase(ABC):
         dlnK = self.dlnK_dT(T)
         if dlnK is None:
             dlnK = (np.log(self.K(T + eps)) - np.log(self.K(T - eps))) / (2 * eps)
-        return R_GAS * T ** 2 * dlnK
+        return R_GAS * T**2 * dlnK
 
     def d_reaction_enthalpy_dT(self, T: float, eps: float = 1e-4) -> float:
         """
@@ -59,7 +57,9 @@ class EquilibriumConstantBase(ABC):
         FD fallback via central difference on reaction_enthalpy(T).
         Subclasses override with analytic forms where available.
         """
-        return (self.reaction_enthalpy(T + eps) - self.reaction_enthalpy(T - eps)) / (2 * eps)
+        return (self.reaction_enthalpy(T + eps) - self.reaction_enthalpy(T - eps)) / (
+            2 * eps
+        )
 
 
 @dataclass
@@ -93,7 +93,7 @@ class EquilibriumConstant(EquilibriumConstantBase):
 @dataclass
 class EquilibriumConstantVantHoff(EquilibriumConstantBase):
     """
-    ln K(T) = -dH / (R·T) + dS / R
+    ln K(T) = -dH / (R·T) + dS / R.
 
     Parameters
     ----------
@@ -115,7 +115,7 @@ class EquilibriumConstantVantHoff(EquilibriumConstantBase):
         return float(np.exp(-self.dH / (R_GAS * T) + self.dS / R_GAS))
 
     def dlnK_dT(self, T: float) -> float:  # noqa: N802
-        return self.dH / (R_GAS * T ** 2)
+        return self.dH / (R_GAS * T**2)
 
     def reaction_enthalpy(self, T: float) -> float:
         return self.dH
@@ -129,7 +129,7 @@ class EquilibriumConstantVantHoffCp(EquilibriumConstantBase):
     """
     Van't Hoff with heat capacity correction (Kirchhoff's law):
         dH(T) = dH_ref + dCp · (T - T_ref)
-        dS(T) = dS_ref + dCp · ln(T / T_ref)
+        dS(T) = dS_ref + dCp · ln(T / T_ref).
 
     Parameters
     ----------
@@ -151,7 +151,7 @@ class EquilibriumConstantVantHoffCp(EquilibriumConstantBase):
 
     def dlnK_dT(self, T: float) -> float:  # noqa: N802
         dH_T = self.dH + self.dCp * (T - self.T_ref)
-        return dH_T / (R_GAS * T ** 2)
+        return dH_T / (R_GAS * T**2)
 
     def reaction_enthalpy(self, T: float) -> float:
         return self.dH + self.dCp * (T - self.T_ref)
@@ -201,7 +201,7 @@ class EquilibriumConstantTabulated(EquilibriumConstantBase):
 @dataclass
 class EquilibriumConstantPolynomial(EquilibriumConstantBase):
     """
-    K(T) = exp(a₀ + a₁T + a₂T² + ...)
+    K(T) = exp(a₀ + a₁T + a₂T² + ...).
 
     coeffs = [a₀, a₁, a₂, ...] in ascending power order.
 
@@ -224,20 +224,20 @@ class EquilibriumConstantPolynomial(EquilibriumConstantBase):
         self._deriv2_coeffs = self._powers * (self._powers - 1) * self.coeffs
 
     def K(self, T: float) -> float:  # noqa: N802
-        return float(np.exp(np.dot(self.coeffs, T ** self._powers)))
+        return float(np.exp(np.dot(self.coeffs, T**self._powers)))
 
     def dlnK_dT(self, T: float) -> float:  # noqa: N802
         powers_m1 = np.where(self._powers > 0, self._powers - 1, 0.0)
-        return float(np.dot(self._deriv_coeffs, T ** powers_m1))
+        return float(np.dot(self._deriv_coeffs, T**powers_m1))
 
     def reaction_enthalpy(self, T: float) -> float:
-        return R_GAS * T ** 2 * self.dlnK_dT(T)
+        return R_GAS * T**2 * self.dlnK_dT(T)
 
     def d_reaction_enthalpy_dT(self, T: float) -> float:
         dlnK = self.dlnK_dT(T)
         powers_m2 = np.where(self._powers > 1, self._powers - 2, 0.0)
-        d2lnK = float(np.dot(self._deriv2_coeffs, T ** powers_m2))
-        return R_GAS * (2.0 * T * dlnK + T ** 2 * d2lnK)
+        d2lnK = float(np.dot(self._deriv2_coeffs, T**powers_m2))
+        return R_GAS * (2.0 * T * dlnK + T**2 * d2lnK)
 
 
 def pKa(

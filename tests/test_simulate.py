@@ -7,14 +7,17 @@ import warnings
 
 import numpy as np
 import pytest
-
 from reactions.activity import ActivityCoefficientCustom
-from reactions.equilibrium import EquilibriumConstant, EquilibriumConstantCustom, EquilibriumConstantVantHoff
+from reactions.equilibrium import (
+    EquilibriumConstant,
+    EquilibriumConstantCustom,
+    EquilibriumConstantVantHoff,
+)
 from reactions.model import ReactionModel
 from reactions.rate import RateConstantArrhenius, RateConstantFixed
 from reactions.reaction import MassActionReaction, ThermodynamicReaction
 from reactions.solver import simulate
-from reactions.species import Component, R_GAS, Species
+from reactions.species import R_GAS, Component, Species
 
 C_REF: float = 1000.0  # mol/m³ — standard-state concentration
 
@@ -118,9 +121,16 @@ def test_thermodynamic_consistency_kr_derived():
 
 def test_conservation_multi_reaction():
     """A + B <-> C, C <-> D + E: atom balances conserved throughout."""
-    comp = Component("all", [
-        Species("A"), Species("B"), Species("C"), Species("D"), Species("E"),
-    ])
+    comp = Component(
+        "all",
+        [
+            Species("A"),
+            Species("B"),
+            Species("C"),
+            Species("D"),
+            Species("E"),
+        ],
+    )
     model = ReactionModel(
         components=[comp],
         reactions=[
@@ -251,18 +261,20 @@ def test_volumetric_heat_capacity_independent_of_solute():
     )
     c_no_solute = np.array([0.0, _WATER.c_ref])
     c_with_solute = np.array([500.0, _WATER.c_ref])
-    assert model.volumetric_heat_capacity(c_no_solute) == model.volumetric_heat_capacity(c_with_solute)
+    assert model.volumetric_heat_capacity(
+        c_no_solute
+    ) == model.volumetric_heat_capacity(c_with_solute)
 
 
 def test_volumetric_heat_capacity_mixture():
     """volumetric_heat_capacity weighted sum for two-solvent mixture."""
-    water = Species("H2O",  molar_mass=0.018, density=997.0, heat_capacity=75.3)
-    mecn  = Species("MeCN", molar_mass=0.041, density=786.0, heat_capacity=91.4)
+    water = Species("H2O", molar_mass=0.018, density=997.0, heat_capacity=75.3)
+    mecn = Species("MeCN", molar_mass=0.041, density=786.0, heat_capacity=91.4)
     model = ReactionModel(
         components=[
             Component("A"),
-            Component("water",  [water]),
-            Component("MeCN",   [mecn]),
+            Component("water", [water]),
+            Component("MeCN", [mecn]),
         ],
         reactions=[
             ThermodynamicReaction(
@@ -368,13 +380,14 @@ def test_coupled_callable_T_raises():
 
 def test_coupled_callable_solvent_composition():
     """Callable solvent_composition (gradient) is evaluated at each time step."""
-    water = Species("H2O",  molar_mass=0.018, density=997.0, heat_capacity=75.3)
-    mecn  = Species("MeCN", molar_mass=0.041, density=786.0, heat_capacity=91.4)
+    water = Species("H2O", molar_mass=0.018, density=997.0, heat_capacity=75.3)
+    mecn = Species("MeCN", molar_mass=0.041, density=786.0, heat_capacity=91.4)
     model = ReactionModel(
         components=[
-            Component("A"), Component("B"),
+            Component("A"),
+            Component("B"),
             Component("water", [water]),
-            Component("MeCN",  [mecn]),
+            Component("MeCN", [mecn]),
         ],
         reactions=[
             ThermodynamicReaction(
@@ -387,7 +400,7 @@ def test_coupled_callable_solvent_composition():
     )
     t_end = 5.0
     x_comp = {
-        "H2O":  lambda t: 1.0 - 0.3 * t / t_end,
+        "H2O": lambda t: 1.0 - 0.3 * t / t_end,
         "MeCN": lambda t: 0.3 * t / t_end,
     }
     result = simulate(
@@ -430,7 +443,7 @@ def test_energy_balance_custom_K_matches_vanthoff():
     )
     kw = dict(c0={"A": 1000.0}, t_span=(0, 2.0), T=298.15, solvent_composition=_WATER_X)
     r_custom = simulate(model_custom, **kw)
-    r_vH    = simulate(model_vH,    **kw)
+    r_vH = simulate(model_vH, **kw)
     assert r_custom.success and r_vH.success
     np.testing.assert_allclose(r_custom.T_profile, r_vH.T_profile, rtol=1e-4)
 
@@ -443,8 +456,13 @@ def test_energy_balance_mass_action_warns():
     )
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        simulate(model, c0={"A": 1000.0}, t_span=(0, 0.1), T=298.15,
-                 solvent_composition=_WATER_X)
+        simulate(
+            model,
+            c0={"A": 1000.0},
+            t_span=(0, 0.1),
+            T=298.15,
+            solvent_composition=_WATER_X,
+        )
     assert any(issubclass(warning.category, UserWarning) for warning in w)
     assert any("MassActionReaction" in str(warning.message) for warning in w)
 
@@ -489,13 +507,15 @@ def test_custom_ac_sees_solvent_in_state_c():
 
     model = ReactionModel(
         components=[Component("A"), Component("B"), Component("water", [_WATER])],
-        reactions=[ThermodynamicReaction(
-            "A <-> B",
-            mode="kinetic",
-            equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
-            rate_constant=RateConstantFixed(1000.0),
-            activity_coefficient=ActivityCoefficientCustom(fn=custom_ac),
-        )],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
+                rate_constant=RateConstantFixed(1000.0),
+                activity_coefficient=ActivityCoefficientCustom(fn=custom_ac),
+            )
+        ],
     )
     h2o_idx_ref[0] = model.species_index["H2O"]
     simulate(
@@ -525,13 +545,15 @@ def test_gradient_solvent_varies_in_state_c():
 
     model = ReactionModel(
         components=[Component("A"), Component("B"), Component("water", [_WATER])],
-        reactions=[ThermodynamicReaction(
-            "A <-> B",
-            mode="kinetic",
-            equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
-            rate_constant=RateConstantFixed(1000.0),
-            activity_coefficient=ActivityCoefficientCustom(fn=custom_ac),
-        )],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
+                rate_constant=RateConstantFixed(1000.0),
+                activity_coefficient=ActivityCoefficientCustom(fn=custom_ac),
+            )
+        ],
     )
     h2o_idx_ref[0] = model.species_index["H2O"]
     simulate(

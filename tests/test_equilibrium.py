@@ -4,7 +4,6 @@ Unit tests for equilibrium constant K(T) and rate constant kf(T) models.
 
 import numpy as np
 import pytest
-
 from reactions.equilibrium import (
     EquilibriumConstant,
     EquilibriumConstantCustom,
@@ -14,10 +13,14 @@ from reactions.equilibrium import (
     EquilibriumConstantVantHoffCp,
 )
 from reactions.model import ReactionModel
-from reactions.rate import RateConstantArrhenius, RateConstantFixed, RateConstantPolynomial
+from reactions.rate import (
+    RateConstantArrhenius,
+    RateConstantFixed,
+    RateConstantPolynomial,
+)
 from reactions.reaction import ThermodynamicReaction
 from reactions.solver import simulate
-from reactions.species import Component, R_GAS, Species
+from reactions.species import R_GAS, Component, Species
 
 C_REF: float = 1000.0
 
@@ -180,8 +183,10 @@ def test_polynomial_jacobian_dT_analytic_vs_fd():
     T = 310.0
     analytic = model.jacobian_dT(c, np.zeros(2), T)
     eps = 1e-5
-    fd = (model.residual(c, np.zeros(2), T + eps) -
-          model.residual(c, np.zeros(2), T - eps)) / (2 * eps)
+    fd = (
+        model.residual(c, np.zeros(2), T + eps)
+        - model.residual(c, np.zeros(2), T - eps)
+    ) / (2 * eps)
     np.testing.assert_allclose(analytic, fd, rtol=1e-4)
 
 

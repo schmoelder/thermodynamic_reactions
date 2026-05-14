@@ -1,5 +1,5 @@
 """
-formulation.py
+formulation.py.
 ==============
 Solution: converts a recipe (solutes + solvent fractions) to c0 and prescribed.
 """

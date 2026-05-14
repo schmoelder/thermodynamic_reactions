@@ -3,13 +3,14 @@ Tests for reactions.formulation.Solution.
 """
 
 import pytest
-
 from reactions.formulation import Solution
 from reactions.species import Component, Species
 
 
 def _water():
-    return Component("water", [Species("H2O", charge=0, molar_mass=0.018015, density=1000.0)])
+    return Component(
+        "water", [Species("H2O", charge=0, molar_mass=0.018015, density=1000.0)]
+    )
 
 
 def test_solution_pure_solvent_c0():

@@ -1,6 +1,4 @@
-"""
-Core types: constants, state, species, components.
-"""
+"""Core types: constants, state, species, components."""
 
 from __future__ import annotations
 
@@ -22,9 +20,9 @@ __all__ = [
 # Constants
 # ---------------------------------------------------------------------------
 
-R_GAS: float = 8.314462        # J / (mol K)
-KB: float = 1.380649e-23       # J / K
-H_PLANCK: float = 6.626070e-34 # J s
+R_GAS: float = 8.314462  # J / (mol K)
+KB: float = 1.380649e-23  # J / K
+H_PLANCK: float = 6.626070e-34  # J s
 
 
 # ---------------------------------------------------------------------------
@@ -132,7 +130,9 @@ class Component:
     ])
     """
 
-    def __init__(self, name: str, species: list[Species] | None = None, **kwargs) -> None:
+    def __init__(
+        self, name: str, species: list[Species] | None = None, **kwargs
+    ) -> None:
         self.name = name
         self.species = species if species is not None else [Species(name, **kwargs)]
         self._validate()

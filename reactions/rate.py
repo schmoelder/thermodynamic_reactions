@@ -1,6 +1,4 @@
-"""
-Rate constant models: kf(T). Enzymatic rate laws: v(state, species_index).
-"""
+"""Rate constant models: kf(T). Enzymatic rate laws: v(state, species_index)."""
 
 from __future__ import annotations
 
@@ -10,7 +8,7 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from .species import PhysicalState, R_GAS
+from .species import R_GAS, PhysicalState
 
 __all__ = [
     "RateConstantBase",
@@ -96,7 +94,7 @@ class RateConstantFixed(RateConstantBase):
 @dataclass
 class RateConstantArrhenius(RateConstantBase):
     """
-    k(T) = A · exp(-Ea / (R·T))
+    k(T) = A · exp(-Ea / (R·T)).
 
     Parameters
     ----------
@@ -114,13 +112,13 @@ class RateConstantArrhenius(RateConstantBase):
         return self.A * float(np.exp(-self.Ea / (R_GAS * T)))
 
     def dlnkf_dT(self, T: float) -> float:
-        return self.Ea / (R_GAS * T ** 2)
+        return self.Ea / (R_GAS * T**2)
 
 
 @dataclass
 class RateConstantPolynomial(RateConstantBase):
     """
-    kf(T) = exp(b₀ + b₁T + b₂T² + ...)
+    kf(T) = exp(b₀ + b₁T + b₂T² + ...).
 
     coeffs = [b₀, b₁, b₂, ...] in ascending power order.
 
@@ -138,11 +136,11 @@ class RateConstantPolynomial(RateConstantBase):
         self._deriv_coeffs = self._powers * self.coeffs
 
     def kf(self, T: float) -> float:
-        return float(np.exp(np.dot(self.coeffs, T ** self._powers)))
+        return float(np.exp(np.dot(self.coeffs, T**self._powers)))
 
     def dlnkf_dT(self, T: float) -> float:
         powers_m1 = np.where(self._powers > 0, self._powers - 1, 0.0)
-        return float(np.dot(self._deriv_coeffs, T ** powers_m1))
+        return float(np.dot(self._deriv_coeffs, T**powers_m1))
 
 
 @dataclass
@@ -176,16 +174,14 @@ class RateBase(ABC):
     """Abstract base for enzymatic / custom rate laws."""
 
     @abstractmethod
-    def __call__(
-        self, state: PhysicalState, species_index: dict[str, int]
-    ) -> float:
+    def __call__(self, state: PhysicalState, species_index: dict[str, int]) -> float:
         """Net reaction rate [mol/(m³·s)]."""
 
 
 @dataclass
 class MichaelisMenten(RateBase):
     """
-    v = Vmax · [S] / (Km + [S])
+    v = Vmax · [S] / (Km + [S]).
 
     Parameters
     ----------
@@ -198,9 +194,7 @@ class MichaelisMenten(RateBase):
     Km: float
     substrate: str
 
-    def __call__(
-        self, state: PhysicalState, species_index: dict[str, int]
-    ) -> float:
+    def __call__(self, state: PhysicalState, species_index: dict[str, int]) -> float:
         S = state.c[species_index[self.substrate]]
         return self.Vmax * S / (self.Km + S)
 
@@ -208,7 +202,7 @@ class MichaelisMenten(RateBase):
 @dataclass
 class HillRate(RateBase):
     """
-    v = Vmax · [S]^n / (Km^n + [S]^n)
+    v = Vmax · [S]^n / (Km^n + [S]^n).
 
     Parameters
     ----------
@@ -223,9 +217,7 @@ class HillRate(RateBase):
     n: float
     substrate: str
 
-    def __call__(
-        self, state: PhysicalState, species_index: dict[str, int]
-    ) -> float:
+    def __call__(self, state: PhysicalState, species_index: dict[str, int]) -> float:
         S = state.c[species_index[self.substrate]]
         return self.Vmax * S**self.n / (self.Km**self.n + S**self.n)
 
@@ -242,7 +234,5 @@ class CustomRate(RateBase):
 
     fn: Callable[[PhysicalState, dict[str, int]], float]
 
-    def __call__(
-        self, state: PhysicalState, species_index: dict[str, int]
-    ) -> float:
+    def __call__(self, state: PhysicalState, species_index: dict[str, int]) -> float:
         return self.fn(state, species_index)

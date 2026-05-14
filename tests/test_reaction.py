@@ -3,7 +3,6 @@ Tests for parse_stoichiometry and reaction classes.
 """
 
 import pytest
-
 from reactions.reaction import parse_stoichiometry
 
 

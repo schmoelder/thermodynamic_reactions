@@ -160,7 +160,7 @@ The coupling between proton-transfer equilibria and saturating kinetics is natur
 from reactions.api import CustomRate
 from reactions.common import H_plus, OH_minus, water, autoionisation
 
-C_REF = 1000.0  # mol/m³
+C_REF = 1000.0  # mol/m³  # todo: let's check all uses of C_REF again. do we still *need* it?
 pKa1, pKa2 = 5.5, 8.5
 Ka1_d = 10.0 ** (-pKa1)
 Ka2_d = 10.0 ** (-pKa2)
@@ -169,7 +169,7 @@ Km_enz = 200.0  # mol/m³
 
 
 def ph_enzyme_rate(state, species_index):
-    a_H = state.c[species_index["H+"]] / C_REF
+    a_H = state.c[species_index["H+"]] / C_REF  # todo: do we need activity coefficient? should we have an "activity" pseudo state?
     S = state.c[species_index["S"]]
     denom = a_H**2 + Ka1_d * a_H + Ka1_d * Ka2_d
     return Vmax_max * (Ka1_d * a_H / denom) * S / (Km_enz + S)

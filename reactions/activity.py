@@ -1,6 +1,4 @@
-"""
-Activity coefficient models: γ(state, charges).
-"""
+"""Activity coefficient models: γ(state, charges)."""
 
 from __future__ import annotations
 
@@ -78,7 +76,7 @@ class ActivityCoefficientIdeal(ActivityCoefficientBase):
 class ActivityCoefficientDebyeHuckel(ActivityCoefficientBase):
     """
     Extended Debye-Hückel:
-        log10(γᵢ) = -A · zᵢ² · √I_L / (1 + B · a_ion · √I_L)
+        log10(γᵢ) = -A · zᵢ² · √I_L / (1 + B · a_ion · √I_L).
 
     where I_L = I / 1000 is ionic strength in mol/L (I in mol/m³ from PhysicalState).
     Valid up to I ~ 100 mol/m³ (0.1 mol/L).
@@ -110,7 +108,11 @@ class ActivityCoefficientDebyeHuckel(ActivityCoefficientBase):
     def activity(self, state: PhysicalState, charges: np.ndarray) -> np.ndarray:
         T = state.T
         if self.epsilon_r is not None:
-            er = float(self.epsilon_r(T)) if callable(self.epsilon_r) else float(self.epsilon_r)
+            er = (
+                float(self.epsilon_r(T))
+                if callable(self.epsilon_r)
+                else float(self.epsilon_r)
+            )
             A = _DH_A_CONST / (er * T) ** 1.5
             B = _DH_B_L_CONST / (er * T) ** 0.5
         else:
@@ -127,10 +129,7 @@ class ActivityCoefficientDebyeHuckel(ActivityCoefficientBase):
             B = self.B
         I_L = state.I / 1000.0
         sqrt_I = np.sqrt(I_L)
-        log_gamma = (
-            -A * charges**2 * sqrt_I
-            / (1.0 + B * self.a_ion * sqrt_I)
-        )
+        log_gamma = -A * charges**2 * sqrt_I / (1.0 + B * self.a_ion * sqrt_I)
         return 10.0**log_gamma
 
 
@@ -138,7 +137,7 @@ class ActivityCoefficientDebyeHuckel(ActivityCoefficientBase):
 class ActivityCoefficientDavies(ActivityCoefficientBase):
     """
     Davies equation:
-        log10(γᵢ) = -A · zᵢ² · (√I_L / (1 + √I_L) - 0.3 · I_L)
+        log10(γᵢ) = -A · zᵢ² · (√I_L / (1 + √I_L) - 0.3 · I_L).
 
     where I_L = I / 1000 is ionic strength in mol/L.
     Valid up to I ~ 500 mol/m³ (0.5 mol/L).
@@ -161,7 +160,11 @@ class ActivityCoefficientDavies(ActivityCoefficientBase):
     def activity(self, state: PhysicalState, charges: np.ndarray) -> np.ndarray:
         T = state.T
         if self.epsilon_r is not None:
-            er = float(self.epsilon_r(T)) if callable(self.epsilon_r) else float(self.epsilon_r)
+            er = (
+                float(self.epsilon_r(T))
+                if callable(self.epsilon_r)
+                else float(self.epsilon_r)
+            )
             A = _DH_A_CONST / (er * T) ** 1.5
         else:
             if abs(T - 298.15) > 5.0:

@@ -1,5 +1,5 @@
 """
-solver.py
+solver.py.
 =========
 ODE/DAE integration and equilibrium solving for ReactionModel.
 
@@ -71,6 +71,7 @@ class SimulationResult:
             Subset of species to plot. Default: all.
         """
         import matplotlib.pyplot as plt
+
         if ax is None:
             _, ax = plt.subplots()
         names = species or self.species
@@ -195,9 +196,11 @@ def simulate(
             T_func_ida = lambda t: T  # noqa: E731
 
         # Algebraic variable indices: equilibrium-dependent + prescribed (deduped)
-        algebraic_idx = list(dict.fromkeys(
-            [int(i) for i in model.equil_dep] + [int(i) for i in prescribed_idx]
-        ))
+        algebraic_idx = list(
+            dict.fromkeys(
+                [int(i) for i in model.equil_dep] + [int(i) for i in prescribed_idx]
+            )
+        )
         ode_rows = [i for i in range(n) if i not in set(algebraic_idx)]
 
         # Consistent initial ydot: rhs for ODE rows, 0 for algebraic
@@ -206,7 +209,7 @@ def simulate(
         for i in ode_rows:
             ydot0[i] = -r0[i]
 
-        def ida_residual(t, y, ydot, result):
+        def ida_residual(t, y, ydot, result) -> None:
             c = y.copy()
             for idx, fn in zip(prescribed_idx, prescribed_fns):
                 c[idx] = fn(t)
@@ -214,7 +217,7 @@ def simulate(
             for idx, fn in zip(prescribed_idx, prescribed_fns):
                 result[idx] = y[idx] - fn(t)
 
-        def ida_jac(t, y, ydot, residual, cj, J):
+        def ida_jac(t, y, ydot, residual, cj, J) -> None:
             c = y.copy()
             for idx, fn in zip(prescribed_idx, prescribed_fns):
                 c[idx] = fn(t)
@@ -251,7 +254,8 @@ def simulate(
             message=str(output.message),
             T_profile=(
                 np.array([T_func_ida(t) for t in output.values.t])
-                if callable(T) else None
+                if callable(T)
+                else None
             ),
         )
 
@@ -290,6 +294,7 @@ def simulate(
 
         # Warn once for any reactions that cannot contribute to the energy balance.
         import warnings
+
         for rxn in model.reactions:
             if getattr(rxn, "equilibrium_constant", None) is None:
                 warnings.warn(
@@ -379,7 +384,7 @@ def simulate(
 
     if has_prescribed:
         # Solve only for dynamic species; inject prescribed values before each call.
-        n_dyn = len(dynamic_idx)
+        len(dynamic_idx)
 
         def _full_c(c_dyn: np.ndarray, t: float) -> np.ndarray:
             c_full = np.empty(n)
@@ -561,10 +566,12 @@ def solve_equilibrium(
     if trivial_local:
         N_dyn = model.nu[np.ix_(dynamic_idx, list(range(len(model.reactions))))]
         U_s, sv, _ = np.linalg.svd(N_dyn, full_matrices=True)
-        sv_tol = max(N_dyn.shape) * np.finfo(float).eps * (sv.max() if len(sv) > 0 else 1.0)
+        sv_tol = (
+            max(N_dyn.shape) * np.finfo(float).eps * (sv.max() if len(sv) > 0 else 1.0)
+        )
         n_sv = min(N_dyn.shape)
         is_null = np.concatenate([sv < sv_tol, np.ones(n_dyn - n_sv, dtype=bool)])
-        moiety_vecs = U_s[:, is_null]               # (n_dyn, n_moiety)
+        moiety_vecs = U_s[:, is_null]  # (n_dyn, n_moiety)
         moiety_targets = moiety_vecs.T @ c_init[dynamic_idx]  # conserved quantities
     else:
         moiety_vecs = np.zeros((n_dyn, 0))
@@ -588,7 +595,7 @@ def solve_equilibrium(
             if slot >= n_moiety:
                 break
             w = moiety_vecs[:, slot]
-            J_y[local_i, :] = w * c_dyn   # ∂(w^T c)/∂y_k = w_k * c_k
+            J_y[local_i, :] = w * c_dyn  # ∂(w^T c)/∂y_k = w_k * c_k
         return J_y
 
     # Newton in log space, reduced to dynamic species only.
@@ -639,9 +646,7 @@ def solve_equilibrium(
     c_sol[dynamic_idx] = np.exp(y)
     c_dyn_sol = c_sol[dynamic_idx]
     r_sol_full = model.residual(c_sol, c_dot_zero, T)[dynamic_idx]
-    r_final_norm = float(np.linalg.norm(
-        _apply_conservation(r_sol_full, c_dyn_sol)
-    ))
+    r_final_norm = float(np.linalg.norm(_apply_conservation(r_sol_full, c_dyn_sol)))
 
     if r_final_norm > 1e-6:
         raise RuntimeError(

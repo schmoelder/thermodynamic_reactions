@@ -7,8 +7,14 @@ import math
 
 import numpy as np
 import pytest
-
-from reactions.common import acetic_acid, acetic_acid_equilibria, autoionisation, H_plus, OH_minus, water
+from reactions.common import (
+    H_plus,
+    OH_minus,
+    acetic_acid,
+    acetic_acid_equilibria,
+    autoionisation,
+    water,
+)
 from reactions.equilibrium import EquilibriumConstant, pKa
 from reactions.formulation import Solution
 from reactions.ionic import IonicStrengthIdeal
@@ -24,7 +30,9 @@ def test_acid_base_henderson_hasselbalch():
     """Acetic acid speciation matches Henderson-Hasselbalch (ideal activity)."""
     pKa_val, c_tot, T = 4.76, 100.0, 298.15
 
-    acetate = Component("acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)])
+    acetate = Component(
+        "acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)]
+    )
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
     water_local = Component("water", [Species("H2O", charge=0)])
@@ -77,12 +85,15 @@ def test_phosphate_bjerrum_fractions_ph72():
     T = 298.15
     pH = 7.2
 
-    phosphate = Component("phosphate", [
-        Species("H3PO4",  charge=0),
-        Species("H2PO4-", charge=-1),
-        Species("HPO4-2", charge=-2),
-        Species("PO4-3",  charge=-3),
-    ])
+    phosphate = Component(
+        "phosphate",
+        [
+            Species("H3PO4", charge=0),
+            Species("H2PO4-", charge=-1),
+            Species("HPO4-2", charge=-2),
+            Species("PO4-3", charge=-3),
+        ],
+    )
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
     water_local = Component("water", [Species("H2O", charge=0)])
@@ -124,10 +135,10 @@ def test_phosphate_bjerrum_fractions_ph72():
     H = 10.0 ** (-pH) * C_REF
     OH = 1e-14 * C_REF**2 / H
     c0 = {
-        "H3PO4":  max(alpha0 * c_tot_phos, 1e-10),
+        "H3PO4": max(alpha0 * c_tot_phos, 1e-10),
         "H2PO4-": max(alpha1 * c_tot_phos, 1e-10),
         "HPO4-2": max(alpha2 * c_tot_phos, 1e-10),
-        "PO4-3":  max(alpha3 * c_tot_phos, 1e-10),
+        "PO4-3": max(alpha3 * c_tot_phos, 1e-10),
         "H+": H,
         "OH-": OH,
     }
@@ -135,10 +146,10 @@ def test_phosphate_bjerrum_fractions_ph72():
 
     tol = 1e-4
     for sp, alpha in [
-        ("H3PO4",  alpha0),
+        ("H3PO4", alpha0),
         ("H2PO4-", alpha1),
         ("HPO4-2", alpha2),
-        ("PO4-3",  alpha3),
+        ("PO4-3", alpha3),
     ]:
         expected = alpha * c_tot_phos
         err = abs(c_eq[sp] - expected)
@@ -153,7 +164,9 @@ def test_extreme_ph_acid_ph1():
     c_tot = 100.0
     T = 298.15
 
-    acetate = Component("acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)])
+    acetate = Component(
+        "acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)]
+    )
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
     water_local = Component("water", [Species("H2O", charge=0)])
@@ -199,7 +212,9 @@ def test_extreme_ph_acid_ph13():
     c_tot = 100.0
     T = 298.15
 
-    acetate = Component("acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)])
+    acetate = Component(
+        "acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)]
+    )
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
     water_local = Component("water", [Species("H2O", charge=0)])

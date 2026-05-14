@@ -54,6 +54,10 @@ select = [
 ignore = [
   "ANN401",  # Allow dynamically typed expressions like `Any`
   "D100",    # Allow missing docstring in public module
+  "D102",    # Missing docstring in public method — overrides inherit from base class
+  "D105",    # Missing docstring in magic method — not required under numpy convention
+  "D205",    # Blank line between summary and description — structural rewrite deferred
+  "E741",    # Ambiguous variable name — I is standard notation for ionic strength
 ]
 
 [tool.ruff.format]
@@ -69,10 +73,19 @@ convention = "numpy"
 "tests/*.py" = [
   "ANN",   # type annotations
   "D",     # docstrings
-  "E402",  # imports on top of module 
-  "E731",  # lamba assignments
+  "E402",  # imports on top of module
+  "E731",  # lambda assignments
   "F841",  # unused variables
 ]
+"scripts/*.py" = [
+  "ANN",   # type annotations not required for scripts
+  "D103",  # missing docstrings in scripts
+]
+"reactions/solver.py" = ["ANN"]   # IDA/ODE callback signatures imposed by solver API
+"reactions/analysis.py" = ["ANN"] # ReactionModel argument typing deferred
+"reactions/common.py" = ["ANN"]   # optional activity_coefficient typing deferred
+"reactions/plots.py" = ["ANN"]
+"reactions/species.py" = ["ANN"]
 
 
 [tool.pytest.ini_options]

@@ -1,6 +1,4 @@
-"""
-Ionic strength models: I(c, charges).
-"""
+"""Ionic strength models: I(c, charges)."""
 
 from __future__ import annotations
 
@@ -8,8 +6,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 import numpy as np
-
-from .species import PhysicalState
 
 __all__ = [
     "IonicStrengthBase",
@@ -38,7 +34,7 @@ class IonicStrengthBase(ABC):
 
 @dataclass
 class IonicStrengthIdeal(IonicStrengthBase):
-    """I = 0.5 · sum(cᵢ · zᵢ²)  [mol/m³]"""
+    """I = 0.5 · sum(cᵢ · zᵢ²)  [mol/m³]."""
 
     def evaluate(self, c: np.ndarray, charges: np.ndarray) -> float:
         return 0.5 * float(np.sum(c * charges**2))
@@ -47,7 +43,7 @@ class IonicStrengthIdeal(IonicStrengthBase):
 @dataclass
 class IonicStrengthBackground(IonicStrengthBase):
     """
-    I = I_bg + 0.5 · sum(cᵢ · zᵢ²)  [mol/m³]
+    I = I_bg + 0.5 · sum(cᵢ · zᵢ²)  [mol/m³].
 
     Parameters
     ----------

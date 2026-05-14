@@ -12,14 +12,16 @@ import math
 
 import numpy as np
 import pytest
-
-from reactions.analysis import buffer_capacity, speciation_fractions, solve_equilibrium_sweep
+from reactions.analysis import (
+    buffer_capacity,
+    solve_equilibrium_sweep,
+    speciation_fractions,
+)
 from reactions.common import H_plus, OH_minus, water
 from reactions.equilibrium import pKa
 from reactions.model import ReactionModel
 from reactions.reaction import ThermodynamicReaction
 from reactions.species import Component, Species
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -31,8 +33,12 @@ def _acetic_model():
     return ReactionModel(
         components=[acetic, H_plus, OH_minus, water],
         reactions=[
-            ThermodynamicReaction("HAc <-> Ac- + H+", mode="equil", equilibrium_constant=pKa(4.756)),
-            ThermodynamicReaction("H2O <-> H+ + OH-", mode="equil", equilibrium_constant=pKa(14.00)),
+            ThermodynamicReaction(
+                "HAc <-> Ac- + H+", mode="equil", equilibrium_constant=pKa(4.756)
+            ),
+            ThermodynamicReaction(
+                "H2O <-> H+ + OH-", mode="equil", equilibrium_constant=pKa(14.00)
+            ),
         ],
     )
 
@@ -50,10 +56,18 @@ def _phosphate_model():
     return ReactionModel(
         components=[phosphate, H_plus, OH_minus, water],
         reactions=[
-            ThermodynamicReaction("H3PO4 <-> H2PO4- + H+", mode="equil", equilibrium_constant=pKa(2.148)),
-            ThermodynamicReaction("H2PO4- <-> HPO4-2 + H+", mode="equil", equilibrium_constant=pKa(7.198)),
-            ThermodynamicReaction("HPO4-2 <-> PO4-3 + H+", mode="equil", equilibrium_constant=pKa(12.350)),
-            ThermodynamicReaction("H2O <-> H+ + OH-", mode="equil", equilibrium_constant=pKa(14.00)),
+            ThermodynamicReaction(
+                "H3PO4 <-> H2PO4- + H+", mode="equil", equilibrium_constant=pKa(2.148)
+            ),
+            ThermodynamicReaction(
+                "H2PO4- <-> HPO4-2 + H+", mode="equil", equilibrium_constant=pKa(7.198)
+            ),
+            ThermodynamicReaction(
+                "HPO4-2 <-> PO4-3 + H+", mode="equil", equilibrium_constant=pKa(12.350)
+            ),
+            ThermodynamicReaction(
+                "H2O <-> H+ + OH-", mode="equil", equilibrium_constant=pKa(14.00)
+            ),
         ],
     )
 
@@ -222,7 +236,7 @@ def test_speciation_fractions_monoprotic_sum_to_one():
 
 def test_speciation_fractions_monoprotic_limits():
     """Far below pKa → fully protonated; far above → fully deprotonated."""
-    f_low = speciation_fractions([1.0], [4.756])   # pH 1 ≪ pKa
+    f_low = speciation_fractions([1.0], [4.756])  # pH 1 ≪ pKa
     f_high = speciation_fractions([10.0], [4.756])  # pH 10 ≫ pKa
     assert f_low[0, 0] > 0.999
     assert f_high[1, 0] > 0.999
@@ -266,8 +280,12 @@ def _acetic_sweep_model():
     return ReactionModel(
         components=[acetic, H_plus, OH_minus, water],
         reactions=[
-            ThermodynamicReaction("HAc <-> Ac- + H+", mode="equil", equilibrium_constant=pKa(4.756)),
-            ThermodynamicReaction("H2O <-> H+ + OH-", mode="equil", equilibrium_constant=pKa(14.00)),
+            ThermodynamicReaction(
+                "HAc <-> Ac- + H+", mode="equil", equilibrium_constant=pKa(4.756)
+            ),
+            ThermodynamicReaction(
+                "H2O <-> H+ + OH-", mode="equil", equilibrium_constant=pKa(14.00)
+            ),
         ],
     )
 
@@ -277,7 +295,9 @@ def test_sweep_prescribed_pH_matches_target():
     model = _acetic_sweep_model()
     pH_vals = np.linspace(3.0, 8.0, 20)
     c0 = {"HAc": 50.0, "Ac-": 50.0, "H+": 1e-4, "OH-": 1e-10}
-    result = solve_equilibrium_sweep(model, pH_vals, c0, prescribed={"H2O": water.c_ref})
+    result = solve_equilibrium_sweep(
+        model, pH_vals, c0, prescribed={"H2O": water.c_ref}
+    )
 
     c_ref = H_plus.species[0].c_ref
     pH_actual = -np.log10(result["H+"] / c_ref)
@@ -291,7 +311,9 @@ def test_sweep_speciation_matches_henderson_hasselbalch():
     model = _acetic_sweep_model()
     pH_vals = np.linspace(3.0, 7.0, 15)
     c0 = {"HAc": c_tot / 2, "Ac-": c_tot / 2, "H+": 1e-4, "OH-": 1e-10}
-    result = solve_equilibrium_sweep(model, pH_vals, c0, prescribed={"H2O": water.c_ref})
+    result = solve_equilibrium_sweep(
+        model, pH_vals, c0, prescribed={"H2O": water.c_ref}
+    )
 
     f = speciation_fractions(pH_vals, [pKa_val])
     np.testing.assert_allclose(result["Ac-"], f[1] * c_tot, rtol=1e-4)
@@ -303,7 +325,9 @@ def test_sweep_returns_arrays_for_all_species():
     model = _acetic_sweep_model()
     pH_vals = np.linspace(4.0, 6.0, 10)
     c0 = {"HAc": 50.0, "Ac-": 50.0, "H+": 1e-4, "OH-": 1e-10}
-    result = solve_equilibrium_sweep(model, pH_vals, c0, prescribed={"H2O": water.c_ref})
+    result = solve_equilibrium_sweep(
+        model, pH_vals, c0, prescribed={"H2O": water.c_ref}
+    )
 
     expected_species = {"HAc", "Ac-", "H+", "OH-", "H2O"}
     assert expected_species.issubset(result.keys())

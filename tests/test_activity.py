@@ -6,8 +6,11 @@ import warnings
 
 import numpy as np
 import pytest
-
-from reactions.activity import ActivityCoefficientDavies, ActivityCoefficientDebyeHuckel, _water_epsilon_r
+from reactions.activity import (
+    ActivityCoefficientDavies,
+    ActivityCoefficientDebyeHuckel,
+    _water_epsilon_r,
+)
 from reactions.equilibrium import EquilibriumConstant, pKa
 from reactions.ionic import IonicStrengthFixed
 from reactions.model import ReactionModel
@@ -54,7 +57,7 @@ def test_near_zero_ionic_strength_gives_ideal_activity():
         assert deviations[i] >= deviations[i + 1], (
             f"Activity deviation not monotone in valid range: "
             f"I={I_vals[i]} dev={deviations[i]:.6f}, "
-            f"I={I_vals[i+1]} dev={deviations[i+1]:.6f}"
+            f"I={I_vals[i + 1]} dev={deviations[i + 1]:.6f}"
         )
 
     assert deviations[-1] < deviations[0] / 10.0
@@ -86,7 +89,9 @@ def test_davies_ph_shift_direction():
     T = 298.15
     A_davies = 0.509
 
-    acetate = Component("acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)])
+    acetate = Component(
+        "acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)]
+    )
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
     water = Component("water", [Species("H2O", charge=0)])

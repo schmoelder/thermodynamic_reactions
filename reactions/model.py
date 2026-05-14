@@ -1,6 +1,4 @@
-"""
-ReactionModel: assembles state, dispatches to reaction modules, exposes DAE interface.
-"""
+"""ReactionModel: assembles state, dispatches to reaction modules, exposes DAE interface."""
 
 from __future__ import annotations
 
@@ -10,7 +8,7 @@ from typing import Optional
 import numpy as np
 
 from .ionic import IonicStrengthBase, IonicStrengthIdeal
-from .reaction import MassActionReaction, ReactionBase, ThermodynamicReaction
+from .reaction import ReactionBase
 from .species import Component, PhysicalState, Species
 
 __all__ = [
@@ -106,9 +104,7 @@ class ReactionModel:
             [sp.charge for sp in self.species], dtype=float
         )
         self._validate()
-        self.nu, self.kinetic_mask, self.equil_dep = (
-            self._build_stoichiometric_matrix()
-        )
+        self.nu, self.kinetic_mask, self.equil_dep = self._build_stoichiometric_matrix()
 
     def _validate(self) -> None:
         all_names = [sp.name for sp in self._all_species]
@@ -147,9 +143,7 @@ class ReactionModel:
                 if name in self.species_index:
                     nu[self.species_index[name], j] = coeff
 
-        kinetic_mask = np.array(
-            [rxn.mode == "kinetic" for rxn in self.reactions]
-        )
+        kinetic_mask = np.array([rxn.mode == "kinetic" for rxn in self.reactions])
 
         def _pick_dep(col: np.ndarray) -> int:
             abs_nu = np.abs(col)
@@ -159,11 +153,9 @@ class ReactionModel:
             products = [i for i in candidates if col[i] > 0]
             return int(products[0] if products else candidates[0])
 
-        equil_dep = np.array([
-            _pick_dep(nu[:, j])
-            for j in range(n_r)
-            if not kinetic_mask[j]
-        ], dtype=int)
+        equil_dep = np.array(
+            [_pick_dep(nu[:, j]) for j in range(n_r) if not kinetic_mask[j]], dtype=int
+        )
 
         return nu, kinetic_mask, equil_dep
 
@@ -208,9 +200,7 @@ class ReactionModel:
             else:
                 dep = equil_dep[equil_counter]
                 equil_counter += 1
-                r[dep] = rxn.log_K_residual(
-                    state, self.species_index, self.charges
-                )
+                r[dep] = rxn.log_K_residual(state, self.species_index, self.charges)
 
         return r
 
@@ -244,7 +234,9 @@ class ReactionModel:
                     for k in range(n_s):
                         c_pert = c.copy()
                         c_pert[k] += eps
-                        s_pert = PhysicalState(c=c_pert, T=state.T, I=state.I, c_ref=state.c_ref)
+                        s_pert = PhysicalState(
+                            c=c_pert, T=state.T, I=state.I, c_ref=state.c_ref
+                        )
                         v_pert = rxn.net_rate(s_pert, self.species_index, self.charges)
                         J[:, k] -= nu[:, j] * (v_pert - v0) / eps
 
@@ -274,8 +266,7 @@ class ReactionModel:
         where c_k [mol/m³] and Cp_k [J/(mol·K)].
         """
         thermal = [
-            (i, sp) for i, sp in enumerate(self.species)
-            if sp.heat_capacity is not None
+            (i, sp) for i, sp in enumerate(self.species) if sp.heat_capacity is not None
         ]
         if not thermal:
             raise ValueError(
@@ -310,7 +301,9 @@ class ReactionModel:
                     dvdT = rxn.net_rate_dT(state, self.species_index, self.charges, eps)
                 else:
                     v0 = rxn.net_rate(state, self.species_index, self.charges)
-                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, c_ref=state.c_ref)
+                    s_pert = PhysicalState(
+                        c=state.c, T=state.T + eps, I=state.I, c_ref=state.c_ref
+                    )
                     dvdT = (
                         rxn.net_rate(s_pert, self.species_index, self.charges) - v0
                     ) / eps
@@ -321,7 +314,9 @@ class ReactionModel:
                 dlnK = rxn.equilibrium_constant.dlnK_dT(state.T)
                 if dlnK is None:
                     r0 = rxn.log_K_residual(state, self.species_index, self.charges)
-                    s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, c_ref=state.c_ref)
+                    s_pert = PhysicalState(
+                        c=state.c, T=state.T + eps, I=state.I, c_ref=state.c_ref
+                    )
                     r1 = rxn.log_K_residual(s_pert, self.species_index, self.charges)
                     drdT[dep] = (r1 - r0) / eps
                 else:
@@ -363,19 +358,14 @@ class ReactionModel:
         else:
             sv_tol = float(tol)
 
-        null_mask = np.concatenate(
-            [s < sv_tol, np.ones(n_s - len(s), dtype=bool)]
-        )
+        null_mask = np.concatenate([s < sv_tol, np.ones(n_s - len(s), dtype=bool)])
         Q = U[:, null_mask]
 
-        proj_tol = sv_tol ** 0.5
+        proj_tol = sv_tol**0.5
 
         reports: list[ConservationReport] = []
         for comp in self.components:
-            dyn = [
-                sp for sp in comp.species
-                if sp.name in self.species_index
-            ]
+            dyn = [sp for sp in comp.species if sp.name in self.species_index]
             if len(dyn) <= 1:
                 continue
 
@@ -385,12 +375,14 @@ class ReactionModel:
             v_norm = float(np.linalg.norm(v))
 
             if v_norm == 0.0 or Q.shape[1] == 0:
-                reports.append(ConservationReport(
-                    component=comp,
-                    conserved=False,
-                    residual=1.0,
-                    moiety_vector=None,
-                ))
+                reports.append(
+                    ConservationReport(
+                        component=comp,
+                        conserved=False,
+                        residual=1.0,
+                        moiety_vector=None,
+                    )
+                )
                 continue
 
             v_unit = v / v_norm
@@ -398,12 +390,14 @@ class ReactionModel:
             res = float(np.linalg.norm(v_unit - proj))
             dots = np.abs(Q.T @ v_unit)
             closest = Q[:, int(np.argmax(dots))] if dots.size > 0 else None
-            reports.append(ConservationReport(
-                component=comp,
-                conserved=res < proj_tol,
-                residual=res,
-                moiety_vector=closest,
-            ))
+            reports.append(
+                ConservationReport(
+                    component=comp,
+                    conserved=res < proj_tol,
+                    residual=res,
+                    moiety_vector=closest,
+                )
+            )
 
         if report_all:
             moieties = [Q[:, i] for i in range(Q.shape[1])]

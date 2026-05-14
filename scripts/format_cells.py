@@ -29,8 +29,8 @@ def ruff_format(code: str) -> str | None:
 
 _CELL_RE = re.compile(
     r"(```\{code-cell\}\s+ipython3[^\n]*\n)"  # group 1: opening fence line
-    r"(.*?)"                                   # group 2: cell content
-    r"(^```[ \t]*$)",                          # group 3: closing fence
+    r"(.*?)"  # group 2: cell content
+    r"(^```[ \t]*$)",  # group 3: closing fence
     re.MULTILINE | re.DOTALL,
 )
 

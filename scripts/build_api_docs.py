@@ -10,7 +10,6 @@ Usage:
 
 from __future__ import annotations
 
-import textwrap
 from pathlib import Path
 
 import griffe
@@ -155,7 +154,6 @@ def render_object(obj: Object) -> str:
     lines = []
 
     is_func = obj.kind.name == "FUNCTION"
-    kind_label = "function" if is_func else "class"
 
     # Heading
     lines.append(f"### `{obj.name}`")
@@ -174,7 +172,7 @@ def render_object(obj: Object) -> str:
     text_sections = []
     example_sections = []
 
-    def collect_sections(sections):
+    def collect_sections(sections) -> None:
         for section in sections:
             if section.kind == DocstringSectionKind.text:
                 text_sections.append(section.value)
@@ -212,7 +210,7 @@ def render_object(obj: Object) -> str:
     for ex in example_sections:
         lines.append("**Example**")
         lines.append("")
-        for kind, content in (ex if isinstance(ex, list) else [ex]):
+        for kind, content in ex if isinstance(ex, list) else [ex]:
             if kind == DocstringSectionKind.text:
                 # code block
                 lines.append("```python")
@@ -257,7 +255,7 @@ def render_index(groups) -> str:
 # ---------------------------------------------------------------------------
 
 
-def main():
+def main() -> None:
     # Load modules once
     modules: dict[str, griffe.Module] = {}
     for _, _, _, members in GROUPS:

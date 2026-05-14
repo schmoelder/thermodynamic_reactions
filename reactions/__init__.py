@@ -6,7 +6,12 @@ Primary imports
 from reactions.species import R_GAS, KB, PhysicalState, Species, Component
 from reactions.activity import ActivityCoefficientDebyeHuckel, ActivityCoefficientDavies
 from reactions.ionic import IonicStrengthIdeal, IonicStrengthBackground
-from reactions.equilibrium import EquilibriumConstant, EquilibriumConstantVantHoff, EquilibriumConstantVantHoffCp, pKa
+from reactions.equilibrium import (
+    EquilibriumConstant,
+    EquilibriumConstantVantHoff,
+    EquilibriumConstantVantHoffCp,
+    pKa,
+)
 from reactions.rate import RateConstantFixed, RateConstantArrhenius, MichaelisMenten, HillRate
 from reactions.reaction import MassActionReaction, ThermodynamicReaction, EnzymaticReaction
 from reactions.model import ReactionModel, ConservationReport

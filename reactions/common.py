@@ -1,5 +1,5 @@
 """
-reactions.common
+reactions.common.
 ================
 Pre-defined Component instances and equilibrium reaction factories for
 commonly used buffer species and solvents.
@@ -11,8 +11,12 @@ buffers are treated as temperature-independent at this level.
 Usage pattern::
 
     from reactions.common import (
-        water, H_plus, OH_minus,
-        acetic_acid, autoionisation, acetic_acid_equilibria,
+        water,
+        H_plus,
+        OH_minus,
+        acetic_acid,
+        autoionisation,
+        acetic_acid_equilibria,
     )
     from reactions.activity import ActivityCoefficientDavies
     from reactions.formulation import Solution
@@ -87,7 +91,7 @@ _M_H = 1.008e-3  # kg/mol
 acetic_acid = Component(
     "acetic_acid",
     [
-        Species("HAc", charge=0,  molar_mass=60.052e-3),
+        Species("HAc", charge=0, molar_mass=60.052e-3),
         Species("Ac-", charge=-1, molar_mass=60.052e-3 - _M_H),
     ],
 )
@@ -97,10 +101,10 @@ acetic_acid = Component(
 phosphate = Component(
     "phosphate",
     [
-        Species("H3PO4",  charge=0,  molar_mass=97.994e-3),
+        Species("H3PO4", charge=0, molar_mass=97.994e-3),
         Species("H2PO4-", charge=-1, molar_mass=97.994e-3 - _M_H),
         Species("HPO4-2", charge=-2, molar_mass=97.994e-3 - 2 * _M_H),
-        Species("PO4-3",  charge=-3, molar_mass=97.994e-3 - 3 * _M_H),
+        Species("PO4-3", charge=-3, molar_mass=97.994e-3 - 3 * _M_H),
     ],
 )
 
@@ -109,10 +113,10 @@ phosphate = Component(
 citric_acid = Component(
     "citric_acid",
     [
-        Species("H3Cit",  charge=0,  molar_mass=192.123e-3),
+        Species("H3Cit", charge=0, molar_mass=192.123e-3),
         Species("H2Cit-", charge=-1, molar_mass=192.123e-3 - _M_H),
         Species("HCit-2", charge=-2, molar_mass=192.123e-3 - 2 * _M_H),
-        Species("Cit-3",  charge=-3, molar_mass=192.123e-3 - 3 * _M_H),
+        Species("Cit-3", charge=-3, molar_mass=192.123e-3 - 3 * _M_H),
     ],
 )
 
@@ -121,8 +125,8 @@ citric_acid = Component(
 tris = Component(
     "tris",
     [
-        Species("TrisH+", charge=1,  molar_mass=122.144e-3),
-        Species("Tris",   charge=0,  molar_mass=122.144e-3 - _M_H),
+        Species("TrisH+", charge=1, molar_mass=122.144e-3),
+        Species("Tris", charge=0, molar_mass=122.144e-3 - _M_H),
     ],
 )
 
@@ -131,7 +135,7 @@ tris = Component(
 hepes = Component(
     "hepes",
     [
-        Species("HEPESH", charge=0,  molar_mass=238.302e-3),
+        Species("HEPESH", charge=0, molar_mass=238.302e-3),
         Species("HEPES-", charge=-1, molar_mass=238.302e-3 - _M_H),
     ],
 )
@@ -141,7 +145,7 @@ hepes = Component(
 mops = Component(
     "mops",
     [
-        Species("MOPSH", charge=0,  molar_mass=209.260e-3),
+        Species("MOPSH", charge=0, molar_mass=209.260e-3),
         Species("MOPS-", charge=-1, molar_mass=209.260e-3 - _M_H),
     ],
 )
