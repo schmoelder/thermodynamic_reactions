@@ -157,28 +157,23 @@ The three-state protonation model (@enzyme-ph-activity) gives $f_\text{active}$ 
 The coupling between proton-transfer equilibria and saturating kinetics is natural in the `ReactionModel` framework: both reaction types occupy the same model, driven by the same $\mathbf{S}\boldsymbol{\varphi}$ source term, without any additional machinery.
 
 ```{code-cell} ipython3
-from reactions.api import CustomRate
+from reactions.api import BellModulator, ModulatedRate
 from reactions.common import H_plus, OH_minus, water, autoionization
 
-C_REF = 1000.0  # mol/m³  # todo: let's check all uses of C_REF again. do we still *need* it?
 pKa1, pKa2 = 5.5, 8.5
-Ka1_d = 10.0 ** (-pKa1)
-Ka2_d = 10.0 ** (-pKa2)
 Vmax_max = 1.0  # mol/(m³·s)  peak rate
 Km_enz = 200.0  # mol/m³
-
-
-def ph_enzyme_rate(state, species_index):
-    a_H = state.c[species_index["H+"]] / C_REF  # todo: do we need activity coefficient? should we have an "activity" pseudo state?
-    S = state.c[species_index["S"]]
-    denom = a_H**2 + Ka1_d * a_H + Ka1_d * Ka2_d
-    return Vmax_max * (Ka1_d * a_H / denom) * S / (Km_enz + S)
-
 
 model_ph = ReactionModel(
     components=[Component("S"), Component("P"), H_plus, OH_minus, water],
     reactions=[
-        EnzymaticReaction("S -> P", rate=CustomRate(fn=ph_enzyme_rate)),
+        EnzymaticReaction(
+            "S -> P",
+            rate=ModulatedRate(
+                base_rate=MichaelisMenten(Vmax=Vmax_max, Km=Km_enz, substrate="S"),
+                modulator=BellModulator(pKa1=pKa1, pKa2=pKa2, proton_species="H+"),
+            ),
+        ),
         *autoionization(),
     ],
 )
@@ -190,6 +185,8 @@ Simulations at pH 4 (well below $\text{p}K_{a1}$, $f_\text{active} \approx 0.03$
 Simulations at three prescribed pH values use the pH-stat pattern (@implementation-practical):
 
 ```{code-cell} ipython3
+C_REF = 1000.0  # mol/m³
+
 S0 = 600.0
 t_span = (0, 3000.0)
 
@@ -226,7 +223,8 @@ At pH 7.0 (optimal) conversion is rapid; at pH 9.0 the active fraction is $\appr
 ```
 
 At the optimal pH, $f_\text{active} \approx 1$ and the enzyme operates near $V_\text{max}$; the difference between pH 9.0 and pH 4.0 reflects the asymmetry of the bell: pH 4.0 is well below $\text{p}K_{a1} = 5.5$, suppressing activity far more than the equivalent distance above $\text{p}K_{a2} = 8.5$.
-A `CustomRate` makes the rate closure available to the solver with no changes to the surrounding framework: the proton-transfer equilibrium (autoionization) and the enzymatic kinetics are co-resident in the same `ReactionModel` and are handled uniformly.
+`BellModulator` reads the proton activity from `aux.gamma` and `aux.c_ref`, so the activity correction is exact rather than the ideal approximation $a_\text{H} \approx c_\text{H}/c^\circ$.
+The proton-transfer equilibrium (autoionization) and the enzymatic kinetics are co-resident in the same `ReactionModel` and are handled uniformly.
 
 ---
 
