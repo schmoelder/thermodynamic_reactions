@@ -156,6 +156,4 @@ check_jacobian(
 
 ---
 
-Part 5 applies the full framework to a realistic problem: designing a pH gradient for
-ion-exchange chromatography, where buffer composition, ionic strength, and protein
-charge state are all coupled (@case-ph-gradient).
+Part 5 applies the full framework to realistic design problems in ion-exchange chromatography, using the residual and Jacobian contract established here as the computational engine.

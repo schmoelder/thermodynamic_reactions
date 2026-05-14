@@ -327,4 +327,3 @@ Designing a buffer system that delivers a predictable, linear pH gradient at the
 
 The equilibrium arc is now complete: from the driving force $\Delta_r G$, through the equilibrium constant $K$, to adsorption, temperature dependence, and pH buffering.
 The next chapter begins the kinetics arc, asking not where reactions end up but how fast they get there (@kinetics).
-A later case study (@case-ph-gradient) shows how the acid-base framework developed here is used to model pH gradients in ion-exchange chromatography.

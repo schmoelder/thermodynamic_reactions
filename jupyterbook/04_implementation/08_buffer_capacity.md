@@ -367,7 +367,7 @@ Ionic strength effect on buffer capacity for 50 mol/m³ phosphate: ideal ($I = 0
 The activity correction shifts the p$K_{a2}$ peak to lower pH by roughly $0.1$--$0.3$ units and reduces the peak height slightly.
 ```
 
-In IEX gradient design this shift is not negligible: a buffer prepared at low ionic strength will deliver a different pH on-column once the salt gradient is applied (@case-ph-gradient).
+In IEX gradient design this shift is not negligible: a buffer prepared at low ionic strength will deliver a different pH on-column once the salt gradient is applied.
 
 ---
 
