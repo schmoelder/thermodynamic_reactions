@@ -8,7 +8,7 @@ kernelspec:
 # CADET-Core Interface
 
 The `reactions` library is a self-contained Python prototype.
-This chapter describes the mathematical contract it must satisfy to connect to CADET-Core, and identifies the C++ abstractions that a full implementation would require.
+This chapter describes the mathematical contract it must satisfy to connect to CADET-Core, and outlines what a full implementation would need to express — without prescribing a specific design.
 CADET already implements the mass action law (MAL); the extensions developed in this book add thermodynamic consistency, activity corrections, and equilibrium mode as new building blocks on top of the existing framework.
 
 
@@ -44,19 +44,35 @@ The dependent species is chosen as the product with the largest $|\nu_{ij}|$.
 This structure is identical to CADET's existing reaction interface; the only extension is that fluxes $\varphi_j$ are evaluated in terms of activities $a_i = \gamma_i c_i / c^\circ$ rather than concentrations directly.
 
 
+## Computation pipeline
+
+Before the residual is assembled, `ReactionModel` evaluates two derived quantities from the current state vector:
+
+```python
+state = model.make_state(c, T)   # wraps c and T into a named container
+aux   = model.make_aux(state)    # computes I, c_ref, and gamma
+```
+
+`AuxiliaryState` holds the quantities that are not integrated by the solver but are needed at every residual evaluation: ionic strength $I$, per-species reference concentrations $c^\circ_i$, and activity coefficients $\gamma_i$.
+The activity coefficient model is a property of the mixture, held on `ReactionModel`, not on individual reactions.
+The entire vector $\gamma$ is computed once in `make_aux` and stored in `aux.gamma`; every reaction then reads the same $\gamma_i$ from `aux` without recomputing it.
+
+Any implementation requires a pre-computation step that derives $I$ and $\gamma_i$ from the current concentration state before the residual loop runs; all reactions then read from those derived values without recomputing them.
+
+
 ## C++ building blocks
 
 Three abstractions are needed beyond the existing MAL implementation.
 
-**Equilibrium constant functor $K(T)$.** Both van't Hoff and Arrhenius share the form $A\,\exp(B/T)$; a single C++ functor template with that structure covers `EquilibriumConstantVantHoff`, `RateConstantArrhenius`, and their Kirchhoff-corrected variants.
+**Equilibrium constant functor $K(T)$.** Both van't Hoff and Arrhenius share the form $A\,\exp(B/T)$; the polynomial and Kirchhoff-corrected variants are extensions of the same structure.
 More general forms (`EquilibriumConstantTabulated`, `EquilibriumConstantCustom`) require a callable interface with the same signature.
 
 **Activity coefficient plugin $\gamma(\mathbf{c}, T)$.** The Davies and Debye-Hückel models are both functions of ionic strength $I(\mathbf{c}) = \frac{1}{2}\sum_i z_i^2 c_i / c^\circ$, itself a linear function of the concentration state.
 A plugin interface that takes the concentration vector and charge array and returns $\gamma_i$ covers both models and allows future extensions (Pitzer, custom) without changing the solver.
 
 **Parameter-state dependencies.** Both $K(T)$ and $\gamma(\mathbf{c}, T)$ are state-dependent parameters: $K$ depends on temperature; $\gamma$ depends on composition through $I$.
-Recognising this pattern allows the C++ implementation to reuse a common infrastructure for any quantity of the form $f(\text{state})$, rather than treating each model as a special case.
-The same infrastructure would support future energy-balance coupling, where $T$ itself becomes a dynamic state variable.
+Both follow the same pattern — a quantity of the form $f(\text{state})$ that must be re-evaluated at each solver step but is not itself a dynamic variable.
+The same pattern extends to future coupling where $T$ is a dynamic state variable rather than a prescribed input.
 
 
 ## Jacobian verification
