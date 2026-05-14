@@ -127,8 +127,8 @@ for ax, result, label in [
     (axes[0], result_mm, "Michaelis-Menten"),
     (axes[1], result_hill, r"Hill ($n = 3$)"),
 ]:
-    ax.plot(result.t, result["S"], label="S (substrate)", color="C0")
-    ax.plot(result.t, result["P"], label="P (product)", color="C1")
+    ax.plot(result.coords["time"], result["c"].sel(species="S"), label="S (substrate)", color="C0")
+    ax.plot(result.coords["time"], result["c"].sel(species="P"), label="P (product)", color="C1")
     ax.set_xlabel("time [s]")
     ax.set_title(label)
 
@@ -211,7 +211,7 @@ for pH in [4.0, 7.0, 9.0]:
 
 fig, ax = plt.subplots(figsize=(5, 3.5))
 for pH, result in results_ph.items():
-    ax.plot(result.t, result["S"], label=f"pH {pH:.0f}")
+    ax.plot(result.coords["time"], result["c"].sel(species="S"), label=f"pH {pH:.0f}")
 ax.set_xlabel("time [s]")
 ax.set_ylabel(r"$c_S\ [\mathrm{mol/m^3}]$")
 ax.legend()

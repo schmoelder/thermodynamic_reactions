@@ -154,7 +154,7 @@ rho_cp = model.volumetric_heat_capacity(c_pure)
 print(f"ρCp = {rho_cp:.3e} J/(m³·K)")
 ```
 
-Passing `solvent_composition` to `simulate` triggers the energy balance: $T$ is appended to the state vector and the result gains a `T_profile` array alongside the concentration trajectories.
+Passing `solvent_composition` to `simulate` triggers the energy balance: $T$ is appended to the state vector and the result gains a `result["T"]` array alongside the concentration trajectories.
 
 ```{code-cell} ipython3
 result = simulate(
@@ -165,9 +165,9 @@ result = simulate(
     solvent_composition={"water": 1.0},
 )
 
-print(f"T(0)   = {result.T_profile[0]:.3f} K")
-print(f"T(end) = {result.T_profile[-1]:.3f} K")
-print(f"c_B(end) = {result['B'][-1]:.2f} mol/m³")
+print(f"T(0)   = {result['T'].values[0]:.3f} K")
+print(f"T(end) = {result['T'].values[-1]:.3f} K")
+print(f"c_B(end) = {result['c'].sel(species='B').values[-1]:.2f} mol/m³")
 ```
 
 The temperature rises by a few kelvin as the exothermic reaction produces B, then plateaus once equilibrium is reached (@fig-adiabatic).
@@ -185,7 +185,7 @@ An exothermic reaction ($\Delta_r H^\circ < 0$) decreases the second term as $c_
 The solver should preserve {eq}`eq-adiabatic-invariant` to within the specified tolerance:
 
 ```{code-cell} ipython3
-invariant = rho_cp * result.T_profile + dH_rxn * result["B"]
+invariant = rho_cp * result["T"].values + dH_rxn * result["c"].sel(species="B").values
 rel_var = (invariant.max() - invariant.min()) / abs(invariant[0])
 print(f"Invariant range:      {invariant.min():.4f} to {invariant.max():.4f} J/m³")
 print(f"Relative variation:   {rel_var:.2e}")
@@ -200,13 +200,13 @@ from reactions.plots import setup_figure, COLORS
 
 fig, axes = setup_figure(1, 2)
 
-axes[0].plot(result.t, result["A"], color="C0", label="A")
-axes[0].plot(result.t, result["B"], color="C1", label="B")
+axes[0].plot(result.coords["time"], result["c"].sel(species="A"), color="C0", label="A")
+axes[0].plot(result.coords["time"], result["c"].sel(species="B"), color="C1", label="B")
 axes[0].set_xlabel("time [s]")
 axes[0].set_ylabel(r"concentration [mol/m³]")
 axes[0].legend()
 
-axes[1].plot(result.t, result.T_profile - 273.15, color="C3")
+axes[1].plot(result.coords["time"], result["T"] - 273.15, color="C3")
 axes[1].set_xlabel("time [s]")
 axes[1].set_ylabel(r"$T$ [°C]")
 
@@ -265,7 +265,7 @@ result_iso_cmp = simulate(
 )
 
 K_T0 = K_vH.K(T0)
-T_final_cmp = float(result_adi_cmp.T_profile[-1])
+T_final_cmp = float(result_adi_cmp["T"].values[-1])
 c_B_iso_eq = c_tot * K_T0 / (1 + K_T0)
 c_B_adi_eq = c_tot * K_vH.K(T_final_cmp) / (1 + K_vH.K(T_final_cmp))
 
@@ -274,8 +274,8 @@ C_ISO = "C1"
 
 fig, axes = setup_figure(1, 2)
 
-axes[0].plot(result_iso_cmp.t, result_iso_cmp["B"], color=C_ISO, ls="--", label="isothermal $T_0$")
-axes[0].plot(result_adi_cmp.t, result_adi_cmp["B"], color=C_ADI, label="adiabatic")
+axes[0].plot(result_iso_cmp.coords["time"], result_iso_cmp["c"].sel(species="B"), color=C_ISO, ls="--", label="isothermal $T_0$")
+axes[0].plot(result_adi_cmp.coords["time"], result_adi_cmp["c"].sel(species="B"), color=C_ADI, label="adiabatic")
 axes[0].axhline(c_B_iso_eq, color=C_ISO, lw=0.8, ls="--", alpha=0.5)
 axes[0].axhline(c_B_adi_eq, color=C_ADI, lw=0.8, ls=":", alpha=0.5)
 axes[0].text(
@@ -293,13 +293,13 @@ axes[0].set_ylabel(r"$c_B$ [mol/m³]")
 axes[0].legend()
 
 axes[1].plot(
-    result_iso_cmp.t,
-    np.full_like(result_iso_cmp.t, T0) - 273.15,
+    result_iso_cmp.coords["time"],
+    np.full_like(result_iso_cmp.coords["time"].values, T0) - 273.15,
     color=C_ISO,
     ls="--",
     label="isothermal $T_0$",
 )
-axes[1].plot(result_adi_cmp.t, result_adi_cmp.T_profile - 273.15, color=C_ADI, label="adiabatic")
+axes[1].plot(result_adi_cmp.coords["time"], result_adi_cmp["T"] - 273.15, color=C_ADI, label="adiabatic")
 axes[1].set_xlabel("time [s]")
 axes[1].set_ylabel(r"$T$ [°C]")
 axes[1].legend()
@@ -369,7 +369,7 @@ The resulting concentration and temperature profiles are shown in @fig-gradient.
 :tags: [remove-cell]
 :label: cell-gradient
 
-x_MeCN = np.array([0.4 * t / t_end for t in result_grad.t])
+x_MeCN = np.array([0.4 * t / t_end for t in result_grad.coords["time"].values])
 
 
 def _rho_cp_mix(x_mecn: float) -> float:
@@ -383,16 +383,16 @@ rho_cp_t = np.array([_rho_cp_mix(x) for x in x_MeCN])
 
 fig, axes = setup_figure(1, 2)
 
-axes[0].plot(result_grad.t, result_grad["A"], color="C0", label="A")
-axes[0].plot(result_grad.t, result_grad["B"], color="C1", label="B")
+axes[0].plot(result_grad.coords["time"], result_grad["c"].sel(species="A"), color="C0", label="A")
+axes[0].plot(result_grad.coords["time"], result_grad["c"].sel(species="B"), color="C1", label="B")
 axes[0].set_xlabel("time [s]")
 axes[0].set_ylabel(r"concentration [mol/m³]")
 axes[0].legend()
 axes[0].set_title("Concentrations (gradient solvent)")
 
 ax2 = axes[1].twinx()
-axes[1].plot(result_grad.t, result_grad.T_profile - 273.15, color="C3", label=r"$T$")
-ax2.plot(result_grad.t, rho_cp_t / 1e6, color="gray", ls="--", label=r"$\rho C_p$")
+axes[1].plot(result_grad.coords["time"], result_grad["T"] - 273.15, color="C3", label=r"$T$")
+ax2.plot(result_grad.coords["time"], rho_cp_t / 1e6, color="gray", ls="--", label=r"$\rho C_p$")
 axes[1].set_xlabel("time [s]")
 axes[1].set_ylabel(r"$T$ [°C]", color="C3")
 ax2.set_ylabel(r"$\rho C_p$ [$\mathrm{MJ/(m^3 \cdot K)}$]", color="gray")
@@ -471,5 +471,5 @@ See the discussion in `LIBRARY.md` under "Known limitations".
 ---
 
 Temperature as a dynamic state requires only solvent species with complete physical fields (`molar_mass`, `density`, `heat_capacity`) and reactions that expose $\Delta_r H^\circ(T)$ via `reaction_enthalpy`.
-The solver interface is otherwise unchanged; `simulate` simply adds a `T_profile` array to the returned `SimulationResult`.
+The solver interface is otherwise unchanged; `simulate` simply adds a `result["T"]` array to the returned `xr.Dataset`.
 The following chapter extends the activity term $a_i = \gamma_i c_i / c^\circ$ to non-ideal solutions, where ionic-strength corrections shift the apparent equilibrium composition (@implementation-activity).

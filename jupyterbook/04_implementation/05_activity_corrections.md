@@ -86,9 +86,9 @@ c_custom = solve_equilibrium(model_custom, c0={"A": c_tot / 2, "B": c_tot / 2})
 :tags: [remove-cell]
 
 K_c_expected = K_thermo / gamma_B  # apparent K in concentration space
-print(f"Ideal:   c_B/c_A = {c_ideal['B'] / c_ideal['A']:.4f}  (K = {K_thermo})")
+print(f"Ideal:   c_B/c_A = {c_ideal['c'].sel(species='B').item() / c_ideal['c'].sel(species='A').item():.4f}  (K = {K_thermo})")
 print(
-    f"Custom:  c_B/c_A = {c_custom['B'] / c_custom['A']:.4f}  (K_c = K/γ_B = {K_c_expected:.4f})"
+    f"Custom:  c_B/c_A = {c_custom['c'].sel(species='B').item() / c_custom['c'].sel(species='A').item():.4f}  (K_c = K/γ_B = {K_c_expected:.4f})"
 )
 ```
 
@@ -185,10 +185,10 @@ fB_ideal_eq = K_thermo / (1 + K_thermo)
 fB_custom_eq = (K_thermo / gamma_B) / (1 + K_thermo / gamma_B)
 
 fig, ax = setup_figure()
-ax.plot(result_ideal.t, result_ideal["B"], color="C0", label="ideal ($\\gamma_i = 1$)")
+ax.plot(result_ideal.coords["time"], result_ideal["c"].sel(species="B"), color="C0", label="ideal ($\\gamma_i = 1$)")
 ax.plot(
-    result_custom.t,
-    result_custom["B"],
+    result_custom.coords["time"],
+    result_custom["c"].sel(species="B"),
     color="C1",
     label=rf"non-ideal ($\gamma_\mathrm{{B}} = {gamma_B}$)",
 )
@@ -373,8 +373,8 @@ c0 = {
     "OH-": 10 ** (-7) * C_REF,
 }
 c_eq = solve_equilibrium(model, c0, T=298.15, prescribed={"H2O": water.c_ref})
-pH_eq = -np.log10(c_eq["H+"] / C_REF)
-A_frac = c_eq["A-"] / (c_eq["HA"] + c_eq["A-"])
+pH_eq = -np.log10(c_eq["c"].sel(species="H+").item() / C_REF)
+A_frac = c_eq["c"].sel(species="A-").item() / (c_eq["c"].sel(species="HA").item() + c_eq["c"].sel(species="A-").item())
 pKa_app = pH_eq - np.log10(A_frac / (1 - A_frac))
 print(f"apparent pKa at 150 mM: {pKa_app:.3f}  (thermodynamic: {pKa_thermo})")
 ```
@@ -427,8 +427,8 @@ for I_bg_mM in I_bg_range:
         c_eq = solve_equilibrium(
             model_i, c0_loop, T=298.15, prescribed={"H2O": water.c_ref}
         )
-        pH_eq = -np.log10(c_eq["H+"] / C_REF)
-        A_frac = c_eq["A-"] / (c_eq["HA"] + c_eq["A-"])
+        pH_eq = -np.log10(c_eq["c"].sel(species="H+").item() / C_REF)
+        A_frac = c_eq["c"].sel(species="A-").item() / (c_eq["c"].sel(species="HA").item() + c_eq["c"].sel(species="A-").item())
         results.append(pH_eq - np.log10(A_frac / (1 - A_frac)))
 
 fig, ax = setup_figure()

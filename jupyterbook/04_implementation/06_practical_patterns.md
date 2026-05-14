@@ -84,7 +84,7 @@ model_mixed = ReactionModel(
 
 result_mixed = simulate(model_mixed, c0={"A": 1.0}, t_span=(0, 100.0))
 print(
-    f"c_B / c_C  = {result_mixed['B'][-1] / result_mixed['C'][-1]:.4f}  (expect {1 / 3.0:.4f})"
+    f"c_B / c_C  = {result_mixed['c'].sel(species='B').values[-1] / result_mixed['c'].sel(species='C').values[-1]:.4f}  (expect {1 / 3.0:.4f})"
 )
 ```
 
@@ -306,8 +306,8 @@ for pH in pH_targets:
         c0,
         prescribed={"H+": c_H},
     )
-    total = c_eq["HAc"] + c_eq["Ac-"]
-    f_Ac_neg.append(c_eq["Ac-"] / total)
+    total = c_eq["c"].sel(species="HAc").item() + c_eq["c"].sel(species="Ac-").item()
+    f_Ac_neg.append(c_eq["c"].sel(species="Ac-").item() / total)
 
 pKa_val = 4.756
 fig, ax = setup_figure()

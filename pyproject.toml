@@ -22,6 +22,7 @@ dependencies = [
     "numpy",
     "scipy",
     "matplotlib",
+    "xarray",
 ]
 
 [project.urls]

@@ -60,7 +60,7 @@ def test_acid_base_henderson_hasselbalch():
             "OH-": OH,
         }
         c_eq = solve_equilibrium(model, c0, T=T)
-        errors.append(abs(c_eq["AcOH"] - AcOH_HH))
+        errors.append(abs(c_eq["c"].sel(species="AcOH").item() - AcOH_HH))
 
     assert max(errors) < 1e-6
 
@@ -140,9 +140,10 @@ def test_phosphate_bjerrum_fractions_ph72():
         ("PO4-3", alpha3),
     ]:
         expected = alpha * c_tot_phos
-        err = abs(c_eq[sp] - expected)
+        val = c_eq["c"].sel(species=sp).item()
+        err = abs(val - expected)
         assert err < tol, (
-            f"{sp}: solver {c_eq[sp]:.6f}, Bjerrum {expected:.6f}, err {err:.2e}"
+            f"{sp}: solver {val:.6f}, Bjerrum {expected:.6f}, err {err:.2e}"
         )
 
 
@@ -184,9 +185,9 @@ def test_extreme_ph_acid_ph1():
     }
     c_eq = solve_equilibrium(model, c0, T=T)
 
-    frac_deprotonated = c_eq["AcO-"] / c_tot
+    frac_deprotonated = c_eq["c"].sel(species="AcO-").item() / c_tot
     assert frac_deprotonated < 1e-3
-    assert abs(c_eq["AcOH"] - AcOH_hh) < 1e-4
+    assert abs(c_eq["c"].sel(species="AcOH").item() - AcOH_hh) < 1e-4
 
 
 def test_extreme_ph_acid_ph13():
@@ -227,7 +228,7 @@ def test_extreme_ph_acid_ph13():
     }
     c_eq = solve_equilibrium(model, c0, T=T)
 
-    frac_protonated = c_eq["AcOH"] / c_tot
+    frac_protonated = c_eq["c"].sel(species="AcOH").item() / c_tot
     assert frac_protonated < 1e-7
 
 
@@ -250,8 +251,10 @@ def test_equilibrium_conservation_pure_weak_acid():
     c0 = {"HAc": 100.0, "Ac-": 1e-6, "H+": 1e-4, "OH-": 1e-7}
     c_eq = solve_equilibrium(model, c0)
 
-    pH = -math.log10(c_eq["H+"] / 1000)
-    total_acetate = c_eq["HAc"] + c_eq["Ac-"]
+    pH = -math.log10(c_eq["c"].sel(species="H+").item() / 1000)
+    total_acetate = (
+        c_eq["c"].sel(species="HAc").item() + c_eq["c"].sel(species="Ac-").item()
+    )
 
     assert pytest.approx(pH, abs=0.01) == 2.88
     assert pytest.approx(total_acetate, rel=1e-6) == 100.0
@@ -271,6 +274,6 @@ def test_equilibrium_conservation_independent_of_initial_oh():
     for c_oh in [1e-5, 1e-7, 1e-9]:
         c0 = {**c_base, "OH-": c_oh}
         c_eq = solve_equilibrium(model, c0)
-        pHs.append(-math.log10(c_eq["H+"] / 1000))
+        pHs.append(-math.log10(c_eq["c"].sel(species="H+").item() / 1000))
 
     assert max(pHs) - min(pHs) < 1e-4

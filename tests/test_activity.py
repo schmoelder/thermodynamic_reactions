@@ -124,12 +124,12 @@ def test_davies_ph_shift_direction():
 
     model_ideal = make_model(I_fixed=0.0)
     c_eq_ideal = solve_equilibrium(model_ideal, c0, T=T)
-    pH_ideal = -np.log10(c_eq_ideal["H+"] / C_REF)
+    pH_ideal = -np.log10(c_eq_ideal["c"].sel(species="H+").item() / C_REF)
 
     I_bg = 100.0
     model_ionic = make_model(I_fixed=I_bg)
     c_eq_davies = solve_equilibrium(model_ionic, c0, T=T)
-    pH_davies = -np.log10(c_eq_davies["H+"] / C_REF)
+    pH_davies = -np.log10(c_eq_davies["c"].sel(species="H+").item() / C_REF)
 
     I_L = I_bg / 1000.0
     sqrt_I = np.sqrt(I_L)

@@ -12,75 +12,81 @@ Units: SI throughout (mol/m³, K, s).
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Callable, Optional, Union
 
 import numpy as np
+import xarray as xr
 from scipy.integrate import solve_ivp
 
 from .model import ReactionModel
 
 __all__ = [
-    "SimulationResult",
     "simulate",
     "solve_equilibrium",
 ]
 
 
 # ---------------------------------------------------------------------------
-# Simulation result
+# Internal helpers
 # ---------------------------------------------------------------------------
 
 
-@dataclass
-class SimulationResult:
-    """
-    Result of a ReactionModel simulation.
+def _find_proton_idx(model: ReactionModel) -> tuple[int, float] | None:
+    """Return (species_index, c_ref) for H⁺ (charge +1, single-species component)."""
+    for comp in model.components:
+        if len(comp.species) == 1 and comp.species[0].charge == 1:
+            sp = comp.species[0]
+            return model.species_index[sp.name], sp.c_ref
+    return None
 
-    Attributes
-    ----------
-    t : np.ndarray
-        Time points [s].
-    c : np.ndarray
-        Concentrations [mol/m³], shape (n_t, n_species).
-    species : list[str]
-        Species names, matching columns of c.
-    success : bool
-    message : str
-    """
 
-    t: np.ndarray
-    c: np.ndarray
-    species: list[str]
-    success: bool
-    message: str
-    T_profile: Optional[np.ndarray] = None  # None when T was scalar/default
+def _assemble_simulate_dataset(
+    t: np.ndarray,
+    c_out: np.ndarray,
+    T_arr: np.ndarray,
+    model: ReactionModel,
+    species_names: list[str],
+) -> xr.Dataset:
+    I_arr = np.array(
+        [model.ionic_strength.evaluate(c_out[i], model.charges) for i in range(len(t))]
+    )
+    data_vars: dict = {
+        "c": (["time", "species"], c_out),
+        "T": (["time"], T_arr),
+        "I": (["time"], I_arr),
+    }
+    h_info = _find_proton_idx(model)
+    if h_info is not None:
+        h_idx, h_cref = h_info
+        pH_arr = -np.log10(np.maximum(c_out[:, h_idx], 1e-300) / h_cref)
+        data_vars["pH"] = (["time"], pH_arr)
+    return xr.Dataset(
+        data_vars,
+        coords={"time": t, "species": species_names},
+    )
 
-    def __getitem__(self, name: str) -> np.ndarray:
-        """result['A'] returns the concentration array of species A."""
-        return self.c[:, self.species.index(name)]
 
-    def plot(self, ax=None, species: Optional[list[str]] = None, **kwargs):
-        """
-        Plot concentrations vs time.
-
-        Parameters
-        ----------
-        ax : matplotlib Axes, optional
-        species : list[str], optional
-            Subset of species to plot. Default: all.
-        """
-        import matplotlib.pyplot as plt
-
-        if ax is None:
-            _, ax = plt.subplots()
-        names = species or self.species
-        for name in names:
-            ax.plot(self.t, self[name], label=name, **kwargs)
-        ax.set_xlabel("time [s]")
-        ax.set_ylabel("concentration [mol/m³]")
-        ax.legend()
-        return ax
+def _assemble_equilibrium_dataset(
+    c_sol: np.ndarray,
+    T: float,
+    model: ReactionModel,
+    species_names: list[str],
+) -> xr.Dataset:
+    I_val = float(model.ionic_strength.evaluate(c_sol, model.charges))
+    data_vars: dict = {
+        "c": (["species"], c_sol),
+        "T": ([], float(T)),
+        "I": ([], I_val),
+    }
+    h_info = _find_proton_idx(model)
+    if h_info is not None:
+        h_idx, h_cref = h_info
+        pH_val = float(-np.log10(max(float(c_sol[h_idx]), 1e-300) / h_cref))
+        data_vars["pH"] = ([], pH_val)
+    return xr.Dataset(
+        data_vars,
+        coords={"species": species_names},
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -99,7 +105,7 @@ def simulate(
     rtol: float = 1e-8,
     atol: float = 1e-10,
     method: str = "radau",
-) -> SimulationResult:
+) -> xr.Dataset:
     """
     Integrate a ReactionModel forward in time.
 
@@ -147,9 +153,15 @@ def simulate(
 
     Returns
     -------
-    SimulationResult
-        result.T_profile is populated when T is callable or
-        solvent_composition is given; None otherwise.
+    xr.Dataset
+        Variables: ``c`` (time × species), ``T`` (time), ``I`` (time),
+        and ``pH`` (time) when H⁺ is present in the model.
+        Coordinates: ``time`` [s], ``species`` (names).
+
+    Raises
+    ------
+    RuntimeError
+        If the solver does not converge.
     """
     species_names = [sp.name for sp in model.species]
     c_init = np.array([c0.get(name, 0.0) for name in species_names])
@@ -174,6 +186,8 @@ def simulate(
         # Initialise prescribed species from their function at t0
         for i, fn in zip(prescribed_idx, prescribed_fns):
             c_init[i] = fn(t_span[0])
+
+    T_default = T if T is not None else model.T
 
     # --- IDA path (scikits.odes) ---
     if method == "ida":
@@ -242,21 +256,20 @@ def simulate(
         ida_solver = ida_dae("ida", ida_residual, **solver_kwargs)
         output = ida_solver.solve(t_eval, c_init, ydot0)
 
+        if output.flag < 0:
+            raise RuntimeError(f"IDA solver did not converge: {output.message}")
+
         c_out = output.values.y.copy()
         for idx, fn in zip(prescribed_idx, prescribed_fns):
             c_out[:, idx] = np.array([fn(t) for t in output.values.t])
 
-        return SimulationResult(
-            t=output.values.t,
-            c=c_out,
-            species=species_names,
-            success=output.flag >= 0,
-            message=str(output.message),
-            T_profile=(
-                np.array([T_func_ida(t) for t in output.values.t])
-                if callable(T)
-                else None
-            ),
+        T_arr = (
+            np.array([T(t) for t in output.values.t])
+            if callable(T)
+            else np.full(len(output.values.t), T_default)
+        )
+        return _assemble_simulate_dataset(
+            output.values.t, c_out, T_arr, model, species_names
         )
 
     # --- coupled energy balance ---
@@ -366,13 +379,12 @@ def simulate(
             atol=atol,
             dense_output=False,
         )
-        return SimulationResult(
-            t=sol.t,
-            c=sol.y[:n, :].T,
-            species=species_names,
-            success=sol.success,
-            message=sol.message,
-            T_profile=sol.y[n, :],
+        if not sol.success:
+            raise RuntimeError(
+                f"Energy balance simulation did not converge: {sol.message}"
+            )
+        return _assemble_simulate_dataset(
+            sol.t, sol.y[:n, :].T, sol.y[n, :], model, species_names
         )
 
     # --- isothermal or prescribed T(t) ---
@@ -414,19 +426,20 @@ def simulate(
             dense_output=False,
         )
 
+        if not sol.success:
+            raise RuntimeError(f"Simulation did not converge: {sol.message}")
+
         c_out = np.zeros((len(sol.t), n))
         c_out[:, dynamic_idx] = sol.y.T
         for i, fn in zip(prescribed_idx, prescribed_fns):
             c_out[:, i] = np.array([fn(t) for t in sol.t])
 
-        return SimulationResult(
-            t=sol.t,
-            c=c_out,
-            species=species_names,
-            success=sol.success,
-            message=sol.message,
-            T_profile=np.array([T_func(t) for t in sol.t]) if callable(T) else None,
+        T_arr = (
+            np.array([T(t) for t in sol.t])
+            if callable(T)
+            else np.full(len(sol.t), T_default)
         )
+        return _assemble_simulate_dataset(sol.t, c_out, T_arr, model, species_names)
 
     def rhs(t: float, c: np.ndarray) -> np.ndarray:
         # residual(c, c_dot=0) = c_dot - f(c)  =>  f(c) = -residual(c, 0)
@@ -447,16 +460,15 @@ def simulate(
         dense_output=False,
     )
 
-    T_profile = np.array([T_func(t) for t in sol.t]) if callable(T) else None
+    if not sol.success:
+        raise RuntimeError(f"Simulation did not converge: {sol.message}")
 
-    return SimulationResult(
-        t=sol.t,
-        c=sol.y.T,
-        species=species_names,
-        success=sol.success,
-        message=sol.message,
-        T_profile=T_profile,
+    T_arr = (
+        np.array([T(t) for t in sol.t])
+        if callable(T)
+        else np.full(len(sol.t), T_default)
     )
+    return _assemble_simulate_dataset(sol.t, sol.y.T, T_arr, model, species_names)
 
 
 # ---------------------------------------------------------------------------
@@ -471,7 +483,7 @@ def solve_equilibrium(
     prescribed: Optional[dict] = None,
     max_iter: int = 200,
     tol: float = 1e-12,
-) -> dict[str, float]:
+) -> xr.Dataset:
     """
     Solve for equilibrium concentrations using Newton's method in log space.
 
@@ -507,8 +519,10 @@ def solve_equilibrium(
 
     Returns
     -------
-    dict[str, float]
-        Equilibrium concentrations [mol/m³].
+    xr.Dataset
+        Variables: ``c`` (species), ``T`` (scalar), ``I`` (scalar),
+        and ``pH`` (scalar) when H⁺ is present in the model.
+        Coordinate: ``species`` (names).
 
     Raises
     ------
@@ -655,4 +669,5 @@ def solve_equilibrium(
             f"Try a better initial guess or check that the system is well-posed."
         )
 
-    return dict(zip(species_names, c_sol))
+    T_actual = float(T if T is not None else model.T)
+    return _assemble_equilibrium_dataset(c_sol, T_actual, model, species_names)

@@ -143,7 +143,7 @@ def solve_equilibrium_sweep(
     c0: dict[str, float],
     prescribed: dict | None = None,
     T: float = 298.15,
-) -> dict[str, np.ndarray]:
+):
     """
     Solve equilibrium across a pH range by prescribing [H⁺] at each point.
 
@@ -167,10 +167,10 @@ def solve_equilibrium_sweep(
 
     Returns
     -------
-    dict[str, np.ndarray]
-        Equilibrium concentrations [mol/m³] for every species, each an
-        array of length ``len(pH)``.  Points where the solver did not
-        converge are filled with ``np.nan``.
+    xr.Dataset
+        Variable ``c`` with dimensions ``(pH, species)`` [mol/m³].
+        Points where the solver did not converge are filled with ``np.nan``.
+        Coordinates: ``pH`` (input values), ``species`` (names).
 
     Notes
     -----
@@ -180,13 +180,17 @@ def solve_equilibrium_sweep(
     initial guesses at every pH because the warm-start propagates the
     previous equilibrium state across the sweep.
     """
+    import xarray as xr
+
     from .solver import solve_equilibrium
 
     pH = np.asarray(pH, dtype=float)
     h_name, h_cref = _find_proton(model)
     species_names = [sp.name for sp in model.species]
+    n_pH = len(pH)
+    n_sp = len(species_names)
 
-    result = {name: np.full(len(pH), np.nan) for name in species_names}
+    c_arr = np.full((n_pH, n_sp), np.nan)
     c_curr = dict(c0)
 
     for i, ph in enumerate(pH):
@@ -195,13 +199,16 @@ def solve_equilibrium_sweep(
         step_prescribed = {h_name: c_H, **(prescribed or {})}
         try:
             c_eq = solve_equilibrium(model, c_curr, T=T, prescribed=step_prescribed)
-            for name in species_names:
-                result[name][i] = c_eq.get(name, np.nan)
-            c_curr = dict(c_eq)
+            for j, name in enumerate(species_names):
+                c_arr[i, j] = c_eq["c"].sel(species=name).item()
+            c_curr = {name: c_arr[i, j] for j, name in enumerate(species_names)}
         except RuntimeError:
             pass  # NaN already filled; warm-start from last successful result
 
-    return result
+    return xr.Dataset(
+        {"c": (["pH", "species"], c_arr)},
+        coords={"pH": pH, "species": species_names},
+    )
 
 
 # ---------------------------------------------------------------------------

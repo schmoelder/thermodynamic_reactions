@@ -51,9 +51,9 @@ def test_vanthoff_converges_at_each_temperature(T):
 
     tau = C_REF / (kf * (1.0 + 1.0 / K_expected))
     result = simulate(model, {"A": 1000.0, "B": 0.0}, (0, 10 * tau), T=T, n_points=300)
-    assert result.success
-
-    Q = (result["B"][-1] / C_REF) / (result["A"][-1] / C_REF)
+    Q = (result["c"].sel(species="B").values[-1] / C_REF) / (
+        result["c"].sel(species="A").values[-1] / C_REF
+    )
     assert abs(Q - K_expected) / K_expected < 1e-3
 
 

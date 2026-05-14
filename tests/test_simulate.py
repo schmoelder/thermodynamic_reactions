@@ -49,17 +49,17 @@ def test_reversible_ab_matches_analytical():
     )
 
     result = simulate(model, {"A": A0, "B": B0}, (0, 5.0))
-    assert result.success
+    t = result.coords["time"].values
 
     total = A0 + B0
     A_eq = total / (1 + K)
     B_eq = total * K / (1 + K)
     lam = kf_val + kr_val
-    A_ana = A_eq + (A0 - A_eq) * np.exp(-lam * result.t)
-    B_ana = B_eq + (B0 - B_eq) * np.exp(-lam * result.t)
+    A_ana = A_eq + (A0 - A_eq) * np.exp(-lam * t)
+    B_ana = B_eq + (B0 - B_eq) * np.exp(-lam * t)
 
-    assert np.max(np.abs(result["A"] - A_ana)) < 1e-6
-    assert np.max(np.abs(result["B"] - B_ana)) < 1e-6
+    assert np.max(np.abs(result["c"].sel(species="A").values - A_ana)) < 1e-6
+    assert np.max(np.abs(result["c"].sel(species="B").values - B_ana)) < 1e-6
 
 
 def test_reversible_ab_conservation():
@@ -71,8 +71,9 @@ def test_reversible_ab_conservation():
         reactions=[MassActionReaction("A <-> B", kf=2.0, kr=0.5)],
     )
     result = simulate(model, {"A": A0, "B": B0}, (0, 5.0))
-    assert result.success
-    assert np.max(np.abs(result["A"] + result["B"] - (A0 + B0))) < 1e-6
+    A = result["c"].sel(species="A").values
+    B = result["c"].sel(species="B").values
+    assert np.max(np.abs(A + B - (A0 + B0))) < 1e-6
 
 
 def test_thermodynamic_consistency_converges_to_K():
@@ -94,9 +95,11 @@ def test_thermodynamic_consistency_converges_to_K():
 
     tau = C_REF / (kf * (1.0 + 1.0 / K_eq))
     result = simulate(model, {"A": A0, "B": 0.0}, (0, 10.0 * tau), T=T, n_points=500)
-    assert result.success
 
-    Q_final = result["B"][-1] / result["A"][-1]
+    Q_final = (
+        result["c"].sel(species="B").values[-1]
+        / result["c"].sel(species="A").values[-1]
+    )
     assert abs(Q_final - K_eq) / K_eq < 1e-3
 
 
@@ -141,24 +144,24 @@ def test_conservation_multi_reaction():
 
     c0 = {"A": 500.0, "B": 300.0, "C": 0.0, "D": 0.0, "E": 0.0}
     result = simulate(model, c0, (0, 10.0))
-    assert result.success
+    c = result["c"]
 
-    C1 = result["A"] + result["C"] + result["D"]
-    C2 = result["B"] + result["C"] + result["E"]
+    C1 = (
+        c.sel(species="A").values
+        + c.sel(species="C").values
+        + c.sel(species="D").values
+    )
+    C2 = (
+        c.sel(species="B").values
+        + c.sel(species="C").values
+        + c.sel(species="E").values
+    )
     assert np.max(np.abs(C1 - C1[0])) < 1e-6
     assert np.max(np.abs(C2 - C2[0])) < 1e-6
 
 
 # ---------------------------------------------------------------------------
 # ThermodynamicReaction reduces to MassActionReaction under ideal conditions
-#
-# ThermodynamicReaction uses activities a_i = c_i / C_REF (ideal, γ=1):
-#   v = kf_thermo * prod(a_i^e_fwd) = (kf_thermo / C_REF^n) * prod(c_i^e_fwd)
-# MassActionReaction uses concentrations directly:
-#   v = kf_MA * prod(c_i^e_fwd)
-# Equivalence requires kf_thermo = kf_MA * C_REF^n.
-# For the equilibrium constant: K_thermo = K_conc * C_REF^(n_fwd - n_bwd),
-# where n_fwd and n_bwd are the sums of forward and backward exponents.
 # ---------------------------------------------------------------------------
 
 
@@ -188,8 +191,24 @@ def test_thermodynamic_reduces_to_mass_action_n1():
     result_ma = simulate(model_ma, c0, (0, 2.0))
     result_td = simulate(model_td, c0, (0, 2.0))
 
-    assert np.max(np.abs(result_ma["A"] - result_td["A"])) < 1e-6
-    assert np.max(np.abs(result_ma["B"] - result_td["B"])) < 1e-6
+    assert (
+        np.max(
+            np.abs(
+                result_ma["c"].sel(species="A").values
+                - result_td["c"].sel(species="A").values
+            )
+        )
+        < 1e-6
+    )
+    assert (
+        np.max(
+            np.abs(
+                result_ma["c"].sel(species="B").values
+                - result_td["c"].sel(species="B").values
+            )
+        )
+        < 1e-6
+    )
 
 
 def test_thermodynamic_reduces_to_mass_action_n2():
@@ -219,8 +238,24 @@ def test_thermodynamic_reduces_to_mass_action_n2():
     result_ma = simulate(model_ma, c0, (0, 5.0))
     result_td = simulate(model_td, c0, (0, 5.0))
 
-    assert np.max(np.abs(result_ma["A"] - result_td["A"])) < 1e-4
-    assert np.max(np.abs(result_ma["B"] - result_td["B"])) < 1e-4
+    assert (
+        np.max(
+            np.abs(
+                result_ma["c"].sel(species="A").values
+                - result_td["c"].sel(species="A").values
+            )
+        )
+        < 1e-4
+    )
+    assert (
+        np.max(
+            np.abs(
+                result_ma["c"].sel(species="B").values
+                - result_td["c"].sel(species="B").values
+            )
+        )
+        < 1e-4
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -320,9 +355,8 @@ def test_coupled_energy_balance_adiabatic():
         T=T0,
         solvent_composition=_WATER_X,
     )
-    assert result.success
-    dc_B = result["B"][-1]
-    dT_sim = result.T_profile[-1] - T0
+    dc_B = result["c"].sel(species="B").values[-1]
+    dT_sim = result["T"].values[-1] - T0
     dT_exp = -dH * dc_B / _RHO_CP_WATER
     np.testing.assert_allclose(dT_sim, dT_exp, rtol=1e-6)
 
@@ -341,12 +375,12 @@ def test_coupled_mass_balance():
         T=298.15,
         solvent_composition=_WATER_X,
     )
-    total = result["A"] + result["B"]
+    total = result["c"].sel(species="A").values + result["c"].sel(species="B").values
     np.testing.assert_allclose(total, c_tot, rtol=1e-8)
 
 
 def test_coupled_T_profile_populated():
-    """T_profile is always populated when solvent_composition is given."""
+    """T varies when solvent_composition is given (energy balance active)."""
     model = _make_ab_model_with_water(
         EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
         RateConstantFixed(kf_value=1e5),
@@ -358,8 +392,8 @@ def test_coupled_T_profile_populated():
         T=298.15,
         solvent_composition=_WATER_X,
     )
-    assert result.T_profile is not None
-    assert len(result.T_profile) == len(result.t)
+    assert "T" in result
+    assert len(result["T"]) == len(result.coords["time"])
 
 
 def test_coupled_callable_T_raises():
@@ -410,8 +444,7 @@ def test_coupled_callable_solvent_composition():
         T=298.15,
         solvent_composition=x_comp,
     )
-    assert result.success
-    assert result.T_profile is not None
+    assert "T" in result
 
 
 def test_energy_balance_custom_K_matches_vanthoff():
@@ -444,8 +477,7 @@ def test_energy_balance_custom_K_matches_vanthoff():
     kw = dict(c0={"A": 1000.0}, t_span=(0, 2.0), T=298.15, solvent_composition=_WATER_X)
     r_custom = simulate(model_custom, **kw)
     r_vH = simulate(model_vH, **kw)
-    assert r_custom.success and r_vH.success
-    np.testing.assert_allclose(r_custom.T_profile, r_vH.T_profile, rtol=1e-4)
+    np.testing.assert_allclose(r_custom["T"].values, r_vH["T"].values, rtol=1e-4)
 
 
 def test_energy_balance_mass_action_warns():
@@ -479,7 +511,7 @@ def test_prescribed_at_call_site_holds_constant():
         reactions=[MassActionReaction("A <-> A", kf=1.0)],
     )
     result = simulate(model, {"A": 100.0}, (0.0, 1.0), prescribed={"H2O": C_REF})
-    np.testing.assert_allclose(result["H2O"], C_REF, rtol=1e-10)
+    np.testing.assert_allclose(result["c"].sel(species="H2O").values, C_REF, rtol=1e-10)
 
 
 def test_solvent_included_in_state_c():
@@ -590,12 +622,12 @@ def test_prescribed_species_constant():
         prescribed={"A": lambda t: A0},
         n_points=200,
     )
-    assert result.success
+    t = result.coords["time"].values
 
-    np.testing.assert_allclose(result["A"], A0, rtol=1e-6)
+    np.testing.assert_allclose(result["c"].sel(species="A").values, A0, rtol=1e-6)
 
-    B_ana = k * A0 * result.t
-    np.testing.assert_allclose(result["B"], B_ana, rtol=1e-4)
+    B_ana = k * A0 * t
+    np.testing.assert_allclose(result["c"].sel(species="B").values, B_ana, rtol=1e-4)
 
 
 def test_prescribed_species_ramp():
@@ -617,9 +649,11 @@ def test_prescribed_species_ramp():
         prescribed={"A": lambda t: A0 - r * t},
         n_points=200,
     )
-    assert result.success
+    t = result.coords["time"].values
 
-    np.testing.assert_allclose(result["A"], A0 - r * result.t, rtol=1e-6)
+    np.testing.assert_allclose(
+        result["c"].sel(species="A").values, A0 - r * t, rtol=1e-6
+    )
 
-    B_ana = k * (A0 * result.t - 0.5 * r * result.t**2)
-    np.testing.assert_allclose(result["B"], B_ana, rtol=1e-4)
+    B_ana = k * (A0 * t - 0.5 * r * t**2)
+    np.testing.assert_allclose(result["c"].sel(species="B").values, B_ana, rtol=1e-4)

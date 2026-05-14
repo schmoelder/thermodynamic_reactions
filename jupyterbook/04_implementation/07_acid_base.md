@@ -61,9 +61,9 @@ c_tot = 100.0  # mol/m³ = 100 mM total acetate
 c0 = {"HAc": c_tot, "Ac-": 1e-6, "H+": 1e-4, "OH-": 1e-7}
 c_eq = solve_equilibrium(model_acetic, c0, T=298.15, prescribed={"H2O": water.c_ref})
 
-pH = -np.log10(c_eq["H+"] / H_plus.c_ref)
+pH = -np.log10(c_eq["c"].sel(species="H+").item() / H_plus.c_ref)
 pKa_v = -np.log10(k_acetic.K(298.15))
-pH_HH = pKa_v + np.log10(c_eq["Ac-"] / c_eq["HAc"])
+pH_HH = pKa_v + np.log10(c_eq["c"].sel(species="Ac-").item() / c_eq["c"].sel(species="HAc").item())
 
 print(f"pH (numerical)          = {pH:.4f}")
 print(f"pH (Henderson-Hasselbalch) = {pH_HH:.4f}")
@@ -152,8 +152,9 @@ for pH in [4.0, 7.2, 10.0]:
         model_phosphate_ideal, c0, T=298.15, prescribed={"H2O": water.c_ref}
     )
     ana = f[0] * c_tot_phosphate
+    c_H3PO4 = c_eq["c"].sel(species="H3PO4").item()
     print(
-        f"{pH:>6.1f}  {ana:>12.4f}  {c_eq['H3PO4']:>12.4f}  {abs(c_eq['H3PO4'] - ana):>10.2e}"
+        f"{pH:>6.1f}  {ana:>12.4f}  {c_H3PO4:>12.4f}  {abs(c_H3PO4 - ana):>10.2e}"
     )
 ```
 
@@ -222,9 +223,11 @@ eq_davies = solve_equilibrium(
 print(f"At pH 7.2, I = 150 mol/m³ vs ideal (mol/m³):")
 print(f"{'Species':>10}  {'ideal':>10}  {'Davies':>10}  {'shift':>10}")
 for sp in ["H3PO4", "H2PO4-", "HPO4-2", "PO4-3"]:
+    val_ideal = eq_ideal["c"].sel(species=sp).item()
+    val_davies = eq_davies["c"].sel(species=sp).item()
     print(
-        f"{sp:>10}  {eq_ideal[sp]:>10.3f}  {eq_davies[sp]:>10.3f}  "
-        f"{eq_davies[sp] - eq_ideal[sp]:>+10.3f}"
+        f"{sp:>10}  {val_ideal:>10.3f}  {val_davies:>10.3f}  "
+        f"{val_davies - val_ideal:>+10.3f}"
     )
 ```
 

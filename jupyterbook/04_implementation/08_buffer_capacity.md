@@ -88,9 +88,14 @@ c0_phos = {
 ```{code-cell} ipython3
 pH_vals = np.linspace(3.0, 12.0, 200)
 eq_phos = solve_equilibrium_sweep(model_phos, pH_vals, c0_phos, prescribed={"H2O": water.c_ref})
-pH_num = -np.log10(eq_phos["H+"] / H_plus.c_ref)
+pH_num = -np.log10(eq_phos["c"].sel(species="H+").values / H_plus.c_ref)
 
-Q = eq_phos["H+"] - eq_phos["OH-"] - eq_phos["H2PO4-"] - 2*eq_phos["HPO4-2"] - 3*eq_phos["PO4-3"]
+Q = (
+    eq_phos["c"].sel(species="H+").values - eq_phos["c"].sel(species="OH-").values
+    - eq_phos["c"].sel(species="H2PO4-").values
+    - 2 * eq_phos["c"].sel(species="HPO4-2").values
+    - 3 * eq_phos["c"].sel(species="PO4-3").values
+)
 beta_num = np.abs(np.diff(Q) / np.diff(pH_num))
 pH_mid = 0.5 * (pH_num[:-1] + pH_num[1:])
 ```
@@ -217,11 +222,15 @@ c0_mixed = {
 
 pH_mix = np.linspace(3.0, 10.0, 150)
 eq_mix = solve_equilibrium_sweep(model_mixed, pH_mix, c0_mixed, prescribed={"H2O": water.c_ref})
-pH_m = -np.log10(eq_mix["H+"] / H_plus.c_ref)
+pH_m = -np.log10(eq_mix["c"].sel(species="H+").values / H_plus.c_ref)
 Q_mix = (
-    eq_mix["H+"] - eq_mix["OH-"]
-    - eq_mix["H2Cit-"] - 2*eq_mix["HCit-2"] - 3*eq_mix["Cit-3"]
-    - eq_mix["H2PO4-"] - 2*eq_mix["HPO4-2"] - 3*eq_mix["PO4-3"]
+    eq_mix["c"].sel(species="H+").values - eq_mix["c"].sel(species="OH-").values
+    - eq_mix["c"].sel(species="H2Cit-").values
+    - 2 * eq_mix["c"].sel(species="HCit-2").values
+    - 3 * eq_mix["c"].sel(species="Cit-3").values
+    - eq_mix["c"].sel(species="H2PO4-").values
+    - 2 * eq_mix["c"].sel(species="HPO4-2").values
+    - 3 * eq_mix["c"].sel(species="PO4-3").values
 )
 beta_m = np.abs(np.diff(Q_mix) / np.diff(pH_m))
 pH_m_mid = 0.5 * (pH_m[:-1] + pH_m[1:])
@@ -314,8 +323,13 @@ model_phos_davies = ReactionModel(
 
 pH_dav_vals = np.linspace(3.0, 11.0, 180)
 eq_dav = solve_equilibrium_sweep(model_phos_davies, pH_dav_vals, c0_phos, prescribed={"H2O": water.c_ref})
-pH_dav = -np.log10(eq_dav["H+"] / H_plus.c_ref)
-Q_dav = eq_dav["H+"] - eq_dav["OH-"] - eq_dav["H2PO4-"] - 2*eq_dav["HPO4-2"] - 3*eq_dav["PO4-3"]
+pH_dav = -np.log10(eq_dav["c"].sel(species="H+").values / H_plus.c_ref)
+Q_dav = (
+    eq_dav["c"].sel(species="H+").values - eq_dav["c"].sel(species="OH-").values
+    - eq_dav["c"].sel(species="H2PO4-").values
+    - 2 * eq_dav["c"].sel(species="HPO4-2").values
+    - 3 * eq_dav["c"].sel(species="PO4-3").values
+)
 beta_dav = np.abs(np.diff(Q_dav) / np.diff(pH_dav))
 ```
 

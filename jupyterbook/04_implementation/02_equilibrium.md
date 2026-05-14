@@ -66,9 +66,9 @@ c_eq = solve_equilibrium(
 
 import matplotlib.pyplot as plt
 
-print(f"c_A = {c_eq['A']:.4f} mol/m³")
-print(f"c_B = {c_eq['B']:.4f} mol/m³")
-print(f"c_B / c_A = {c_eq['B'] / c_eq['A']:.6f}   (K = {K_val})")
+print(f"c_A = {c_eq['c'].sel(species='A').item():.4f} mol/m³")
+print(f"c_B = {c_eq['c'].sel(species='B').item():.4f} mol/m³")
+print(f"c_B / c_A = {c_eq['c'].sel(species='B').item() / c_eq['c'].sel(species='A').item():.6f}   (K = {K_val})")
 
 K_vals = np.linspace(0, 10, 300)
 fA = 1 / (1 + K_vals)
@@ -216,7 +216,7 @@ c_320 = solve_equilibrium(
 K_320 = K_vH.K(320.0)
 print(f"K(320 K)  = {K_320:.6f}")
 print(
-    f"c_B / c_A = {c_320['B'] / c_320['A']:.6f}   (error: {abs(c_320['B'] / c_320['A'] - K_320):.2e})"
+    f"c_B / c_A = {c_320['c'].sel(species='B').item() / c_320['c'].sel(species='A').item():.6f}   (error: {abs(c_320['c'].sel(species='B').item() / c_320['c'].sel(species='A').item() - K_320):.2e})"
 )
 ```
 

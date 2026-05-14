@@ -276,7 +276,7 @@ def test_sweep_prescribed_pH_matches_target():
     result = solve_equilibrium_sweep(model, pH_vals, c0)
 
     c_ref = H_plus.species[0].c_ref
-    pH_actual = -np.log10(result["H+"] / c_ref)
+    pH_actual = -np.log10(result["c"].sel(species="H+").values / c_ref)
     np.testing.assert_allclose(pH_actual, pH_vals, atol=1e-8)
 
 
@@ -290,8 +290,12 @@ def test_sweep_speciation_matches_henderson_hasselbalch():
     result = solve_equilibrium_sweep(model, pH_vals, c0)
 
     f = speciation_fractions(pH_vals, [pKa_val])
-    np.testing.assert_allclose(result["Ac-"], f[1] * c_tot, rtol=1e-4)
-    np.testing.assert_allclose(result["HAc"], f[0] * c_tot, rtol=1e-4)
+    np.testing.assert_allclose(
+        result["c"].sel(species="Ac-").values, f[1] * c_tot, rtol=1e-4
+    )
+    np.testing.assert_allclose(
+        result["c"].sel(species="HAc").values, f[0] * c_tot, rtol=1e-4
+    )
 
 
 def test_sweep_returns_arrays_for_all_species():
@@ -302,6 +306,5 @@ def test_sweep_returns_arrays_for_all_species():
     result = solve_equilibrium_sweep(model, pH_vals, c0)
 
     expected_species = {"HAc", "Ac-", "H+", "OH-"}
-    assert expected_species.issubset(result.keys())
-    for arr in result.values():
-        assert arr.shape == (10,)
+    assert expected_species.issubset(set(result.coords["species"].values))
+    assert result["c"].shape == (10, 4)

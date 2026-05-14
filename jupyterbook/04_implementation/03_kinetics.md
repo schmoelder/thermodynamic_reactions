@@ -79,14 +79,14 @@ import matplotlib.pyplot as plt
 B_eq = c_tot * K_val / (1 + K_val)
 A_eq = c_tot - B_eq
 
-print(f"solve_equilibrium: c_A = {c_eq['A']:.4f}, c_B = {c_eq['B']:.4f}")
+print(f"solve_equilibrium: c_A = {c_eq['c'].sel(species='A').item():.4f}, c_B = {c_eq['c'].sel(species='B').item():.4f}")
 print(
-    f"simulate long-time: c_A = {result_kin['A'][-1]:.4f}, c_B = {result_kin['B'][-1]:.4f}"
+    f"simulate long-time: c_A = {result_kin['c'].sel(species='A').values[-1]:.4f}, c_B = {result_kin['c'].sel(species='B').values[-1]:.4f}"
 )
 
 fig, ax = plt.subplots()
-ax.plot(result_kin.t, result_kin["A"], label="A", color="C0")
-ax.plot(result_kin.t, result_kin["B"], label="B", color="C1")
+ax.plot(result_kin.coords["time"], result_kin["c"].sel(species="A"), label="A", color="C0")
+ax.plot(result_kin.coords["time"], result_kin["c"].sel(species="B"), label="B", color="C1")
 ax.axhline(A_eq, color="C0", lw=1.0, ls="--")
 ax.axhline(B_eq, color="C1", lw=1.0, ls="--", label="equilibrium")
 ax.set_xlabel("time [s]")
@@ -251,8 +251,8 @@ for ax, result, T, K, B_eq, label in [
     (axes[0], result_298, 298.15, K_298, B_eq_298, "298 K"),
     (axes[1], result_320, 320.0, K_320, B_eq_320, "320 K"),
 ]:
-    ax.plot(result.t, result["A"], label="A", color="C0")
-    ax.plot(result.t, result["B"], label="B", color="C1")
+    ax.plot(result.coords["time"], result["c"].sel(species="A"), label="A", color="C0")
+    ax.plot(result.coords["time"], result["c"].sel(species="B"), label="B", color="C1")
     ax.axhline(c_tot - B_eq, color="C0", lw=1.0, ls="--")
     ax.axhline(B_eq, color="C1", lw=1.0, ls="--", label="equilibrium")
     ax.set_xlabel("time [s]")
@@ -304,22 +304,22 @@ result_ramp = simulate(
 :tags: [remove-cell]
 :label: cell-T-ramp
 
-T_inst = result_ramp.T_profile
+T_inst = result_ramp["T"].values
 K_inst = np.array([K_vH.K(T) for T in T_inst])
 B_inst = c_tot * K_inst / (1 + K_inst)
 
 fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
 
-axes[0].plot(result_ramp.t, T_inst - 273.15, color="C3")
+axes[0].plot(result_ramp.coords["time"], T_inst - 273.15, color="C3")
 axes[0].set_xlabel("time [s]")
 axes[0].set_ylabel(r"$T$ [°C]")
 
-axes[1].plot(result_ramp.t, result_ramp["A"], color="C0", label="A")
-axes[1].plot(result_ramp.t, result_ramp["B"], color="C1", label="B")
+axes[1].plot(result_ramp.coords["time"], result_ramp["c"].sel(species="A"), color="C0", label="A")
+axes[1].plot(result_ramp.coords["time"], result_ramp["c"].sel(species="B"), color="C1", label="B")
 axes[1].plot(
-    result_ramp.t, B_inst, color="C1", ls="--", lw=1.0, label=r"$c_B^\mathrm{eq}(T(t))$"
+    result_ramp.coords["time"], B_inst, color="C1", ls="--", lw=1.0, label=r"$c_B^\mathrm{eq}(T(t))$"
 )
-axes[1].plot(result_ramp.t, c_tot - B_inst, color="C0", ls="--", lw=1.0)
+axes[1].plot(result_ramp.coords["time"], c_tot - B_inst, color="C0", ls="--", lw=1.0)
 axes[1].set_xlabel("time [s]")
 axes[1].set_ylabel(r"concentration [mol/m³]")
 axes[1].legend(fontsize=8)
@@ -331,7 +331,7 @@ fig.tight_layout()
 :name: fig-T-ramp
 
 Kinetic simulation under a linear temperature ramp from $298\ \text{K}$ to $320\ \text{K}$ over $10\ \text{s}$.
-Left: the prescribed temperature programme stored in `result_ramp.T_profile`.
+Left: the prescribed temperature programme stored in `result_ramp["T"]`.
 Right: concentration trajectories; dashed lines track the instantaneous equilibrium
 $c_\text{B}^\text{eq}(T(t)) = c_\text{tot}\,K(T(t))/(1+K(T(t)))$.
 The exothermic reaction loses product B as temperature rises, consistent with Le Chatelier's principle.
