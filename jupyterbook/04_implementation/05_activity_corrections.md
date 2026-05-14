@@ -17,8 +17,8 @@ Activity coefficients and the Debye-Hückel/Davies models are derived in @nonide
 
 ## General activity corrections
 
-`ThermodynamicReaction` accepts an `activity_coefficient` argument.
-The contract is a callable `(state, charges) -> np.ndarray` that returns $\gamma_i$ for each species given the current physical state and charge numbers.
+`ReactionModel` accepts an `activity_coefficient` argument: a single model for the entire mixture, evaluated once per residual call and stored in `AuxiliaryState.gamma` before any reaction rate is computed.
+The contract is a callable `(state, aux, charges) -> np.ndarray` that returns $\gamma_i$ for each species given the current state, auxiliary state (which carries ionic strength), and charge numbers.
 `ActivityCoefficientCustom` wraps any such callable, making any activity model available without modifying the framework.
 
 A constant activity coefficient already illustrates the effect.
@@ -26,22 +26,34 @@ For $\ce{A <=> B}$ with ideal $K = 4$, setting $\gamma_\text{B} = 0.7$ while $\g
 The apparent equilibrium constant in concentration space becomes $K_c = K\,\gamma_\text{A}/\gamma_\text{B} = 4/0.7 \approx 5.71$:
 
 ```{code-cell} ipython3
+import warnings
+
 import numpy as np
 from reactions.api import (
     Species,
     Component,
+    State,
+    AuxiliaryState,
     IonicStrengthIdeal,
     IonicStrengthBackground,
     IonicStrengthFixed,
+    ActivityCoefficientIdeal,
     ActivityCoefficientDebyeHuckel,
     ActivityCoefficientDavies,
     ActivityCoefficientCustom,
-    PhysicalState,
+    _water_epsilon_r,
     EquilibriumConstant,
     RateConstantFixed,
     ThermodynamicReaction,
     ReactionModel,
     pKa,
+    H_plus,
+    OH_minus,
+    autoionization,
+    tris,
+    tris_equilibria,
+    phosphate,
+    phosphate_equilibria,
 )
 from reactions.solver import solve_equilibrium, simulate
 
@@ -71,11 +83,11 @@ model_custom = ReactionModel(
             "A <-> B",
             mode="equil",
             equilibrium_constant=EquilibriumConstant(K_thermo),
-            activity_coefficient=ActivityCoefficientCustom(
-                lambda state, charges: np.array([1.0, gamma_B])
-            ),
         ),
     ],
+    activity_coefficient=ActivityCoefficientCustom(
+        lambda state, aux, charges: np.array([1.0, gamma_B])
+    ),
 )
 
 c_ideal = solve_equilibrium(model_ideal, c0={"A": c_tot / 2, "B": c_tot / 2})
@@ -166,11 +178,11 @@ model_custom_kin = ReactionModel(
             mode="kinetic",
             equilibrium_constant=EquilibriumConstant(K_thermo),
             rate_constant=RateConstantFixed(2000.0),
-            activity_coefficient=ActivityCoefficientCustom(
-                lambda state, charges: np.array([1.0, gamma_B])
-            ),
         ),
     ],
+    activity_coefficient=ActivityCoefficientCustom(
+        lambda state, aux, charges: np.array([1.0, gamma_B])
+    ),
 )
 
 result_ideal = simulate(model_ideal_kin, c0={"A": c_tot, "B": 0.0}, t_span=(0, 2.0))
@@ -207,7 +219,7 @@ Concentration of B over time for ideal and non-ideal ($\gamma_\text{B} = 0.7$, $
 Both trajectories start from pure A and follow the same initial slope; the non-ideal system converges to a higher equilibrium concentration (dashed lines) because $\gamma_\text{B} < 1$ stabilises B relative to A.
 ```
 
-Any callable that maps `(state, charges)` to an array of activity coefficients slots in identically; the solver loop is unchanged.
+Any callable that maps `(state, aux, charges)` to an array of activity coefficients slots in identically; the solver loop is unchanged.
 
 
 ## Activity models for aqueous electrolytes
@@ -253,7 +265,8 @@ model_nacl = ReactionModel(
 
 c = np.array([1e-4, 1e-4, 1000.0, 150.0, 150.0])  # H+, OH-, H2O, Cl-, Na+ [mol/m³]
 state = model_nacl.make_state(c)
-print(f"I = {state.I / 1000:.4f} mol/L   (expected 0.1500 for 150 mM NaCl)")
+aux = model_nacl.make_aux(state)
+print(f"I = {aux.I / 1000:.4f} mol/L   (expected 0.1500 for 150 mM NaCl)")
 ```
 
 **`IonicStrengthBackground`** adds a fixed $I_\text{bg}$ to the species-computed value, representing an unmodelled salt such as the NaCl gradient in ion-exchange chromatography.
@@ -273,7 +286,8 @@ I_bg = 50.0  # mol/m³
 
 def eval_I_ideal(c_salt):
     c_vec = np.array([1e-4, 1e-4, 1000.0, c_salt, c_salt])
-    return model_nacl.make_state(c_vec).I
+    state = model_nacl.make_state(c_vec)
+    return model_nacl.make_aux(state).I
 
 
 I_ideal = np.array([eval_I_ideal(c) for c in c_nacl])
@@ -326,8 +340,10 @@ dav = ActivityCoefficientDavies()
 c_H = 1e-4  # mol/m³  (= 10⁻⁷ mol/L, nominal pH 7)
 I = 150.0  # mol/m³  (= 150 mM)
 
-state = PhysicalState(c=np.array([c_H]), T=298.15, I=I)
-gamma_H = dav.activity(state, np.array([1.0]))[0]
+state = State("bulk", {"c": ["H+"]}, T=298.15)
+state.c = np.array([c_H])
+aux = AuxiliaryState(I=I, c_ref=np.array([C_REF]), gamma=np.ones(1))
+gamma_H = dav.activity(state, aux, np.array([1.0]))[0]
 
 print(f"γ(H+) at 150 mM    = {gamma_H:.4f}")
 print(f"pH from c(H+)      = {-np.log10(c_H / C_REF):.4f}")
@@ -353,16 +369,15 @@ model = ReactionModel(
             "HA <-> A- + H+",
             mode="equil",
             equilibrium_constant=pKa(pKa_thermo),
-            activity_coefficient=ActivityCoefficientDavies(),
         ),
         ThermodynamicReaction(
             "H2O <-> H+ + OH-",
             mode="equil",
             equilibrium_constant=EquilibriumConstant(1e-14),
-            activity_coefficient=ActivityCoefficientDavies(),
         ),
     ],
     ionic_strength=IonicStrengthBackground(I_bg=150.0),
+    activity_coefficient=ActivityCoefficientDavies(),
     T=298.15,
 )
 
@@ -400,16 +415,15 @@ def make_model(activity_coeff, I_bg):
                 "HA <-> A- + H+",
                 mode="equil",
                 equilibrium_constant=pKa(pKa_thermo),
-                activity_coefficient=activity_coeff,
             ),
             ThermodynamicReaction(
                 "H2O <-> H+ + OH-",
                 mode="equil",
                 equilibrium_constant=EquilibriumConstant(1e-14),
-                activity_coefficient=activity_coeff,
             ),
         ],
         ionic_strength=IonicStrengthBackground(I_bg=I_bg),
+        activity_coefficient=activity_coeff,
         T=298.15,
     )
 
@@ -467,9 +481,6 @@ Passing `epsilon_r=None` (the default) uses the stored 25 °C value $A = 0.509$ 
 The library provides `_water_epsilon_r`, a {cite:t}`malmberg1956` correlation valid from 0 to 100 °C, as a ready-made callable:
 
 ```{code-cell} ipython3
-import warnings
-from reactions.api import _water_epsilon_r
-
 charges = np.array([1.0, -1.0])
 I = 150.0  # mol/m³
 
@@ -477,16 +488,168 @@ dav_fixed = ActivityCoefficientDavies()
 dav_Tdep = ActivityCoefficientDavies(epsilon_r=_water_epsilon_r)
 
 for T in [298.15, 310.0, 330.0]:
-    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=T, I=I)
+    state = State("bulk", {"c": ["H+", "OH-"]}, T=T)
+    state.c = np.array([1e-4, 1e-4])
+    aux = AuxiliaryState(I=I, c_ref=np.array([C_REF, C_REF]), gamma=np.ones(2))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        g_fixed = dav_fixed.activity(state, charges)[0]
-    g_Tdep = dav_Tdep.activity(state, charges)[0]
+        g_fixed = dav_fixed.activity(state, aux, charges)[0]
+    g_Tdep = dav_Tdep.activity(state, aux, charges)[0]
     print(f"T = {T:.2f} K:  γ (fixed A) = {g_fixed:.4f},  γ (T-dep A) = {g_Tdep:.4f}")
 ```
 
 At 298 K the two agree by construction; above 298 K the temperature-dependent path gives lower $\gamma$ (stronger non-ideality) as $A$ grows.
 A scalar `epsilon_r` value overrides the 25 °C constant with a fixed dielectric environment, for example `epsilon_r=33.0` for methanol at 25 °C.
+
+
+## Tris buffer: van't Hoff temperature sensitivity
+
+Tris is one of the most widely used biological buffers, but its pKa shifts by approximately $-0.028\,\mathrm{pK}$ units per kelvin, more than ten times the temperature sensitivity of phosphate or acetate.
+The origin is thermodynamic: the deprotonation reaction $\ce{TrisH+ <=> Tris + H+}$ has $\Delta H^\circ = +47.45\,\mathrm{kJ\,mol^{-1}}$ (Goldberg et al. 2002), so increasing temperature drives the equilibrium toward dissociation.
+At physiological ionic strength $I = 150\,\mathrm{mM}$, varying temperature from 5 °C to 40 °C shifts the apparent pKa by nearly one unit:
+
+```{code-cell} ipython3
+:tags: [remove-cell]
+:label: cell-tris-T
+
+I_PHYS = 150.0  # mol/m³
+
+model_tris_ideal = ReactionModel(
+    components=[tris, H_plus, OH_minus],
+    reactions=[*tris_equilibria(), *autoionization()],
+    ionic_strength=IonicStrengthFixed(I=I_PHYS),
+    activity_coefficient=ActivityCoefficientIdeal(),
+)
+model_tris_davies = ReactionModel(
+    components=[tris, H_plus, OH_minus],
+    reactions=[*tris_equilibria(), *autoionization()],
+    ionic_strength=IonicStrengthFixed(I=I_PHYS),
+    activity_coefficient=ActivityCoefficientDavies(epsilon_r=_water_epsilon_r),
+)
+
+T_arr = np.linspace(278.15, 313.15, 50)
+c0_tris = {"TrisH+": 25.0, "Tris": 25.0, "H+": 1e-5, "OH-": 1e-3}
+
+pKa_ideal_T = []
+pKa_davies_T = []
+for T in T_arr:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        sol_i = solve_equilibrium(model_tris_ideal, c0=c0_tris, T=T)
+        sol_d = solve_equilibrium(model_tris_davies, c0=c0_tris, T=T)
+    pKa_ideal_T.append(-np.log10(sol_i["c"].sel(species="H+").item() / C_REF))
+    pKa_davies_T.append(-np.log10(sol_d["c"].sel(species="H+").item() / C_REF))
+
+eq_tris = tris_equilibria()[0].equilibrium_constant
+pKa_vH = np.array([-np.log10(eq_tris.K(T)) for T in T_arr])
+
+from reactions.plots import setup_figure, COLORS
+
+fig, ax = setup_figure()
+ax.plot(T_arr - 273.15, pKa_vH, color="gray", ls="--", lw=1.0, label="van't Hoff (ideal, analytical)")
+ax.plot(T_arr - 273.15, pKa_ideal_T, color="C0", lw=1.5, label="ideal activity (numerical)")
+ax.plot(T_arr - 273.15, pKa_davies_T, color="C1", ls="-.", lw=1.5, label="Davies T-dep (numerical)")
+ax.set_xlabel(r"$T$ [°C]")
+ax.set_ylabel(r"apparent $\mathrm{p}K_a$")
+ax.legend()
+fig.tight_layout()
+```
+
+```{figure} #cell-tris-T
+:name: fig-tris-T
+
+Apparent pKa of Tris at $I = 150\,\mathrm{mM}$ (fixed) as a function of temperature, for ideal and Davies (temperature-dependent $A$) activity models.
+The three lines are indistinguishable because $\Delta z^2 = z_{\ce{Tris}}^2 + z_{\ce{H+}}^2 - z_{\ce{TrisH+}}^2 = 0 + 1 - 1 = 0$: both charged species in the reaction ($\ce{TrisH+}$ and $\ce{H+}$) carry $|z|=1$, so the Debye-Hückel corrections cancel exactly.
+The entire pKa shift is determined by van't Hoff alone.
+```
+
+The charge cancellation $\Delta z^2 = 0$ makes the Tris pKa entirely insensitive to ionic strength; a Tris buffer prepared at fixed buffer ratio maintains the same pH regardless of salt concentration.
+The price is strong temperature sensitivity: a 10 °C change shifts the pH of a half-equivalence Tris buffer by $\approx 0.28$ units, which is large enough to affect enzyme kinetics and protein stability assays.
+
+
+## Polyprotic equilibria: charge-dependent activity shifts
+
+Phosphoric acid dissociates in three steps of increasing charge:
+
+$$
+\ce{H3PO4 <=> H2PO4- + H+}, \quad
+\ce{H2PO4- <=> HPO4^{2-} + H+}, \quad
+\ce{HPO4^{2-} <=> PO4^{3-} + H+}.
+$$
+
+For each step, $\Delta z^2 = \sum_i \nu_i z_i^2$ takes the values $2$, $4$, and $6$, so the Davies correction $\Delta\mathrm{p}K_a = -A\,f(I)\,\Delta z^2$ grows linearly with step number.
+At $I = 150\,\mathrm{mM}$ and $T = 25\,{}^\circ\mathrm{C}$ ($A = 0.509$, $f(I) = 0.234$), the three shifts are $-0.24$, $-0.48$, and $-0.72$ pKa units, confirmed by solving the coupled equilibrium at each half-equivalence point:
+
+```{code-cell} ipython3
+model_phosphate = ReactionModel(
+    components=[phosphate, H_plus, OH_minus],
+    reactions=[*phosphate_equilibria(), *autoionization()],
+    ionic_strength=IonicStrengthFixed(I=I_PHYS),
+    activity_coefficient=ActivityCoefficientDavies(),
+)
+
+A = 0.509
+I_M = I_PHYS / C_REF
+f_I = np.sqrt(I_M) / (1 + np.sqrt(I_M)) - 0.3 * I_M
+pKw_app = 14.0 - A * f_I * 2  # Davies correction for water (Δz²=2)
+
+pKa_thermo = [2.148, 7.198, 12.35]
+delta_z2 = [2, 4, 6]
+
+print(f"{'Step':<6} {'pKa_thermo':>12} {'pKa_app (num)':>14} {'pKa_app (ana)':>14} {'Δ':>8}")
+for k, (pKa_t, dz2) in enumerate(zip(pKa_thermo, delta_z2)):
+    species_acid = ["H3PO4", "H2PO4-", "HPO4-2"][k]
+    species_base = ["H2PO4-", "HPO4-2", "PO4-3"][k]
+    pKa_app_est = pKa_t - A * f_I * dz2
+    cH_init = 10 ** (-pKa_app_est) * C_REF
+    cOH_init = 10 ** (-pKw_app) * C_REF**2 / cH_init
+    c0 = {
+        species_acid: 25.0,
+        species_base: 25.0,
+        "H+": cH_init,
+        "OH-": cOH_init,
+    }
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        sol = solve_equilibrium(model_phosphate, c0=c0)
+    pKa_num = -np.log10(sol["c"].sel(species="H+").item() / C_REF)
+    pKa_ana = pKa_app_est
+    print(
+        f"  {k+1:<4d} {pKa_t:>12.3f} {pKa_num:>14.3f} {pKa_ana:>14.3f} {pKa_num - pKa_t:>8.3f}"
+    )
+```
+
+```{code-cell} ipython3
+:tags: [remove-cell]
+:label: cell-phosphate-shift
+
+I_arr_M = np.linspace(0.001, 0.300, 200)
+A = 0.509
+f_arr = np.sqrt(I_arr_M) / (1 + np.sqrt(I_arr_M)) - 0.3 * I_arr_M
+
+fig, ax = setup_figure()
+for k, (pKa_t, dz2, label) in enumerate(
+    zip(pKa_thermo, delta_z2, [r"$\mathrm{H_3PO_4}$", r"$\mathrm{H_2PO_4^-}$", r"$\mathrm{HPO_4^{2-}}$"])
+):
+    pKa_app = pKa_t - A * f_arr * dz2
+    ax.plot(I_arr_M * 1e3, pKa_app - pKa_t, color=f"C{k}", label=rf"{label}, $\Delta z^2={dz2}$")
+ax.axvline(150, color="gray", lw=0.6, ls=":")
+ax.set_xlabel(r"$I$ [mM]")
+ax.set_ylabel(r"$\mathrm{p}K_{a,\mathrm{app}} - \mathrm{p}K_{a,\mathrm{thermo}}$")
+ax.legend()
+fig.tight_layout()
+```
+
+```{figure} #cell-phosphate-shift
+:name: fig-phosphate-shift
+
+Davies activity correction $\Delta\mathrm{p}K_a = \mathrm{p}K_{a,\mathrm{app}} - \mathrm{p}K_{a,\mathrm{thermo}}$ for the three phosphate dissociation steps as a function of ionic strength.
+Each curve is the analytical result $-A\,f(I)\,\Delta z^2$; the dotted line marks physiological $I = 150\,\mathrm{mM}$.
+The shift grows with both $I$ and $\Delta z^2$: step 3 ($\Delta z^2 = 6$) is suppressed by $\approx 0.72$ units at physiological strength, meaning any calculation that uses the thermodynamic pKa directly overestimates the pH of a phosphate buffer by three quarters of a unit.
+```
+
+The numerical pKa values in the table (column `pKa_app (num)`) match the analytical formula to within rounding.
+The agreement confirms that the solver correctly propagates activity corrections through the coupled three-step equilibrium: each reaction reads $\gamma_i$ from `aux.gamma`, which was computed once from the same concentration state before the residual loop ran.
 
 ---
 
