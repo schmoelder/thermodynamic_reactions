@@ -10,6 +10,7 @@ buffers are treated as temperature-independent at this level.
 
 Usage pattern::
 
+    from reactions.activity import ActivityCoefficientDavies
     from reactions.common import (
         water,
         H_plus,
@@ -18,19 +19,18 @@ Usage pattern::
         autoionization,
         acetic_acid_equilibria,
     )
-    from reactions.activity import ActivityCoefficientDavies
     from reactions.formulation import Solution
     from reactions.ionic import IonicStrengthIdeal
     from reactions.model import ReactionModel
 
-    davies = ActivityCoefficientDavies()
     model = ReactionModel(
         components=[acetic_acid, H_plus, OH_minus, water],
         reactions=[
-            *acetic_acid_equilibria(activity_coefficient=davies),
-            *autoionization(activity_coefficient=davies),
+            *acetic_acid_equilibria(),
+            *autoionization(),
         ],
         ionic_strength=IonicStrengthIdeal(),
+        activity_coefficient=ActivityCoefficientDavies(),
     )
     sol = Solution(water, solutes={"HAc": 100.0, "H+": 1e-4, "OH-": 1e-7})
     c_eq = solve_equilibrium(model, sol.c0, prescribed=sol.prescribed)
@@ -157,7 +157,7 @@ mops = Component(
 # is always *factory(...) regardless of how many reactions a system has.
 
 
-def autoionization(activity_coefficient=None) -> list[ThermodynamicReaction]:
+def autoionization() -> list[ThermodynamicReaction]:
     r"""
     Water autoionization constraint for dilute aqueous systems (pKw = 14.00, ΔH° = 55.8 kJ/mol).
 
@@ -176,12 +176,11 @@ def autoionization(activity_coefficient=None) -> list[ThermodynamicReaction]:
             "<-> H+ + OH-",
             mode="equil",
             equilibrium_constant=pKa(14.00, dH=55800.0),
-            activity_coefficient=activity_coefficient,
         ),
     ]
 
 
-def acetic_acid_equilibria(activity_coefficient=None) -> list[ThermodynamicReaction]:
+def acetic_acid_equilibria() -> list[ThermodynamicReaction]:
     """
     ``HAc <-> Ac- + H+``  (pKa = 4.756; temperature-independent).
 
@@ -192,12 +191,11 @@ def acetic_acid_equilibria(activity_coefficient=None) -> list[ThermodynamicReact
             "HAc <-> Ac- + H+",
             mode="equil",
             equilibrium_constant=pKa(4.756),
-            activity_coefficient=activity_coefficient,
         ),
     ]
 
 
-def phosphate_equilibria(activity_coefficient=None) -> list[ThermodynamicReaction]:
+def phosphate_equilibria() -> list[ThermodynamicReaction]:
     """
     Three dissociation steps of phosphoric acid (pKa = 2.148, 7.198, 12.35).
 
@@ -208,24 +206,21 @@ def phosphate_equilibria(activity_coefficient=None) -> list[ThermodynamicReactio
             "H3PO4 <-> H2PO4- + H+",
             mode="equil",
             equilibrium_constant=pKa(2.148),
-            activity_coefficient=activity_coefficient,
         ),
         ThermodynamicReaction(
             "H2PO4- <-> HPO4-2 + H+",
             mode="equil",
             equilibrium_constant=pKa(7.198),
-            activity_coefficient=activity_coefficient,
         ),
         ThermodynamicReaction(
             "HPO4-2 <-> PO4-3 + H+",
             mode="equil",
             equilibrium_constant=pKa(12.35),
-            activity_coefficient=activity_coefficient,
         ),
     ]
 
 
-def citric_acid_equilibria(activity_coefficient=None) -> list[ThermodynamicReaction]:
+def citric_acid_equilibria() -> list[ThermodynamicReaction]:
     """
     Three dissociation steps of citric acid (pKa = 3.128, 4.761, 6.396).
 
@@ -236,24 +231,21 @@ def citric_acid_equilibria(activity_coefficient=None) -> list[ThermodynamicReact
             "H3Cit <-> H2Cit- + H+",
             mode="equil",
             equilibrium_constant=pKa(3.128),
-            activity_coefficient=activity_coefficient,
         ),
         ThermodynamicReaction(
             "H2Cit- <-> HCit-2 + H+",
             mode="equil",
             equilibrium_constant=pKa(4.761),
-            activity_coefficient=activity_coefficient,
         ),
         ThermodynamicReaction(
             "HCit-2 <-> Cit-3 + H+",
             mode="equil",
             equilibrium_constant=pKa(6.396),
-            activity_coefficient=activity_coefficient,
         ),
     ]
 
 
-def tris_equilibria(activity_coefficient=None) -> list[ThermodynamicReaction]:
+def tris_equilibria() -> list[ThermodynamicReaction]:
     """
     ``TrisH+ <-> Tris + H+``  (pKa = 8.072, ΔH° = −47.45 kJ/mol).
 
@@ -267,12 +259,11 @@ def tris_equilibria(activity_coefficient=None) -> list[ThermodynamicReaction]:
             "TrisH+ <-> Tris + H+",
             mode="equil",
             equilibrium_constant=pKa(8.072, dH=-47450.0),
-            activity_coefficient=activity_coefficient,
         ),
     ]
 
 
-def hepes_equilibria(activity_coefficient=None) -> list[ThermodynamicReaction]:
+def hepes_equilibria() -> list[ThermodynamicReaction]:
     """
     ``HEPESH <-> HEPES- + H+``  (pKa = 7.55; temperature-independent).
 
@@ -283,12 +274,11 @@ def hepes_equilibria(activity_coefficient=None) -> list[ThermodynamicReaction]:
             "HEPESH <-> HEPES- + H+",
             mode="equil",
             equilibrium_constant=pKa(7.55),
-            activity_coefficient=activity_coefficient,
         ),
     ]
 
 
-def mops_equilibria(activity_coefficient=None) -> list[ThermodynamicReaction]:
+def mops_equilibria() -> list[ThermodynamicReaction]:
     """
     ``MOPSH <-> MOPS- + H+``  (pKa = 7.20; temperature-independent).
 
@@ -299,6 +289,5 @@ def mops_equilibria(activity_coefficient=None) -> list[ThermodynamicReaction]:
             "MOPSH <-> MOPS- + H+",
             mode="equil",
             equilibrium_constant=pKa(7.20),
-            activity_coefficient=activity_coefficient,
         ),
     ]

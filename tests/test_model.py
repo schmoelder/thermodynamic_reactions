@@ -73,9 +73,7 @@ def _eb_rhs_T(model, c, T, rho_cp):
         eq = getattr(rxn, "equilibrium_constant", None)
         if eq is None:
             continue
-        Q_dot += eq.reaction_enthalpy(T) * rxn.net_rate(
-            state, aux, model.species_index, model.charges
-        )
+        Q_dot += eq.reaction_enthalpy(T) * rxn.net_rate(state, aux, model.species_index)
     return -Q_dot / rho_cp
 
 
@@ -94,9 +92,9 @@ def _eb_jac_analytic(model, c, T, rho_cp):
             continue
         dH = eq.reaction_enthalpy(T)
         dH_dT = eq.d_reaction_enthalpy_dT(T)
-        phi = rxn.net_rate(state, aux, model.species_index, model.charges)
-        dphi_dc = rxn.net_rate_jac(state, aux, model.species_index, model.charges)
-        dphi_dT = rxn.net_rate_dT(state, aux, model.species_index, model.charges)
+        phi = rxn.net_rate(state, aux, model.species_index)
+        dphi_dc = rxn.net_rate_jac(state, aux, model.species_index)
+        dphi_dT = rxn.net_rate_dT(state, aux, model.species_index)
         jac_c -= dH / rho_cp * dphi_dc
         jac_T -= (dH * dphi_dT + phi * dH_dT) / rho_cp
     return jac_c, jac_T

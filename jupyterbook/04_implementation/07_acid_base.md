@@ -162,7 +162,7 @@ for pH in [4.0, 7.2, 10.0]:
 ## Ionic strength corrections
 
 Activity coefficients shift the apparent p$K_a$ values at nonzero ionic strength (@nonidealities, @acid-base).
-`ActivityCoefficientDavies` is passed per reaction; ionic strength is recomputed from the current concentration state and passed into $\gamma_i$ before each residual evaluation, so activity corrections enter the nonlinear solve consistently (@implementation-activity):
+`ActivityCoefficientDavies` is passed to `ReactionModel`; ionic strength is recomputed from the current concentration state and passed into $\gamma_i$ before each residual evaluation, so activity corrections enter the nonlinear solve consistently (@implementation-activity):
 
 ```{code-cell} ipython3
 model_phosphate_davies = ReactionModel(
@@ -172,28 +172,25 @@ model_phosphate_davies = ReactionModel(
             "H3PO4 <-> H2PO4- + H+",
             mode="equil",
             equilibrium_constant=pKa(pKa1),
-            activity_coefficient=ActivityCoefficientDavies(),
         ),
         ThermodynamicReaction(
             "H2PO4- <-> HPO4-2 + H+",
             mode="equil",
             equilibrium_constant=pKa(pKa2),
-            activity_coefficient=ActivityCoefficientDavies(),
         ),
         ThermodynamicReaction(
             "HPO4-2 <-> PO4-3 + H+",
             mode="equil",
             equilibrium_constant=pKa(pKa3),
-            activity_coefficient=ActivityCoefficientDavies(),
         ),
         ThermodynamicReaction(
             "H2O <-> H+ + OH-",
             mode="equil",
             equilibrium_constant=pKa(14.00),
-            activity_coefficient=ActivityCoefficientDavies(),
         ),
     ],
     ionic_strength=IonicStrengthBackground(I_bg=150.0),
+    activity_coefficient=ActivityCoefficientDavies(),
     T=298.15,
 )
 ```

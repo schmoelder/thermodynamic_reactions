@@ -545,9 +545,9 @@ def test_custom_ac_sees_solvent_in_state_c():
                 mode="kinetic",
                 equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
                 rate_constant=RateConstantFixed(1000.0),
-                activity_coefficient=ActivityCoefficientCustom(fn=custom_ac),
             )
         ],
+        activity_coefficient=ActivityCoefficientCustom(fn=custom_ac),
     )
     h2o_idx_ref[0] = model.species_index["H2O"]
     simulate(
@@ -583,9 +583,9 @@ def test_gradient_solvent_varies_in_state_c():
                 mode="kinetic",
                 equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
                 rate_constant=RateConstantFixed(1000.0),
-                activity_coefficient=ActivityCoefficientCustom(fn=custom_ac),
             )
         ],
+        activity_coefficient=ActivityCoefficientCustom(fn=custom_ac),
     )
     h2o_idx_ref[0] = model.species_index["H2O"]
     simulate(

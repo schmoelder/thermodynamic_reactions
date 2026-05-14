@@ -337,9 +337,7 @@ def simulate(
                 if eq is None:
                     continue
                 dH = eq.reaction_enthalpy(T_cur)
-                Q_dot += dH * rxn.net_rate(
-                    state, aux, model.species_index, model.charges
-                )
+                Q_dot += dH * rxn.net_rate(state, aux, model.species_index)
             return np.append(dc_dt, -Q_dot / rho_cp)
 
         def jac_coupled(t: float, y: np.ndarray) -> np.ndarray:
@@ -365,13 +363,9 @@ def simulate(
                     continue
                 dH = eq.reaction_enthalpy(T_cur)
                 dH_dT = eq.d_reaction_enthalpy_dT(T_cur)
-                phi = rxn.net_rate(state, aux, model.species_index, model.charges)
-                dphi_dc = rxn.net_rate_jac(
-                    state, aux, model.species_index, model.charges
-                )
-                dphi_dT = rxn.net_rate_dT(
-                    state, aux, model.species_index, model.charges
-                )
+                phi = rxn.net_rate(state, aux, model.species_index)
+                dphi_dc = rxn.net_rate_jac(state, aux, model.species_index)
+                dphi_dT = rxn.net_rate_dT(state, aux, model.species_index)
                 J[n, :n] -= dH / rho_cp * dphi_dc
                 J[n, n] -= (dH * dphi_dT + phi * dH_dT) / rho_cp
             return J

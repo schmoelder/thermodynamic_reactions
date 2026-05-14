@@ -8,7 +8,6 @@ from typing import Optional, Union
 
 import numpy as np
 
-from .activity import ActivityCoefficientBase, ActivityCoefficientIdeal
 from .equilibrium import EquilibriumConstantBase
 from .rate import RateBase, RateConstantBase, RateConstantFixed
 from .state import AuxiliaryState, State
@@ -248,8 +247,6 @@ class ThermodynamicReaction(ReactionBase):
         Provides K(T).
     rate_constant : RateConstantBase, optional
         Provides kf(T) in [mol/(m³·s)]. Required for mode="kinetic".
-    activity_coefficient : ActivityCoefficientBase, optional
-        Default: ActivityCoefficientIdeal().
     """
 
     def __init__(
@@ -258,7 +255,6 @@ class ThermodynamicReaction(ReactionBase):
         mode: str,
         equilibrium_constant: EquilibriumConstantBase,
         rate_constant: Optional[RateConstantBase] = None,
-        activity_coefficient: Optional[ActivityCoefficientBase] = None,
     ) -> None:
         super().__init__(stoichiometry)
         if mode not in ("kinetic", "equil"):
@@ -268,7 +264,6 @@ class ThermodynamicReaction(ReactionBase):
         self.mode = mode
         self.equilibrium_constant = equilibrium_constant
         self.rate_constant = rate_constant
-        self.activity_coefficient = activity_coefficient or ActivityCoefficientIdeal()
 
     def kf(self, T: float) -> float:
         if self.rate_constant is None:
@@ -284,13 +279,10 @@ class ThermodynamicReaction(ReactionBase):
         state: State,
         aux: AuxiliaryState,
         species_index: dict[str, int],
-        charges: np.ndarray,
     ) -> float:
         """Net reaction rate [mol/(m³·s)] for kinetic mode."""
-        gamma = self.activity_coefficient.activity(state, aux, charges)
         n = len(state.c)
-        a = gamma * state.c / aux.c_ref
-
+        a = aux.gamma * state.c / aux.c_ref
         e_fwd, e_bwd = self._build_exponent_arrays(species_index, n)
         return self._mass_action_rate(
             a,
@@ -305,12 +297,10 @@ class ThermodynamicReaction(ReactionBase):
         state: State,
         aux: AuxiliaryState,
         species_index: dict[str, int],
-        charges: np.ndarray,
     ) -> np.ndarray:
         """Analytic dv/dc, shape (n_species,)."""
-        gamma = self.activity_coefficient.activity(state, aux, charges)
         n = len(state.c)
-        a = gamma * state.c / aux.c_ref
+        a = aux.gamma * state.c / aux.c_ref
         e_fwd, e_bwd = self._build_exponent_arrays(species_index, n)
         dv_da = self._mass_action_rate_jac(
             a,
@@ -319,14 +309,13 @@ class ThermodynamicReaction(ReactionBase):
             e_fwd,
             e_bwd,
         )
-        return dv_da * gamma / aux.c_ref
+        return dv_da * aux.gamma / aux.c_ref
 
     def net_rate_dT(
         self,
         state: State,
         aux: AuxiliaryState,
         species_index: dict[str, int],
-        charges: np.ndarray,
         eps: float = 1e-6,
     ) -> float:
         """
@@ -340,13 +329,12 @@ class ThermodynamicReaction(ReactionBase):
         dlnK = self.equilibrium_constant.dlnK_dT(state.T)
 
         if dlnkf is None or dlnK is None:
-            phi0 = self.net_rate(state, aux, species_index, charges)
+            phi0 = self.net_rate(state, aux, species_index)
             s_pert = state.with_T(state.T + eps)
-            return (self.net_rate(s_pert, aux, species_index, charges) - phi0) / eps
+            return (self.net_rate(s_pert, aux, species_index) - phi0) / eps
 
-        gamma = self.activity_coefficient.activity(state, aux, charges)
         n = len(state.c)
-        a = gamma * state.c / aux.c_ref
+        a = aux.gamma * state.c / aux.c_ref
         e_fwd, e_bwd = self._build_exponent_arrays(species_index, n)
         a_safe = np.maximum(a, 0.0)
         P_bwd = float(np.prod(a_safe**e_bwd))
@@ -360,16 +348,14 @@ class ThermodynamicReaction(ReactionBase):
         state: State,
         aux: AuxiliaryState,
         species_index: dict[str, int],
-        charges: np.ndarray,
     ) -> float:
         """Algebraic equilibrium residual: ln(Q) - ln(K)."""
-        gamma = self.activity_coefficient.activity(state, aux, charges)
 
         def _a(name: str) -> float:
             if name not in species_index:
                 return 1.0
             i = species_index[name]
-            return float(gamma[i] * state.c[i] / aux.c_ref[i])
+            return float(aux.gamma[i] * state.c[i] / aux.c_ref[i])
 
         ln_Q = sum(
             coeff * np.log(max(_a(name), 1e-300)) for name, coeff in self.nu.items()
@@ -449,7 +435,6 @@ class MassActionReaction(ReactionBase):
         state: State,
         aux: AuxiliaryState,
         species_index: dict[str, int],
-        charges: np.ndarray,
     ) -> float:
         """Net mass-action rate [mol/(m³·s)] using concentrations directly."""
         n = len(state.c)
@@ -472,7 +457,6 @@ class MassActionReaction(ReactionBase):
         state: State,
         aux: AuxiliaryState,
         species_index: dict[str, int],
-        charges: np.ndarray,
     ) -> np.ndarray:
         """Analytic dv/dc, shape (n_species,)."""
         n = len(state.c)
@@ -528,7 +512,6 @@ class EnzymaticReaction(ReactionBase):
         state: State,
         aux: AuxiliaryState,
         species_index: dict[str, int],
-        charges: np.ndarray,
     ) -> float:
         """Net rate from the supplied RateBase instance."""
         return self.rate(state, species_index)

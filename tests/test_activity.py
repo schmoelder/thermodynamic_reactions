@@ -27,7 +27,7 @@ def _state_aux(c: np.ndarray, T: float, I: float):
     """Helper: build a (State, AuxiliaryState) pair for activity coefficient tests."""
     state = State("bulk", {"c": list(range(len(c)))}, T=T)
     state.c = c
-    aux = AuxiliaryState(I=I, c_ref=np.ones(len(c)))
+    aux = AuxiliaryState(I=I, c_ref=np.ones(len(c)), gamma=np.ones(len(c)))
     return state, aux
 
 
@@ -113,11 +113,11 @@ def test_davies_ph_shift_direction():
                     "AcOH <-> AcO- + H+",
                     mode="equil",
                     equilibrium_constant=pKa(pKa_val),
-                    activity_coefficient=ActivityCoefficientDavies(),
                 ),
-                *autoionization(activity_coefficient=ActivityCoefficientDavies()),
+                *autoionization(),
             ],
             ionic_strength=IonicStrengthFixed(I=I_fixed),
+            activity_coefficient=ActivityCoefficientDavies(),
             T=T,
         )
 

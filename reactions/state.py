@@ -153,7 +153,10 @@ class AuxiliaryState:
         Ionic strength [mol/m³].
     c_ref : np.ndarray
         Per-species standard-state concentrations [mol/m³], shape (n_species,).
+    gamma : np.ndarray
+        Activity coefficients γᵢ, shape (n_species,). All ones for ideal systems.
     """
 
     I: float
     c_ref: np.ndarray
+    gamma: np.ndarray

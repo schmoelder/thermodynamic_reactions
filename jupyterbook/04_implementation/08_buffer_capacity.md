@@ -292,28 +292,25 @@ model_phos_davies = ReactionModel(
             "H3PO4 <-> H2PO4- + H+",
             mode="equil",
             equilibrium_constant=pKa(pKa1),
-            activity_coefficient=ActivityCoefficientDavies(),
         ),
         ThermodynamicReaction(
             "H2PO4- <-> HPO4-2 + H+",
             mode="equil",
             equilibrium_constant=pKa(pKa2),
-            activity_coefficient=ActivityCoefficientDavies(),
         ),
         ThermodynamicReaction(
             "HPO4-2 <-> PO4-3 + H+",
             mode="equil",
             equilibrium_constant=pKa(pKa3),
-            activity_coefficient=ActivityCoefficientDavies(),
         ),
         ThermodynamicReaction(
             "H2O <-> H+ + OH-",
             mode="equil",
             equilibrium_constant=pKa(14.00),
-            activity_coefficient=ActivityCoefficientDavies(),
         ),
     ],
     ionic_strength=IonicStrengthBackground(I_bg=150.0),
+    activity_coefficient=ActivityCoefficientDavies(),
     T=298.15,
 )
 ```

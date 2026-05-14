@@ -7,6 +7,7 @@ from typing import Optional
 
 import numpy as np
 
+from .activity import ActivityCoefficientBase, ActivityCoefficientIdeal
 from .ionic import IonicStrengthBase, IonicStrengthIdeal
 from .reaction import ReactionBase
 from .species import Component, Species
@@ -87,11 +88,13 @@ class ReactionModel:
         components: list[Component],
         reactions: list[ReactionBase],
         ionic_strength: Optional[IonicStrengthBase] = None,
+        activity_coefficient: Optional[ActivityCoefficientBase] = None,
         T: float = 298.15,
     ) -> None:
         self.components = components
         self.reactions = reactions
         self.ionic_strength = ionic_strength or IonicStrengthIdeal()
+        self.activity_coefficient = activity_coefficient or ActivityCoefficientIdeal()
         self.T = T
 
         self._all_species: list[Species] = [
@@ -173,10 +176,12 @@ class ReactionModel:
         return state
 
     def make_aux(self, state: State) -> AuxiliaryState:
-        """Compute AuxiliaryState (I, c_ref) from the current State."""
+        """Compute AuxiliaryState (I, c_ref, gamma) from the current State."""
         I = self.ionic_strength.evaluate(state.c, self.charges)
         c_ref = np.array([sp.c_ref for sp in self.species])
-        return AuxiliaryState(I=I, c_ref=c_ref)
+        _tmp = AuxiliaryState(I=I, c_ref=c_ref, gamma=np.ones(len(self.species)))
+        gamma = self.activity_coefficient.activity(state, _tmp, self.charges)
+        return AuxiliaryState(I=I, c_ref=c_ref, gamma=gamma)
 
     def residual(
         self,
@@ -204,14 +209,12 @@ class ReactionModel:
         equil_counter = 0
         for j, rxn in enumerate(self.reactions):
             if kinetic_mask[j]:
-                v = rxn.net_rate(state, aux, self.species_index, self.charges)
+                v = rxn.net_rate(state, aux, self.species_index)
                 r -= nu[:, j] * v
             else:
                 dep = equil_dep[equil_counter]
                 equil_counter += 1
-                r[dep] = rxn.log_K_residual(
-                    state, aux, self.species_index, self.charges
-                )
+                r[dep] = rxn.log_K_residual(state, aux, self.species_index)
 
         return r
 
@@ -239,19 +242,15 @@ class ReactionModel:
         for j, rxn in enumerate(self.reactions):
             if self.kinetic_mask[j]:
                 if hasattr(rxn, "net_rate_jac"):
-                    dv_dc = rxn.net_rate_jac(
-                        state, aux, self.species_index, self.charges
-                    )
+                    dv_dc = rxn.net_rate_jac(state, aux, self.species_index)
                     J -= np.outer(nu[:, j], dv_dc)
                 else:
-                    v0 = rxn.net_rate(state, aux, self.species_index, self.charges)
+                    v0 = rxn.net_rate(state, aux, self.species_index)
                     for k in range(n_s):
                         s_pert = state.copy()
                         s_pert.c[k] += eps
                         aux_pert = self.make_aux(s_pert)
-                        v_pert = rxn.net_rate(
-                            s_pert, aux_pert, self.species_index, self.charges
-                        )
+                        v_pert = rxn.net_rate(s_pert, aux_pert, self.species_index)
                         J[:, k] -= nu[:, j] * (v_pert - v0) / eps
 
             else:
@@ -313,15 +312,11 @@ class ReactionModel:
         for j, rxn in enumerate(self.reactions):
             if self.kinetic_mask[j]:
                 if hasattr(rxn, "net_rate_dT"):
-                    dvdT = rxn.net_rate_dT(
-                        state, aux, self.species_index, self.charges, eps
-                    )
+                    dvdT = rxn.net_rate_dT(state, aux, self.species_index, eps)
                 else:
-                    v0 = rxn.net_rate(state, aux, self.species_index, self.charges)
+                    v0 = rxn.net_rate(state, aux, self.species_index)
                     s_pert = state.with_T(state.T + eps)
-                    dvdT = (
-                        rxn.net_rate(s_pert, aux, self.species_index, self.charges) - v0
-                    ) / eps
+                    dvdT = (rxn.net_rate(s_pert, aux, self.species_index) - v0) / eps
                 drdT -= self.nu[:, j] * dvdT
             else:
                 dep = self.equil_dep[equil_counter]
@@ -425,12 +420,14 @@ class ReactionModel:
     def parameters(self) -> dict[str, float]:
         """Flat dict of all fittable scalar float parameters."""
         params: dict[str, float] = {}
+        for k, v in vars(self.activity_coefficient).items():
+            if isinstance(v, float):
+                params[f"activity_coefficient.{k}"] = v
         for i, rxn in enumerate(self.reactions):
             prefix = f"reactions[{i}]"
             for attr in (
                 "equilibrium_constant",
                 "rate_constant",
-                "activity_coefficient",
                 "_kf",
                 "_kr",
                 "rate",

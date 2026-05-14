@@ -217,14 +217,10 @@ from reactions.common import (
     hepes_equilibria,
     mops_equilibria,
 )
-from reactions.activity import ActivityCoefficientDavies
-
-davies = ActivityCoefficientDavies()
-
 reactions = [
-    *autoionization(activity_coefficient=davies),  # pKw = 14.00, ΔH° = +55.8 kJ/mol
-    *acetic_acid_equilibria(activity_coefficient=davies),  # pKa = 4.756
-    *phosphate_equilibria(activity_coefficient=davies),  # pKa = 2.148 / 7.198 / 12.35
+    *autoionization(),         # pKw = 14.00, ΔH° = +55.8 kJ/mol
+    *acetic_acid_equilibria(),  # pKa = 4.756
+    *phosphate_equilibria(),    # pKa = 2.148 / 7.198 / 12.35
 ]
 print(f"Reactions assembled: {len(reactions)}")
 for rxn in reactions:
@@ -232,7 +228,7 @@ for rxn in reactions:
 ```
 
 All pK$_a$ values are at 298.15 K.
-Factories accept `activity_coefficient=None` (ideal) or any `ActivityCoefficientBase` instance.
+Activity corrections are set on `ReactionModel` via `activity_coefficient=ActivityCoefficientDavies()`, not on individual reactions or factories.
 The temperature-sensitive systems are:
 
 | Factory                    | pKa      | ΔH° [kJ/mol] | dpKa/dT [pH/°C]  |
