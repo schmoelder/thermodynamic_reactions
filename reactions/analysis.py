@@ -243,28 +243,38 @@ def _find_kw(model, h_name: str, h_cref: float, T: float) -> float:
     """
     Return Kw in mol²/m⁶ (= c_H · c_OH at equilibrium).
 
-    Looks for a reaction where a solvent species (density set) is the
-    sole reactant and H⁺ plus exactly one charge-(-1) species are the
-    products — the autoionization pattern.  Discriminating on the
-    reactant having density set distinguishes H₂O → H⁺ + OH⁻ from
-    acid dissociation reactions such as H₃PO₄ → H₂PO₄⁻ + H⁺, where
-    H₂PO₄⁻ also carries charge −1.
-    Falls back to 1e-14 · c_ref² (25 °C value).
+    Checks two patterns (tried in order):
+
+    1. **Empty-LHS** (preferred): no reactants, products are H⁺ plus exactly
+       one charge-(-1) species.  This is the ``<-> H+ + OH-`` stoichiometry
+       produced by ``autoionization()``.
+
+    2. **Explicit-water** (mixed-solvent): sole reactant is a solvent species
+       (density set), same product pattern.  Discriminating on density
+       distinguishes H₂O → H⁺ + OH⁻ from acid dissociation reactions such as
+       H₃PO₄ → H₂PO₄⁻ + H⁺, where H₂PO₄⁻ also carries charge −1.
+
+    Falls back to 1e-14 · c_ref² (25 °C value in pure water).
     """
     for rxn in model.reactions:
         reactants = {k: v for k, v in rxn.nu.items() if v < 0}
         products = {k: v for k, v in rxn.nu.items() if v > 0}
-        if h_name not in products or len(reactants) != 1:
-            continue
-        reactant_name = next(iter(reactants))
-        if not _species_is_solvent(model, reactant_name):
+        if h_name not in products:
             continue
         other_products = {k: v for k, v in products.items() if k != h_name}
         if len(other_products) != 1:
             continue
         other_name = next(iter(other_products))
-        if _species_charge(model, other_name) == -1:
+        if _species_charge(model, other_name) != -1:
+            continue
+        # Pattern 1: empty-LHS (autoionization() default)
+        if len(reactants) == 0:
             return rxn.equilibrium_constant.K(T) * h_cref**2
+        # Pattern 2: explicit water reactant (mixed-solvent models)
+        if len(reactants) == 1:
+            reactant_name = next(iter(reactants))
+            if _species_is_solvent(model, reactant_name):
+                return rxn.equilibrium_constant.K(T) * h_cref**2
     return 1e-14 * h_cref**2
 
 

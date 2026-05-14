@@ -158,14 +158,22 @@ mops = Component(
 
 
 def autoionization(activity_coefficient=None) -> list[ThermodynamicReaction]:
-    """
-    Water autoionization: ``H2O <-> H+ + OH-``  (pKw = 14.00, ΔH° = 55.8 kJ/mol).
+    r"""
+    Water autoionization constraint for dilute aqueous systems (pKw = 14.00, ΔH° = 55.8 kJ/mol).
 
-    Requires components: ``water``, ``H_plus``, ``OH_minus``.
+    Uses empty-LHS stoichiometry ``<-> H+ + OH-``, which absorbs $a_{H_2O} = 1$
+    into Kw.  Water is therefore **not** required as a component.
+
+    Use this factory when water is the background solvent and is not tracked
+    explicitly.  For mixed-solvent systems where $a_{H_2O} \neq 1$, include
+    water as a component and write the full reaction ``H2O <-> H+ + OH-``
+    with a composition-dependent equilibrium constant instead.
+
+    Requires components: ``H_plus``, ``OH_minus``.
     """
     return [
         ThermodynamicReaction(
-            "H2O <-> H+ + OH-",
+            "<-> H+ + OH-",
             mode="equil",
             equilibrium_constant=pKa(14.00, dH=55800.0),
             activity_coefficient=activity_coefficient,

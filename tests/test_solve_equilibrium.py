@@ -13,10 +13,8 @@ from reactions.common import (
     acetic_acid,
     acetic_acid_equilibria,
     autoionization,
-    water,
 )
 from reactions.equilibrium import EquilibriumConstant, pKa
-from reactions.formulation import Solution
 from reactions.ionic import IonicStrengthIdeal
 from reactions.model import ReactionModel
 from reactions.reaction import ThermodynamicReaction
@@ -265,12 +263,12 @@ def test_equilibrium_conservation_pure_weak_acid():
     c_OH- guess and total acetate was not conserved.
     """
     model = ReactionModel(
-        components=[acetic_acid, H_plus, OH_minus, water],
+        components=[acetic_acid, H_plus, OH_minus],
         reactions=[*acetic_acid_equilibria(), *autoionization()],
         ionic_strength=IonicStrengthIdeal(),
     )
-    sol = Solution(water, solutes={"HAc": 100.0, "Ac-": 1e-6, "H+": 1e-4, "OH-": 1e-7})
-    c_eq = solve_equilibrium(model, sol.c0, prescribed=sol.prescribed)
+    c0 = {"HAc": 100.0, "Ac-": 1e-6, "H+": 1e-4, "OH-": 1e-7}
+    c_eq = solve_equilibrium(model, c0)
 
     pH = -math.log10(c_eq["H+"] / 1000)
     total_acetate = c_eq["HAc"] + c_eq["Ac-"]
@@ -284,15 +282,15 @@ def test_equilibrium_conservation_independent_of_initial_oh():
     solve_equilibrium must give the same pH regardless of c_OH- initial guess.
     """
     model = ReactionModel(
-        components=[acetic_acid, H_plus, OH_minus, water],
+        components=[acetic_acid, H_plus, OH_minus],
         reactions=[*acetic_acid_equilibria(), *autoionization()],
         ionic_strength=IonicStrengthIdeal(),
     )
-    c_base = {"HAc": 100.0, "Ac-": 1e-6, "H+": 1e-4, "H2O": water.c_ref}
+    c_base = {"HAc": 100.0, "Ac-": 1e-6, "H+": 1e-4}
     pHs = []
     for c_oh in [1e-5, 1e-7, 1e-9]:
         c0 = {**c_base, "OH-": c_oh}
-        c_eq = solve_equilibrium(model, c0, prescribed={"H2O": water.c_ref})
+        c_eq = solve_equilibrium(model, c0)
         pHs.append(-math.log10(c_eq["H+"] / 1000))
 
     assert max(pHs) - min(pHs) < 1e-4

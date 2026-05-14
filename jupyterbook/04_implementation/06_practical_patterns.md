@@ -277,7 +277,6 @@ from reactions.common import (
     acetic_acid,
     H_plus,
     OH_minus,
-    water,
     acetic_acid_equilibria,
     autoionization,
 )
@@ -286,7 +285,7 @@ from reactions.plots import setup_figure
 from reactions.solver import solve_equilibrium
 
 model_stat = ReactionModel(
-    components=[acetic_acid, H_plus, OH_minus, water],
+    components=[acetic_acid, H_plus, OH_minus],
     reactions=[
         *acetic_acid_equilibria(),
         *autoionization(),
@@ -297,7 +296,6 @@ model_stat = ReactionModel(
 pH_targets = np.linspace(3.0, 9.0, 40)
 f_Ac_neg = []
 H_CREF = H_plus.species[0].c_ref
-WATER_CREF = water.species[0].c_ref
 
 for pH in pH_targets:
     c_H = 10.0 ** (-pH) * H_CREF
@@ -306,7 +304,7 @@ for pH in pH_targets:
     c_eq = solve_equilibrium(
         model_stat,
         c0,
-        prescribed={"H+": c_H, "H2O": WATER_CREF},
+        prescribed={"H+": c_H},
     )
     total = c_eq["HAc"] + c_eq["Ac-"]
     f_Ac_neg.append(c_eq["Ac-"] / total)
