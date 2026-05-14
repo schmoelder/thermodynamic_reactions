@@ -247,10 +247,13 @@ def citric_acid_equilibria() -> list[ThermodynamicReaction]:
 
 def tris_equilibria() -> list[ThermodynamicReaction]:
     """
-    ``TrisH+ <-> Tris + H+``  (pKa = 8.072, ΔH° = −47.45 kJ/mol).
+    ``TrisH+ <-> Tris + H+``  (pKa = 8.072, ΔH° = +47.45 kJ/mol).
 
-    Temperature sensitivity: pKa drops ~0.03 per °C — use van't Hoff for
-    any simulation where temperature deviates from 298.15 K.
+    Temperature sensitivity: pKa drops ~0.028 per °C (endothermic ionisation;
+    Goldberg et al. 2002, J. Phys. Chem. Ref. Data 31, 231).
+    Note: dH is the *ionisation* (dissociation) enthalpy, positive for endothermic
+    reactions.  ITC literature reports the opposite sign (protonation enthalpy).
+    Use van't Hoff for any simulation where temperature deviates from 298.15 K.
 
     Requires components: ``tris``, ``H_plus``.
     """
@@ -258,7 +261,7 @@ def tris_equilibria() -> list[ThermodynamicReaction]:
         ThermodynamicReaction(
             "TrisH+ <-> Tris + H+",
             mode="equil",
-            equilibrium_constant=pKa(8.072, dH=-47450.0),
+            equilibrium_constant=pKa(8.072, dH=47450.0),
         ),
     ]
 
