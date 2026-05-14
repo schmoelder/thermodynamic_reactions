@@ -47,18 +47,30 @@ __all__ = [
     "H_plus",
     "OH_minus",
     "acetic_acid",
-    "phosphate",
+    "bis_tris",
     "citric_acid",
-    "tris",
+    "dap",
+    "dea",
     "hepes",
+    "imidazole",
+    "lactic_acid",
     "mops",
+    "phosphate",
+    "piperazine",
+    "tris",
     "autoionization",
     "acetic_acid_equilibria",
-    "phosphate_equilibria",
+    "bis_tris_equilibria",
     "citric_acid_equilibria",
-    "tris_equilibria",
+    "dap_equilibria",
+    "dea_equilibria",
     "hepes_equilibria",
+    "imidazole_equilibria",
+    "lactic_acid_equilibria",
     "mops_equilibria",
+    "phosphate_equilibria",
+    "piperazine_equilibria",
+    "tris_equilibria",
 ]
 
 # ---------------------------------------------------------------------------
@@ -78,7 +90,7 @@ H_plus = Component("H+", [Species("H+", charge=1, molar_mass=1.008e-3)])
 OH_minus = Component("OH-", [Species("OH-", charge=-1, molar_mass=17.007e-3)])
 
 # ---------------------------------------------------------------------------
-# Buffer components
+# Buffer components  (alphabetical)
 # Molar masses [kg/mol] from IUPAC atomic weights (H=1.008, C=12.011,
 # N=14.007, O=15.999, P=30.974, S=32.06).  Each dissociation step loses
 # one H, so molar_mass decreases by _M_H = 1.008e-3 kg/mol per step.
@@ -96,15 +108,13 @@ acetic_acid = Component(
     ],
 )
 
-#: Phosphoric acid / phosphate  (pKa = 2.148, 7.198, 12.35)
-#: H3PO4 = 97.994 g/mol
-phosphate = Component(
-    "phosphate",
+#: Bis-Tris  (pKa = 6.484; Δz² = 0, ionic-strength-insensitive)
+#: C8H19NO5 = 209.242 g/mol (free base)
+bis_tris = Component(
+    "bis_tris",
     [
-        Species("H3PO4", charge=0, molar_mass=97.994e-3),
-        Species("H2PO4-", charge=-1, molar_mass=97.994e-3 - _M_H),
-        Species("HPO4-2", charge=-2, molar_mass=97.994e-3 - 2 * _M_H),
-        Species("PO4-3", charge=-3, molar_mass=97.994e-3 - 3 * _M_H),
+        Species("BisH+", charge=1, molar_mass=209.242e-3 + _M_H),
+        Species("Bis", charge=0, molar_mass=209.242e-3),
     ],
 )
 
@@ -120,13 +130,26 @@ citric_acid = Component(
     ],
 )
 
-#: Tris  (pKa = 8.072, ΔH° = -47.45 kJ/mol; strongly temperature-dependent)
-#: C4H11NO3 = 121.136 g/mol (free base); TrisH+ = 122.144 g/mol
-tris = Component(
-    "tris",
+#: 1,3-Diaminopropane (DAP)  (pKa = 8.640, 10.470)
+#: C3H10N2 = 74.127 g/mol (free base)
+#: Step 1 (H2DAP2+ → HDAP+): Δz² = −2 (pKa_app rises with I).
+#: Step 2 (HDAP+ → DAP): Δz² = 0.
+dap = Component(
+    "dap",
     [
-        Species("TrisH+", charge=1, molar_mass=122.144e-3),
-        Species("Tris", charge=0, molar_mass=122.144e-3 - _M_H),
+        Species("H2DAP2+", charge=2, molar_mass=74.127e-3 + 2 * _M_H),
+        Species("HDAP+", charge=1, molar_mass=74.127e-3 + _M_H),
+        Species("DAP", charge=0, molar_mass=74.127e-3),
+    ],
+)
+
+#: Diethanolamine (DEA)  (pKa = 8.883; Δz² = 0, ionic-strength-insensitive)
+#: C4H11NO2 = 105.137 g/mol (free base)
+dea = Component(
+    "dea",
+    [
+        Species("DEAH+", charge=1, molar_mass=105.137e-3 + _M_H),
+        Species("DEA", charge=0, molar_mass=105.137e-3),
     ],
 )
 
@@ -140,6 +163,26 @@ hepes = Component(
     ],
 )
 
+#: Imidazole  (pKa = 6.993; Δz² = 0, ionic-strength-insensitive)
+#: C3H4N2 = 68.079 g/mol (free base)
+imidazole = Component(
+    "imidazole",
+    [
+        Species("ImH+", charge=1, molar_mass=68.079e-3 + _M_H),
+        Species("Im", charge=0, molar_mass=68.079e-3),
+    ],
+)
+
+#: Lactic acid / lactate  (pKa = 3.860)
+#: C3H6O3 = 90.078 g/mol
+lactic_acid = Component(
+    "lactic_acid",
+    [
+        Species("LacH", charge=0, molar_mass=90.078e-3),
+        Species("Lac-", charge=-1, molar_mass=90.078e-3 - _M_H),
+    ],
+)
+
 #: MOPS  (pKa = 7.20; neutral zwitterion <=> anion)
 #: C7H15NO4S = 209.260 g/mol (protonated form)
 mops = Component(
@@ -150,8 +193,43 @@ mops = Component(
     ],
 )
 
+#: Phosphoric acid / phosphate  (pKa = 2.148, 7.198, 12.35)
+#: H3PO4 = 97.994 g/mol
+phosphate = Component(
+    "phosphate",
+    [
+        Species("H3PO4", charge=0, molar_mass=97.994e-3),
+        Species("H2PO4-", charge=-1, molar_mass=97.994e-3 - _M_H),
+        Species("HPO4-2", charge=-2, molar_mass=97.994e-3 - 2 * _M_H),
+        Species("PO4-3", charge=-3, molar_mass=97.994e-3 - 3 * _M_H),
+    ],
+)
+
+#: Piperazine  (pKa = 5.333, 9.731)
+#: C4H10N2 = 86.138 g/mol (free base)
+#: Step 1 (H2Pip2+ → HPip+): Δz² = −2 (pKa_app rises with I).
+#: Step 2 (HPip+ → Pip): Δz² = 0.
+piperazine = Component(
+    "piperazine",
+    [
+        Species("H2Pip2+", charge=2, molar_mass=86.138e-3 + 2 * _M_H),
+        Species("HPip+", charge=1, molar_mass=86.138e-3 + _M_H),
+        Species("Pip", charge=0, molar_mass=86.138e-3),
+    ],
+)
+
+#: Tris  (pKa = 8.072, ΔH° = -47.45 kJ/mol; strongly temperature-dependent)
+#: C4H11NO3 = 121.136 g/mol (free base); TrisH+ = 122.144 g/mol
+tris = Component(
+    "tris",
+    [
+        Species("TrisH+", charge=1, molar_mass=122.144e-3),
+        Species("Tris", charge=0, molar_mass=122.144e-3 - _M_H),
+    ],
+)
+
 # ---------------------------------------------------------------------------
-# Equilibrium reaction factories
+# Equilibrium reaction factories  (alphabetical; autoionization first)
 # ---------------------------------------------------------------------------
 # Each factory returns list[ThermodynamicReaction] so the calling convention
 # is always *factory(...) regardless of how many reactions a system has.
@@ -195,27 +273,17 @@ def acetic_acid_equilibria() -> list[ThermodynamicReaction]:
     ]
 
 
-def phosphate_equilibria() -> list[ThermodynamicReaction]:
+def bis_tris_equilibria() -> list[ThermodynamicReaction]:
     """
-    Three dissociation steps of phosphoric acid (pKa = 2.148, 7.198, 12.35).
+    ``BisH+ <-> Bis + H+``  (pKa = 6.484; Δz² = 0).
 
-    Requires components: ``phosphate``, ``H_plus``.
+    Requires components: ``bis_tris``, ``H_plus``.
     """
     return [
         ThermodynamicReaction(
-            "H3PO4 <-> H2PO4- + H+",
+            "BisH+ <-> Bis + H+",
             mode="equil",
-            equilibrium_constant=pKa(2.148),
-        ),
-        ThermodynamicReaction(
-            "H2PO4- <-> HPO4-2 + H+",
-            mode="equil",
-            equilibrium_constant=pKa(7.198),
-        ),
-        ThermodynamicReaction(
-            "HPO4-2 <-> PO4-3 + H+",
-            mode="equil",
-            equilibrium_constant=pKa(12.35),
+            equilibrium_constant=pKa(6.484),
         ),
     ]
 
@@ -245,23 +313,40 @@ def citric_acid_equilibria() -> list[ThermodynamicReaction]:
     ]
 
 
-def tris_equilibria() -> list[ThermodynamicReaction]:
+def dap_equilibria() -> list[ThermodynamicReaction]:
     """
-    ``TrisH+ <-> Tris + H+``  (pKa = 8.072, ΔH° = +47.45 kJ/mol).
+    Two-step DAP (1,3-diaminopropane) dissociation (pKa = 8.640, 10.470).
 
-    Temperature sensitivity: pKa drops ~0.028 per °C (endothermic ionisation;
-    Goldberg et al. 2002, J. Phys. Chem. Ref. Data 31, 231).
-    Note: dH is the *ionisation* (dissociation) enthalpy, positive for endothermic
-    reactions.  ITC literature reports the opposite sign (protonation enthalpy).
-    Use van't Hoff for any simulation where temperature deviates from 298.15 K.
+    Step 1 (Δz² = −2): pKa_app rises slightly with ionic strength.
+    Step 2 (Δz² = 0): ionic-strength-insensitive.
 
-    Requires components: ``tris``, ``H_plus``.
+    Requires components: ``dap``, ``H_plus``.
     """
     return [
         ThermodynamicReaction(
-            "TrisH+ <-> Tris + H+",
+            "H2DAP2+ <-> HDAP+ + H+",
             mode="equil",
-            equilibrium_constant=pKa(8.072, dH=47450.0),
+            equilibrium_constant=pKa(8.640),
+        ),
+        ThermodynamicReaction(
+            "HDAP+ <-> DAP + H+",
+            mode="equil",
+            equilibrium_constant=pKa(10.470),
+        ),
+    ]
+
+
+def dea_equilibria() -> list[ThermodynamicReaction]:
+    """
+    ``DEAH+ <-> DEA + H+``  (pKa = 8.883; Δz² = 0).
+
+    Requires components: ``dea``, ``H_plus``.
+    """
+    return [
+        ThermodynamicReaction(
+            "DEAH+ <-> DEA + H+",
+            mode="equil",
+            equilibrium_constant=pKa(8.883),
         ),
     ]
 
@@ -281,6 +366,36 @@ def hepes_equilibria() -> list[ThermodynamicReaction]:
     ]
 
 
+def imidazole_equilibria() -> list[ThermodynamicReaction]:
+    """
+    ``ImH+ <-> Im + H+``  (pKa = 6.993; Δz² = 0).
+
+    Requires components: ``imidazole``, ``H_plus``.
+    """
+    return [
+        ThermodynamicReaction(
+            "ImH+ <-> Im + H+",
+            mode="equil",
+            equilibrium_constant=pKa(6.993),
+        ),
+    ]
+
+
+def lactic_acid_equilibria() -> list[ThermodynamicReaction]:
+    """
+    ``LacH <-> Lac- + H+``  (pKa = 3.860; temperature-independent).
+
+    Requires components: ``lactic_acid``, ``H_plus``.
+    """
+    return [
+        ThermodynamicReaction(
+            "LacH <-> Lac- + H+",
+            mode="equil",
+            equilibrium_constant=pKa(3.860),
+        ),
+    ]
+
+
 def mops_equilibria() -> list[ThermodynamicReaction]:
     """
     ``MOPSH <-> MOPS- + H+``  (pKa = 7.20; temperature-independent).
@@ -292,5 +407,74 @@ def mops_equilibria() -> list[ThermodynamicReaction]:
             "MOPSH <-> MOPS- + H+",
             mode="equil",
             equilibrium_constant=pKa(7.20),
+        ),
+    ]
+
+
+def phosphate_equilibria() -> list[ThermodynamicReaction]:
+    """
+    Three dissociation steps of phosphoric acid (pKa = 2.148, 7.198, 12.35).
+
+    Requires components: ``phosphate``, ``H_plus``.
+    """
+    return [
+        ThermodynamicReaction(
+            "H3PO4 <-> H2PO4- + H+",
+            mode="equil",
+            equilibrium_constant=pKa(2.148),
+        ),
+        ThermodynamicReaction(
+            "H2PO4- <-> HPO4-2 + H+",
+            mode="equil",
+            equilibrium_constant=pKa(7.198),
+        ),
+        ThermodynamicReaction(
+            "HPO4-2 <-> PO4-3 + H+",
+            mode="equil",
+            equilibrium_constant=pKa(12.35),
+        ),
+    ]
+
+
+def piperazine_equilibria() -> list[ThermodynamicReaction]:
+    """
+    Two-step piperazine dissociation (pKa = 5.333, 9.731).
+
+    Step 1 (Δz² = −2): pKa_app rises slightly with ionic strength.
+    Step 2 (Δz² = 0): ionic-strength-insensitive.
+
+    Requires components: ``piperazine``, ``H_plus``.
+    """
+    return [
+        ThermodynamicReaction(
+            "H2Pip2+ <-> HPip+ + H+",
+            mode="equil",
+            equilibrium_constant=pKa(5.333),
+        ),
+        ThermodynamicReaction(
+            "HPip+ <-> Pip + H+",
+            mode="equil",
+            equilibrium_constant=pKa(9.731),
+        ),
+    ]
+
+
+def tris_equilibria() -> list[ThermodynamicReaction]:
+    """
+    ``TrisH+ <-> Tris + H+``  (pKa = 8.072, ΔH° = +47.45 kJ/mol).
+
+    Temperature sensitivity: pKa drops ~0.028 per °C (endothermic ionisation;
+    Goldberg et al. 2002, J. Phys. Chem. Ref. Data 31, 231).
+    Note: dH is the *ionisation* (dissociation) enthalpy, positive for endothermic
+    reactions.  ITC literature reports the opposite sign (protonation enthalpy).
+    Use van't Hoff for any simulation where temperature deviates from 298.15 K.
+
+    Requires components: ``tris``, ``H_plus``.
+    """
+    return [
+        ThermodynamicReaction(
+            "TrisH+ <-> Tris + H+",
+            mode="equil",
+            equilibrium_constant=pKa(8.072, dH=47450.0),
         ),
     ]
