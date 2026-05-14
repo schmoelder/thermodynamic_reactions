@@ -65,6 +65,7 @@ def _fd_jacobian_dc(model, c, T, eps=1e-5):
 def _eb_rhs_T(model, c, T, rho_cp):
     """Energy balance scalar rhs: -Q_dot/rho_cp = -Σ_j ΔH_j φ_j / rho_cp."""
     state = model.make_state(c, T)
+    aux = model.make_aux(state)
     Q_dot = 0.0
     for j, rxn in enumerate(model.reactions):
         if not model.kinetic_mask[j]:
@@ -73,7 +74,7 @@ def _eb_rhs_T(model, c, T, rho_cp):
         if eq is None:
             continue
         Q_dot += eq.reaction_enthalpy(T) * rxn.net_rate(
-            state, model.species_index, model.charges
+            state, aux, model.species_index, model.charges
         )
     return -Q_dot / rho_cp
 
@@ -81,6 +82,7 @@ def _eb_rhs_T(model, c, T, rho_cp):
 def _eb_jac_analytic(model, c, T, rho_cp):
     """Analytic energy balance Jacobian row (∂rhs_T/∂c, ∂rhs_T/∂T)."""
     state = model.make_state(c, T)
+    aux = model.make_aux(state)
     n = len(c)
     jac_c = np.zeros(n)
     jac_T = 0.0
@@ -92,9 +94,9 @@ def _eb_jac_analytic(model, c, T, rho_cp):
             continue
         dH = eq.reaction_enthalpy(T)
         dH_dT = eq.d_reaction_enthalpy_dT(T)
-        phi = rxn.net_rate(state, model.species_index, model.charges)
-        dphi_dc = rxn.net_rate_jac(state, model.species_index, model.charges)
-        dphi_dT = rxn.net_rate_dT(state, model.species_index, model.charges)
+        phi = rxn.net_rate(state, aux, model.species_index, model.charges)
+        dphi_dc = rxn.net_rate_jac(state, aux, model.species_index, model.charges)
+        dphi_dT = rxn.net_rate_dT(state, aux, model.species_index, model.charges)
         jac_c -= dH / rho_cp * dphi_dc
         jac_T -= (dH * dphi_dT + phi * dH_dT) / rho_cp
     return jac_c, jac_T

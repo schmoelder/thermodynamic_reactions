@@ -532,7 +532,7 @@ def test_custom_ac_sees_solvent_in_state_c():
     captured_c_h2o = []
     h2o_idx_ref = [None]
 
-    def custom_ac(state, charges):
+    def custom_ac(state, aux, charges):
         if h2o_idx_ref[0] is not None:
             captured_c_h2o.append(float(state.c[h2o_idx_ref[0]]))
         return np.ones(len(state.c))
@@ -567,7 +567,7 @@ def test_gradient_solvent_varies_in_state_c():
     captured_c_h2o = []
     h2o_idx_ref = [None]
 
-    def custom_ac(state, charges):
+    def custom_ac(state, aux, charges):
         if h2o_idx_ref[0] is not None:
             captured_c_h2o.append(float(state.c[h2o_idx_ref[0]]))
         return np.ones(len(state.c))

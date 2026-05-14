@@ -8,7 +8,8 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from .species import R_GAS, PhysicalState
+from .species import R_GAS
+from .state import State
 
 __all__ = [
     "RateConstantBase",
@@ -174,7 +175,7 @@ class RateBase(ABC):
     """Abstract base for enzymatic / custom rate laws."""
 
     @abstractmethod
-    def __call__(self, state: PhysicalState, species_index: dict[str, int]) -> float:
+    def __call__(self, state: State, species_index: dict[str, int]) -> float:
         """Net reaction rate [mol/(m³·s)]."""
 
 
@@ -194,7 +195,7 @@ class MichaelisMenten(RateBase):
     Km: float
     substrate: str
 
-    def __call__(self, state: PhysicalState, species_index: dict[str, int]) -> float:
+    def __call__(self, state: State, species_index: dict[str, int]) -> float:
         S = state.c[species_index[self.substrate]]
         return self.Vmax * S / (self.Km + S)
 
@@ -217,7 +218,7 @@ class HillRate(RateBase):
     n: float
     substrate: str
 
-    def __call__(self, state: PhysicalState, species_index: dict[str, int]) -> float:
+    def __call__(self, state: State, species_index: dict[str, int]) -> float:
         S = state.c[species_index[self.substrate]]
         return self.Vmax * S**self.n / (self.Km**self.n + S**self.n)
 
@@ -232,7 +233,7 @@ class CustomRate(RateBase):
     fn : callable(state, species_index) -> float
     """
 
-    fn: Callable[[PhysicalState, dict[str, int]], float]
+    fn: Callable[[State, dict[str, int]], float]
 
-    def __call__(self, state: PhysicalState, species_index: dict[str, int]) -> float:
+    def __call__(self, state: State, species_index: dict[str, int]) -> float:
         return self.fn(state, species_index)

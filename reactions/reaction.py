@@ -11,7 +11,7 @@ import numpy as np
 from .activity import ActivityCoefficientBase, ActivityCoefficientIdeal
 from .equilibrium import EquilibriumConstantBase
 from .rate import RateBase, RateConstantBase, RateConstantFixed
-from .species import PhysicalState
+from .state import AuxiliaryState, State
 
 __all__ = [
     "parse_stoichiometry",
@@ -115,7 +115,8 @@ class ReactionBase(ABC):
     @abstractmethod
     def residual(
         self,
-        state: PhysicalState,
+        state: State,
+        aux: AuxiliaryState,
         species_index: dict[str, int],
     ) -> np.ndarray:
         """
@@ -128,19 +129,19 @@ class ReactionBase(ABC):
 
     def jacobian(
         self,
-        state: PhysicalState,
+        state: State,
+        aux: AuxiliaryState,
         species_index: dict[str, int],
     ) -> np.ndarray:
         """Finite-difference Jacobian. Override analytically if needed."""
         eps = 1e-6
         n = len(state.c)
-        res0 = self.residual(state, species_index)
+        res0 = self.residual(state, aux, species_index)
         J = np.zeros((len(res0), n))
         for i in range(n):
-            c_pert = state.c.copy()
-            c_pert[i] += eps
-            s_pert = PhysicalState(c=c_pert, T=state.T, I=state.I, c_ref=state.c_ref)
-            J[:, i] = (self.residual(s_pert, species_index) - res0) / eps
+            s_pert = state.copy()
+            s_pert.c[i] += eps
+            J[:, i] = (self.residual(s_pert, aux, species_index) - res0) / eps
         return J
 
     def species_names(self) -> list[str]:
@@ -280,14 +281,15 @@ class ThermodynamicReaction(ReactionBase):
 
     def net_rate(
         self,
-        state: PhysicalState,
+        state: State,
+        aux: AuxiliaryState,
         species_index: dict[str, int],
         charges: np.ndarray,
     ) -> float:
         """Net reaction rate [mol/(m³·s)] for kinetic mode."""
-        gamma = self.activity_coefficient.activity(state, charges)
+        gamma = self.activity_coefficient.activity(state, aux, charges)
         n = len(state.c)
-        a = gamma * state.c / state.c_ref
+        a = gamma * state.c / aux.c_ref
 
         e_fwd, e_bwd = self._build_exponent_arrays(species_index, n)
         return self._mass_action_rate(
@@ -300,14 +302,15 @@ class ThermodynamicReaction(ReactionBase):
 
     def net_rate_jac(
         self,
-        state: PhysicalState,
+        state: State,
+        aux: AuxiliaryState,
         species_index: dict[str, int],
         charges: np.ndarray,
     ) -> np.ndarray:
         """Analytic dv/dc, shape (n_species,)."""
-        gamma = self.activity_coefficient.activity(state, charges)
+        gamma = self.activity_coefficient.activity(state, aux, charges)
         n = len(state.c)
-        a = gamma * state.c / state.c_ref
+        a = gamma * state.c / aux.c_ref
         e_fwd, e_bwd = self._build_exponent_arrays(species_index, n)
         dv_da = self._mass_action_rate_jac(
             a,
@@ -316,11 +319,12 @@ class ThermodynamicReaction(ReactionBase):
             e_fwd,
             e_bwd,
         )
-        return dv_da * gamma / state.c_ref
+        return dv_da * gamma / aux.c_ref
 
     def net_rate_dT(
         self,
-        state: PhysicalState,
+        state: State,
+        aux: AuxiliaryState,
         species_index: dict[str, int],
         charges: np.ndarray,
         eps: float = 1e-6,
@@ -336,15 +340,13 @@ class ThermodynamicReaction(ReactionBase):
         dlnK = self.equilibrium_constant.dlnK_dT(state.T)
 
         if dlnkf is None or dlnK is None:
-            phi0 = self.net_rate(state, species_index, charges)
-            s_pert = PhysicalState(
-                c=state.c, T=state.T + eps, I=state.I, c_ref=state.c_ref
-            )
-            return (self.net_rate(s_pert, species_index, charges) - phi0) / eps
+            phi0 = self.net_rate(state, aux, species_index, charges)
+            s_pert = state.with_T(state.T + eps)
+            return (self.net_rate(s_pert, aux, species_index, charges) - phi0) / eps
 
-        gamma = self.activity_coefficient.activity(state, charges)
+        gamma = self.activity_coefficient.activity(state, aux, charges)
         n = len(state.c)
-        a = gamma * state.c / state.c_ref
+        a = gamma * state.c / aux.c_ref
         e_fwd, e_bwd = self._build_exponent_arrays(species_index, n)
         a_safe = np.maximum(a, 0.0)
         P_bwd = float(np.prod(a_safe**e_bwd))
@@ -355,18 +357,19 @@ class ThermodynamicReaction(ReactionBase):
 
     def log_K_residual(
         self,
-        state: PhysicalState,
+        state: State,
+        aux: AuxiliaryState,
         species_index: dict[str, int],
         charges: np.ndarray,
     ) -> float:
         """Algebraic equilibrium residual: ln(Q) - ln(K)."""
-        gamma = self.activity_coefficient.activity(state, charges)
+        gamma = self.activity_coefficient.activity(state, aux, charges)
 
         def _a(name: str) -> float:
             if name not in species_index:
                 return 1.0
             i = species_index[name]
-            return float(gamma[i] * state.c[i] / state.c_ref[i])
+            return float(gamma[i] * state.c[i] / aux.c_ref[i])
 
         ln_Q = sum(
             coeff * np.log(max(_a(name), 1e-300)) for name, coeff in self.nu.items()
@@ -374,7 +377,10 @@ class ThermodynamicReaction(ReactionBase):
         return float(ln_Q - np.log(self.equilibrium_constant.K(state.T)))
 
     def residual(
-        self, state: PhysicalState, species_index: dict[str, int]
+        self,
+        state: State,
+        aux: AuxiliaryState,
+        species_index: dict[str, int],
     ) -> np.ndarray:
         raise NotImplementedError(
             "ReactionModel assembles residuals — do not call residual() directly."
@@ -440,7 +446,8 @@ class MassActionReaction(ReactionBase):
 
     def net_rate(
         self,
-        state: PhysicalState,
+        state: State,
+        aux: AuxiliaryState,
         species_index: dict[str, int],
         charges: np.ndarray,
     ) -> float:
@@ -462,7 +469,8 @@ class MassActionReaction(ReactionBase):
 
     def net_rate_jac(
         self,
-        state: PhysicalState,
+        state: State,
+        aux: AuxiliaryState,
         species_index: dict[str, int],
         charges: np.ndarray,
     ) -> np.ndarray:
@@ -483,7 +491,10 @@ class MassActionReaction(ReactionBase):
         )
 
     def residual(
-        self, state: PhysicalState, species_index: dict[str, int]
+        self,
+        state: State,
+        aux: AuxiliaryState,
+        species_index: dict[str, int],
     ) -> np.ndarray:
         raise NotImplementedError(
             "ReactionModel assembles residuals — do not call residual() directly."
@@ -514,7 +525,8 @@ class EnzymaticReaction(ReactionBase):
 
     def net_rate(
         self,
-        state: PhysicalState,
+        state: State,
+        aux: AuxiliaryState,
         species_index: dict[str, int],
         charges: np.ndarray,
     ) -> float:
@@ -522,7 +534,10 @@ class EnzymaticReaction(ReactionBase):
         return self.rate(state, species_index)
 
     def residual(
-        self, state: PhysicalState, species_index: dict[str, int]
+        self,
+        state: State,
+        aux: AuxiliaryState,
+        species_index: dict[str, int],
     ) -> np.ndarray:
         raise NotImplementedError(
             "ReactionModel assembles residuals — do not call residual() directly."
@@ -558,6 +573,9 @@ class CustomReaction(ReactionBase):
         self.rate = rate
 
     def residual(
-        self, state: PhysicalState, species_index: dict[str, int]
+        self,
+        state: State,
+        aux: AuxiliaryState,
+        species_index: dict[str, int],
     ) -> np.ndarray:
         raise NotImplementedError("CustomReaction.residual() — to be implemented.")

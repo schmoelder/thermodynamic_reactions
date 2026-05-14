@@ -9,7 +9,8 @@ import numpy as np
 
 from .ionic import IonicStrengthBase, IonicStrengthIdeal
 from .reaction import ReactionBase
-from .species import Component, PhysicalState, Species
+from .species import Component, Species
+from .state import AuxiliaryState, State
 
 __all__ = [
     "ConservationReport",
@@ -58,7 +59,7 @@ class ReactionModel:
     """
     Self-contained reaction model for a single unit operation.
 
-    Assembles PhysicalState from (c, T), dispatches to reaction modules,
+    Assembles State and AuxiliaryState from (c, T), dispatches to reaction modules,
     and exposes residuals / Jacobians for the DAE solver (CADET interface).
 
     Parameters
@@ -163,12 +164,19 @@ class ReactionModel:
         self,
         c: np.ndarray,
         T: Optional[float] = None,
-    ) -> PhysicalState:
-        """Build a PhysicalState with ionic strength computed from charges."""
+    ) -> State:
+        """Build a State from a concentration array."""
         T_val = T if T is not None else self.T
-        I = self.ionic_strength.evaluate(c, self.charges)
+        species_names = [sp.name for sp in self.species]
+        state = State("bulk", {"c": species_names}, T=T_val)
+        state.c = c
+        return state
+
+    def make_aux(self, state: State) -> AuxiliaryState:
+        """Compute AuxiliaryState (I, c_ref) from the current State."""
+        I = self.ionic_strength.evaluate(state.c, self.charges)
         c_ref = np.array([sp.c_ref for sp in self.species])
-        return PhysicalState(c=c, T=T_val, I=I, c_ref=c_ref)
+        return AuxiliaryState(I=I, c_ref=c_ref)
 
     def residual(
         self,
@@ -186,6 +194,7 @@ class ReactionModel:
             r_dep = ln(Q_j) - ln(K_j(T))
         """
         state = self.make_state(c, T)
+        aux = self.make_aux(state)
         nu = self.nu
         kinetic_mask = self.kinetic_mask
         equil_dep = self.equil_dep
@@ -195,12 +204,14 @@ class ReactionModel:
         equil_counter = 0
         for j, rxn in enumerate(self.reactions):
             if kinetic_mask[j]:
-                v = rxn.net_rate(state, self.species_index, self.charges)
+                v = rxn.net_rate(state, aux, self.species_index, self.charges)
                 r -= nu[:, j] * v
             else:
                 dep = equil_dep[equil_counter]
                 equil_counter += 1
-                r[dep] = rxn.log_K_residual(state, self.species_index, self.charges)
+                r[dep] = rxn.log_K_residual(
+                    state, aux, self.species_index, self.charges
+                )
 
         return r
 
@@ -219,6 +230,7 @@ class ReactionModel:
         Falls back to finite differences for EnzymaticReaction and CustomReaction.
         """
         state = self.make_state(c, T)
+        aux = self.make_aux(state)
         nu = self.nu
         n_s = len(self.species)
         J = np.zeros((n_s, n_s))
@@ -227,17 +239,19 @@ class ReactionModel:
         for j, rxn in enumerate(self.reactions):
             if self.kinetic_mask[j]:
                 if hasattr(rxn, "net_rate_jac"):
-                    dv_dc = rxn.net_rate_jac(state, self.species_index, self.charges)
+                    dv_dc = rxn.net_rate_jac(
+                        state, aux, self.species_index, self.charges
+                    )
                     J -= np.outer(nu[:, j], dv_dc)
                 else:
-                    v0 = rxn.net_rate(state, self.species_index, self.charges)
+                    v0 = rxn.net_rate(state, aux, self.species_index, self.charges)
                     for k in range(n_s):
-                        c_pert = c.copy()
-                        c_pert[k] += eps
-                        s_pert = PhysicalState(
-                            c=c_pert, T=state.T, I=state.I, c_ref=state.c_ref
+                        s_pert = state.copy()
+                        s_pert.c[k] += eps
+                        aux_pert = self.make_aux(s_pert)
+                        v_pert = rxn.net_rate(
+                            s_pert, aux_pert, self.species_index, self.charges
                         )
-                        v_pert = rxn.net_rate(s_pert, self.species_index, self.charges)
                         J[:, k] -= nu[:, j] * (v_pert - v0) / eps
 
             else:
@@ -291,6 +305,7 @@ class ReactionModel:
         Analytic where available; falls back to finite differences per reaction.
         """
         state = self.make_state(c, T)
+        aux = self.make_aux(state)
         n_s = len(self.species)
         drdT = np.zeros(n_s)
 
@@ -298,14 +313,14 @@ class ReactionModel:
         for j, rxn in enumerate(self.reactions):
             if self.kinetic_mask[j]:
                 if hasattr(rxn, "net_rate_dT"):
-                    dvdT = rxn.net_rate_dT(state, self.species_index, self.charges, eps)
-                else:
-                    v0 = rxn.net_rate(state, self.species_index, self.charges)
-                    s_pert = PhysicalState(
-                        c=state.c, T=state.T + eps, I=state.I, c_ref=state.c_ref
+                    dvdT = rxn.net_rate_dT(
+                        state, aux, self.species_index, self.charges, eps
                     )
+                else:
+                    v0 = rxn.net_rate(state, aux, self.species_index, self.charges)
+                    s_pert = state.with_T(state.T + eps)
                     dvdT = (
-                        rxn.net_rate(s_pert, self.species_index, self.charges) - v0
+                        rxn.net_rate(s_pert, aux, self.species_index, self.charges) - v0
                     ) / eps
                 drdT -= self.nu[:, j] * dvdT
             else:
@@ -313,11 +328,13 @@ class ReactionModel:
                 equil_counter += 1
                 dlnK = rxn.equilibrium_constant.dlnK_dT(state.T)
                 if dlnK is None:
-                    r0 = rxn.log_K_residual(state, self.species_index, self.charges)
-                    s_pert = PhysicalState(
-                        c=state.c, T=state.T + eps, I=state.I, c_ref=state.c_ref
+                    r0 = rxn.log_K_residual(
+                        state, aux, self.species_index, self.charges
                     )
-                    r1 = rxn.log_K_residual(s_pert, self.species_index, self.charges)
+                    s_pert = state.with_T(state.T + eps)
+                    r1 = rxn.log_K_residual(
+                        s_pert, aux, self.species_index, self.charges
+                    )
                     drdT[dep] = (r1 - r0) / eps
                 else:
                     drdT[dep] = -dlnK

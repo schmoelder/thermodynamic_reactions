@@ -17,9 +17,18 @@ from reactions.ionic import IonicStrengthFixed
 from reactions.model import ReactionModel
 from reactions.reaction import ThermodynamicReaction
 from reactions.solver import solve_equilibrium
-from reactions.species import Component, PhysicalState, Species
+from reactions.species import Component, Species
+from reactions.state import AuxiliaryState, State
 
 C_REF: float = 1000.0
+
+
+def _state_aux(c: np.ndarray, T: float, I: float):
+    """Helper: build a (State, AuxiliaryState) pair for activity coefficient tests."""
+    state = State("bulk", {"c": list(range(len(c)))}, T=T)
+    state.c = c
+    aux = AuxiliaryState(I=I, c_ref=np.ones(len(c)))
+    return state, aux
 
 
 # ---------------------------------------------------------------------------
@@ -41,8 +50,8 @@ def test_near_zero_ionic_strength_gives_ideal_activity():
     c_dummy = np.ones(4) * 100.0
 
     for I in [0.001, 1.0, 100.0, 1000.0]:
-        state = PhysicalState(c=c_dummy, T=298.15, I=I)
-        gamma = dav.activity(state, charges)
+        state, aux = _state_aux(c_dummy, 298.15, I)
+        gamma = dav.activity(state, aux, charges)
         assert abs(gamma[0] - 1.0) < 1e-12, (
             f"At I={I}, neutral species gamma = {gamma[0]:.12f} != 1"
         )
@@ -50,8 +59,8 @@ def test_near_zero_ionic_strength_gives_ideal_activity():
     I_vals = [100.0, 10.0, 1.0, 0.1, 0.01, 0.001]
     deviations = []
     for I in I_vals:
-        state = PhysicalState(c=c_dummy, T=298.15, I=I)
-        gamma = dav.activity(state, charges)
+        state, aux = _state_aux(c_dummy, 298.15, I)
+        gamma = dav.activity(state, aux, charges)
         deviations.append(float(np.max(np.abs(gamma - 1.0))))
 
     for i in range(len(deviations) - 1):
@@ -70,11 +79,11 @@ def test_davies_ac_ignores_solvent_concentration():
     charges = np.array([1.0, -1.0, 0.0])
     I = 50.0
 
-    state_low = PhysicalState(c=np.array([1e-4, 1e-4, 100.0]), T=298.15, I=I)
-    state_high = PhysicalState(c=np.array([1e-4, 1e-4, 1000.0]), T=298.15, I=I)
+    state_low, aux_low = _state_aux(np.array([1e-4, 1e-4, 100.0]), 298.15, I)
+    state_high, aux_high = _state_aux(np.array([1e-4, 1e-4, 1000.0]), 298.15, I)
 
-    gamma_low = dav.activity(state_low, charges)
-    gamma_high = dav.activity(state_high, charges)
+    gamma_low = dav.activity(state_low, aux_low, charges)
+    gamma_high = dav.activity(state_high, aux_high, charges)
 
     np.testing.assert_array_equal(gamma_low, gamma_high)
 
@@ -151,12 +160,12 @@ def test_davies_A_increases_above_ambient():
     charges = np.array([1.0, -1.0])
     I = 100.0
 
-    state_ambient = PhysicalState(c=np.array([1e-4, 1e-4]), T=298.15, I=I)
-    state_warm = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=I)
+    state_ambient, aux = _state_aux(np.array([1e-4, 1e-4]), 298.15, I)
+    state_warm, _ = _state_aux(np.array([1e-4, 1e-4]), 320.0, I)
 
     dav = ActivityCoefficientDavies(epsilon_r=_water_epsilon_r)
-    gamma_ambient = dav.activity(state_ambient, charges)
-    gamma_warm = dav.activity(state_warm, charges)
+    gamma_ambient = dav.activity(state_ambient, aux, charges)
+    gamma_warm = dav.activity(state_warm, aux, charges)
 
     assert gamma_warm[0] < gamma_ambient[0], (
         f"Expected gamma(320K)={gamma_warm[0]:.4f} < gamma(298K)={gamma_ambient[0]:.4f}"
@@ -168,12 +177,12 @@ def test_dh_A_increases_above_ambient():
     charges = np.array([1.0, -1.0])
     I = 50.0
 
-    state_ambient = PhysicalState(c=np.array([1e-4, 1e-4]), T=298.15, I=I)
-    state_warm = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=I)
+    state_ambient, aux = _state_aux(np.array([1e-4, 1e-4]), 298.15, I)
+    state_warm, _ = _state_aux(np.array([1e-4, 1e-4]), 320.0, I)
 
     dh = ActivityCoefficientDebyeHuckel(epsilon_r=_water_epsilon_r)
-    gamma_ambient = dh.activity(state_ambient, charges)
-    gamma_warm = dh.activity(state_warm, charges)
+    gamma_ambient = dh.activity(state_ambient, aux, charges)
+    gamma_warm = dh.activity(state_warm, aux, charges)
 
     assert gamma_warm[0] < gamma_ambient[0]
 
@@ -181,13 +190,13 @@ def test_dh_A_increases_above_ambient():
 def test_davies_scalar_epsilon_r_overrides_default():
     """A scalar epsilon_r overrides the stored 25 °C A: lower εr → higher A → lower γ."""
     charges = np.array([1.0, -1.0])
-    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=298.15, I=100.0)
+    state, aux = _state_aux(np.array([1e-4, 1e-4]), 298.15, 100.0)
 
     dav_default = ActivityCoefficientDavies()
     dav_custom = ActivityCoefficientDavies(epsilon_r=40.0)
 
-    gamma_default = dav_default.activity(state, charges)
-    gamma_custom = dav_custom.activity(state, charges)
+    gamma_default = dav_default.activity(state, aux, charges)
+    gamma_custom = dav_custom.activity(state, aux, charges)
 
     assert gamma_custom[0] < gamma_default[0]
 
@@ -195,52 +204,52 @@ def test_davies_scalar_epsilon_r_overrides_default():
 def test_davies_warning_fires_at_non_ambient_T():
     """UserWarning emitted when T deviates > 5 K from 298.15 and epsilon_r is None."""
     charges = np.array([1.0, -1.0])
-    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=100.0)
+    state, aux = _state_aux(np.array([1e-4, 1e-4]), 320.0, 100.0)
     dav = ActivityCoefficientDavies()
 
     with pytest.warns(UserWarning, match="epsilon_r was not provided"):
-        dav.activity(state, charges)
+        dav.activity(state, aux, charges)
 
 
 def test_dh_warning_fires_at_non_ambient_T():
     """UserWarning emitted when T deviates > 5 K from 298.15 and epsilon_r is None."""
     charges = np.array([1.0, -1.0])
-    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=50.0)
+    state, aux = _state_aux(np.array([1e-4, 1e-4]), 320.0, 50.0)
     dh = ActivityCoefficientDebyeHuckel()
 
     with pytest.warns(UserWarning, match="epsilon_r was not provided"):
-        dh.activity(state, charges)
+        dh.activity(state, aux, charges)
 
 
 def test_davies_no_warning_at_ambient_T():
     """No warning at T = 298.15 K even without epsilon_r."""
     charges = np.array([1.0, -1.0])
-    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=298.15, I=100.0)
+    state, aux = _state_aux(np.array([1e-4, 1e-4]), 298.15, 100.0)
     dav = ActivityCoefficientDavies()
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        dav.activity(state, charges)
+        dav.activity(state, aux, charges)
 
 
 def test_davies_no_warning_with_epsilon_r():
     """No warning at non-ambient T when epsilon_r is provided."""
     charges = np.array([1.0, -1.0])
-    state = PhysicalState(c=np.array([1e-4, 1e-4]), T=320.0, I=100.0)
+    state, aux = _state_aux(np.array([1e-4, 1e-4]), 320.0, 100.0)
     dav = ActivityCoefficientDavies(epsilon_r=_water_epsilon_r)
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        dav.activity(state, charges)
+        dav.activity(state, aux, charges)
 
 
 def test_davies_backward_compat_at_ambient():
     """Default Davies gives the standard A=0.509 result at 298.15 K."""
     charges = np.array([1.0, -1.0, 0.0])
     I = 100.0
-    state = PhysicalState(c=np.array([1e-4, 1e-4, 1000.0]), T=298.15, I=I)
+    state, aux = _state_aux(np.array([1e-4, 1e-4, 1000.0]), 298.15, I)
 
-    gamma = ActivityCoefficientDavies().activity(state, charges)
+    gamma = ActivityCoefficientDavies().activity(state, aux, charges)
 
     A, I_L = 0.509, 0.1
     sqrt_I = np.sqrt(I_L)

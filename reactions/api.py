@@ -4,7 +4,8 @@ ReactionModel API.
 Public-facing re-export facade.
 
 All symbols are defined in their own submodules:
-    reactions.species    — constants, PhysicalState, Species, Component
+    reactions.state      — State, AuxiliaryState
+    reactions.species    — constants, Species, Component
     reactions.ionic      — IonicStrengthIdeal, IonicStrengthBackground, IonicStrengthFixed
     reactions.activity   — ActivityCoefficient*, _water_epsilon_r
     reactions.equilibrium — EquilibriumConstant*, pKa
@@ -99,9 +100,9 @@ from .species import (
     KB,
     R_GAS,
     Component,
-    PhysicalState,
     Species,
 )
+from .state import AuxiliaryState, State
 
 __all__ = [
     # constants
@@ -109,7 +110,8 @@ __all__ = [
     "KB",
     "H_PLANCK",
     # state
-    "PhysicalState",
+    "State",
+    "AuxiliaryState",
     # species / components
     "Species",
     "Component",

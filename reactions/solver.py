@@ -328,6 +328,7 @@ def simulate(
                 dc_dt[i] = 0.0
             rho_cp = model.volumetric_heat_capacity(c)
             state = model.make_state(c, T_cur)
+            aux = model.make_aux(state)
             Q_dot = 0.0
             for j, rxn in enumerate(model.reactions):
                 if not model.kinetic_mask[j]:
@@ -336,13 +337,16 @@ def simulate(
                 if eq is None:
                     continue
                 dH = eq.reaction_enthalpy(T_cur)
-                Q_dot += dH * rxn.net_rate(state, model.species_index, model.charges)
+                Q_dot += dH * rxn.net_rate(
+                    state, aux, model.species_index, model.charges
+                )
             return np.append(dc_dt, -Q_dot / rho_cp)
 
         def jac_coupled(t: float, y: np.ndarray) -> np.ndarray:
             c = _inject_solvents(y[:n], t)
             T_cur = float(y[n])
             state = model.make_state(c, T_cur)
+            aux = model.make_aux(state)
             rho_cp = model.volumetric_heat_capacity(c)
             J = np.zeros((n + 1, n + 1))
             J[:n, :n] = -model.jacobian(c, np.zeros(n), T_cur)
@@ -361,9 +365,13 @@ def simulate(
                     continue
                 dH = eq.reaction_enthalpy(T_cur)
                 dH_dT = eq.d_reaction_enthalpy_dT(T_cur)
-                phi = rxn.net_rate(state, model.species_index, model.charges)
-                dphi_dc = rxn.net_rate_jac(state, model.species_index, model.charges)
-                dphi_dT = rxn.net_rate_dT(state, model.species_index, model.charges)
+                phi = rxn.net_rate(state, aux, model.species_index, model.charges)
+                dphi_dc = rxn.net_rate_jac(
+                    state, aux, model.species_index, model.charges
+                )
+                dphi_dT = rxn.net_rate_dT(
+                    state, aux, model.species_index, model.charges
+                )
                 J[n, :n] -= dH / rho_cp * dphi_dc
                 J[n, n] -= (dH * dphi_dT + phi * dH_dT) / rho_cp
             return J

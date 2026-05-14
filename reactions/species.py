@@ -1,17 +1,14 @@
-"""Core types: constants, state, species, components."""
+"""Species and components: constants, Species, Component."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
-
-import numpy as np
 
 __all__ = [
     "R_GAS",
     "KB",
     "H_PLANCK",
-    "PhysicalState",
     "Species",
     "Component",
 ]
@@ -23,37 +20,6 @@ __all__ = [
 R_GAS: float = 8.314462  # J / (mol K)
 KB: float = 1.380649e-23  # J / K
 H_PLANCK: float = 6.626070e-34  # J s
-
-
-# ---------------------------------------------------------------------------
-# Physical state
-# ---------------------------------------------------------------------------
-
-
-@dataclass
-class PhysicalState:
-    """
-    State at a single spatial point and instant in time.
-
-    Built by ReactionModel.make_state(). Reaction modules receive this
-    and do not need to know where T or I came from.
-
-    Attributes
-    ----------
-    c : np.ndarray
-        Species concentrations [mol/m³], shape (n_species,).
-    T : float
-        Temperature [K].
-    I : float
-        Ionic strength [mol/m³], derived by IonicStrengthModule.
-    c_ref : np.ndarray
-        Per-species standard-state concentrations [mol/m³], shape (n_species,).
-    """
-
-    c: np.ndarray
-    T: float
-    I: float = 0.0
-    c_ref: np.ndarray = field(default_factory=lambda: np.array([]))
 
 
 # ---------------------------------------------------------------------------

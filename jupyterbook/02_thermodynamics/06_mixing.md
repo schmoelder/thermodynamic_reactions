@@ -298,7 +298,8 @@ from reactions.plots import setup_figure, COLORS
 from reactions.api import (
     ActivityCoefficientDebyeHuckel,
     ActivityCoefficientDavies,
-    PhysicalState,
+    State,
+    AuxiliaryState,
 )
 
 dh = ActivityCoefficientDebyeHuckel()
@@ -309,10 +310,12 @@ I_dav = np.linspace(1, 500, 400)
 
 
 def gamma_series(model, I_values, z):
+    state = State("s", {"c": ["X"]}, T=298.15)
     return np.array(
         [
             model.activity(
-                PhysicalState(c=np.array([1.0]), T=298.15, I=float(I)),
+                state,
+                AuxiliaryState(I=float(I), c_ref=np.array([1000.0]), gamma=np.ones(1)),
                 np.array([float(z)]),
             )[0]
             for I in I_values

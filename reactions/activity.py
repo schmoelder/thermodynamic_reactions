@@ -9,7 +9,7 @@ from typing import Callable, Optional, Union
 
 import numpy as np
 
-from .species import PhysicalState
+from .state import AuxiliaryState, State
 
 __all__ = [
     "_DH_A_CONST",
@@ -52,13 +52,19 @@ class ActivityCoefficientBase(ABC):
     """
 
     @abstractmethod
-    def activity(self, state: PhysicalState, charges: np.ndarray) -> np.ndarray:
+    def activity(
+        self,
+        state: State,
+        aux: AuxiliaryState,
+        charges: np.ndarray,
+    ) -> np.ndarray:
         """
         Return activity coefficients γᵢ, shape (n_species,).
 
         Parameters
         ----------
-        state : PhysicalState
+        state : State
+        aux : AuxiliaryState
         charges : np.ndarray
             Ionic charges for each dynamic species.
         """
@@ -68,8 +74,13 @@ class ActivityCoefficientBase(ABC):
 class ActivityCoefficientIdeal(ActivityCoefficientBase):
     """γᵢ = 1 for all species."""
 
-    def activity(self, state: PhysicalState, charges: np.ndarray) -> np.ndarray:
-        return np.ones(len(state.c))
+    def activity(
+        self,
+        state: State,
+        aux: AuxiliaryState,
+        charges: np.ndarray,
+    ) -> np.ndarray:
+        return np.ones(len(charges))
 
 
 @dataclass
@@ -78,7 +89,7 @@ class ActivityCoefficientDebyeHuckel(ActivityCoefficientBase):
     Extended Debye-Hückel:
         log10(γᵢ) = -A · zᵢ² · √I_L / (1 + B · a_ion · √I_L).
 
-    where I_L = I / 1000 is ionic strength in mol/L (I in mol/m³ from PhysicalState).
+    where I_L = I / 1000 is ionic strength in mol/L (I in mol/m³ from AuxiliaryState).
     Valid up to I ~ 100 mol/m³ (0.1 mol/L).
 
     Parameters
@@ -105,7 +116,12 @@ class ActivityCoefficientDebyeHuckel(ActivityCoefficientBase):
     a_ion: float = 3e-10
     epsilon_r: Optional[Union[float, Callable[[float], float]]] = None
 
-    def activity(self, state: PhysicalState, charges: np.ndarray) -> np.ndarray:
+    def activity(
+        self,
+        state: State,
+        aux: AuxiliaryState,
+        charges: np.ndarray,
+    ) -> np.ndarray:
         T = state.T
         if self.epsilon_r is not None:
             er = (
@@ -127,7 +143,7 @@ class ActivityCoefficientDebyeHuckel(ActivityCoefficientBase):
                 )
             A = self.A
             B = self.B
-        I_L = state.I / 1000.0
+        I_L = aux.I / 1000.0
         sqrt_I = np.sqrt(I_L)
         log_gamma = -A * charges**2 * sqrt_I / (1.0 + B * self.a_ion * sqrt_I)
         return 10.0**log_gamma
@@ -157,7 +173,12 @@ class ActivityCoefficientDavies(ActivityCoefficientBase):
     A: float = 0.509
     epsilon_r: Optional[Union[float, Callable[[float], float]]] = None
 
-    def activity(self, state: PhysicalState, charges: np.ndarray) -> np.ndarray:
+    def activity(
+        self,
+        state: State,
+        aux: AuxiliaryState,
+        charges: np.ndarray,
+    ) -> np.ndarray:
         T = state.T
         if self.epsilon_r is not None:
             er = (
@@ -177,7 +198,7 @@ class ActivityCoefficientDavies(ActivityCoefficientBase):
                     stacklevel=2,
                 )
             A = self.A
-        I_L = state.I / 1000.0
+        I_L = aux.I / 1000.0
         sqrt_I = np.sqrt(I_L)
         log_gamma = -A * charges**2 * (sqrt_I / (1.0 + sqrt_I) - 0.3 * I_L)
         return 10.0**log_gamma
@@ -193,7 +214,12 @@ class ActivityCoefficientCustom(ActivityCoefficientBase):
     fn : callable(state, charges) -> np.ndarray
     """
 
-    fn: Callable[[PhysicalState, np.ndarray], np.ndarray]
+    fn: Callable[[State, AuxiliaryState, np.ndarray], np.ndarray]
 
-    def activity(self, state: PhysicalState, charges: np.ndarray) -> np.ndarray:
-        return self.fn(state, charges)
+    def activity(
+        self,
+        state: State,
+        aux: AuxiliaryState,
+        charges: np.ndarray,
+    ) -> np.ndarray:
+        return self.fn(state, aux, charges)

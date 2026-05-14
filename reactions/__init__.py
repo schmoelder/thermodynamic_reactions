@@ -3,7 +3,8 @@ reactions — thermodynamic and kinetic reaction models for CADET.
 
 Primary imports
 ---------------
-from reactions.species import R_GAS, KB, PhysicalState, Species, Component
+from reactions.species import R_GAS, KB, Species, Component
+from reactions.state import State, AuxiliaryState
 from reactions.activity import ActivityCoefficientDebyeHuckel, ActivityCoefficientDavies
 from reactions.ionic import IonicStrengthIdeal, IonicStrengthBackground
 from reactions.equilibrium import (
