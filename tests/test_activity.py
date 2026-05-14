@@ -11,7 +11,8 @@ from reactions.activity import (
     ActivityCoefficientDebyeHuckel,
     _water_epsilon_r,
 )
-from reactions.equilibrium import EquilibriumConstant, pKa
+from reactions.common import autoionization
+from reactions.equilibrium import pKa
 from reactions.ionic import IonicStrengthFixed
 from reactions.model import ReactionModel
 from reactions.reaction import ThermodynamicReaction
@@ -94,11 +95,10 @@ def test_davies_ph_shift_direction():
     )
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-    water = Component("water", [Species("H2O", charge=0)])
 
     def make_model(I_fixed):
         return ReactionModel(
-            components=[acetate, proton, hydroxide, water],
+            components=[acetate, proton, hydroxide],
             reactions=[
                 ThermodynamicReaction(
                     "AcOH <-> AcO- + H+",
@@ -106,12 +106,7 @@ def test_davies_ph_shift_direction():
                     equilibrium_constant=pKa(pKa_val),
                     activity_coefficient=ActivityCoefficientDavies(),
                 ),
-                ThermodynamicReaction(
-                    "H2O <-> H+ + OH-",
-                    mode="equil",
-                    equilibrium_constant=EquilibriumConstant(1e-14),
-                    activity_coefficient=ActivityCoefficientDavies(),
-                ),
+                *autoionization(activity_coefficient=ActivityCoefficientDavies()),
             ],
             ionic_strength=IonicStrengthFixed(I=I_fixed),
             T=T,
@@ -128,12 +123,12 @@ def test_davies_ph_shift_direction():
     }
 
     model_ideal = make_model(I_fixed=0.0)
-    c_eq_ideal = solve_equilibrium(model_ideal, c0, T=T, prescribed={"H2O": C_REF})
+    c_eq_ideal = solve_equilibrium(model_ideal, c0, T=T)
     pH_ideal = -np.log10(c_eq_ideal["H+"] / C_REF)
 
     I_bg = 100.0
     model_ionic = make_model(I_fixed=I_bg)
-    c_eq_davies = solve_equilibrium(model_ionic, c0, T=T, prescribed={"H2O": C_REF})
+    c_eq_davies = solve_equilibrium(model_ionic, c0, T=T)
     pH_davies = -np.log10(c_eq_davies["H+"] / C_REF)
 
     I_L = I_bg / 1000.0

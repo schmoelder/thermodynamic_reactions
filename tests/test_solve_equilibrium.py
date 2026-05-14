@@ -14,7 +14,7 @@ from reactions.common import (
     acetic_acid_equilibria,
     autoionization,
 )
-from reactions.equilibrium import EquilibriumConstant, pKa
+from reactions.equilibrium import pKa
 from reactions.ionic import IonicStrengthIdeal
 from reactions.model import ReactionModel
 from reactions.reaction import ThermodynamicReaction
@@ -33,21 +33,16 @@ def test_acid_base_henderson_hasselbalch():
     )
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-    water_local = Component("water", [Species("H2O", charge=0)])
 
     model = ReactionModel(
-        components=[acetate, proton, hydroxide, water_local],
+        components=[acetate, proton, hydroxide],
         reactions=[
             ThermodynamicReaction(
                 "AcOH <-> AcO- + H+",
                 mode="equil",
                 equilibrium_constant=pKa(pKa_val),
             ),
-            ThermodynamicReaction(
-                "H2O <-> H+ + OH-",
-                mode="equil",
-                equilibrium_constant=EquilibriumConstant(1e-14),
-            ),
+            *autoionization(),
         ],
         T=T,
     )
@@ -64,7 +59,7 @@ def test_acid_base_henderson_hasselbalch():
             "H+": H,
             "OH-": OH,
         }
-        c_eq = solve_equilibrium(model, c0, T=T, prescribed={"H2O": C_REF})
+        c_eq = solve_equilibrium(model, c0, T=T)
         errors.append(abs(c_eq["AcOH"] - AcOH_HH))
 
     assert max(errors) < 1e-6
@@ -94,10 +89,9 @@ def test_phosphate_bjerrum_fractions_ph72():
     )
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-    water_local = Component("water", [Species("H2O", charge=0)])
 
     model_phos = ReactionModel(
-        components=[phosphate, proton, hydroxide, water_local],
+        components=[phosphate, proton, hydroxide],
         reactions=[
             ThermodynamicReaction(
                 "H3PO4 <-> H2PO4- + H+",
@@ -114,11 +108,7 @@ def test_phosphate_bjerrum_fractions_ph72():
                 mode="equil",
                 equilibrium_constant=pKa(pKa3),
             ),
-            ThermodynamicReaction(
-                "H2O <-> H+ + OH-",
-                mode="equil",
-                equilibrium_constant=EquilibriumConstant(1e-14),
-            ),
+            *autoionization(),
         ],
         T=T,
     )
@@ -140,7 +130,7 @@ def test_phosphate_bjerrum_fractions_ph72():
         "H+": H,
         "OH-": OH,
     }
-    c_eq = solve_equilibrium(model_phos, c0, T=T, prescribed={"H2O": C_REF})
+    c_eq = solve_equilibrium(model_phos, c0, T=T)
 
     tol = 1e-4
     for sp, alpha in [
@@ -167,21 +157,16 @@ def test_extreme_ph_acid_ph1():
     )
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-    water_local = Component("water", [Species("H2O", charge=0)])
 
     model = ReactionModel(
-        components=[acetate, proton, hydroxide, water_local],
+        components=[acetate, proton, hydroxide],
         reactions=[
             ThermodynamicReaction(
                 "AcOH <-> AcO- + H+",
                 mode="equil",
                 equilibrium_constant=pKa(pKa_val),
             ),
-            ThermodynamicReaction(
-                "H2O <-> H+ + OH-",
-                mode="equil",
-                equilibrium_constant=EquilibriumConstant(1e-14),
-            ),
+            *autoionization(),
         ],
         T=T,
     )
@@ -197,7 +182,7 @@ def test_extreme_ph_acid_ph1():
         "H+": H,
         "OH-": OH,
     }
-    c_eq = solve_equilibrium(model, c0, T=T, prescribed={"H2O": C_REF})
+    c_eq = solve_equilibrium(model, c0, T=T)
 
     frac_deprotonated = c_eq["AcO-"] / c_tot
     assert frac_deprotonated < 1e-3
@@ -215,21 +200,16 @@ def test_extreme_ph_acid_ph13():
     )
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
-    water_local = Component("water", [Species("H2O", charge=0)])
 
     model = ReactionModel(
-        components=[acetate, proton, hydroxide, water_local],
+        components=[acetate, proton, hydroxide],
         reactions=[
             ThermodynamicReaction(
                 "AcOH <-> AcO- + H+",
                 mode="equil",
                 equilibrium_constant=pKa(pKa_val),
             ),
-            ThermodynamicReaction(
-                "H2O <-> H+ + OH-",
-                mode="equil",
-                equilibrium_constant=EquilibriumConstant(1e-14),
-            ),
+            *autoionization(),
         ],
         T=T,
     )
@@ -245,7 +225,7 @@ def test_extreme_ph_acid_ph13():
         "H+": H,
         "OH-": OH,
     }
-    c_eq = solve_equilibrium(model, c0, T=T, prescribed={"H2O": C_REF})
+    c_eq = solve_equilibrium(model, c0, T=T)
 
     frac_protonated = c_eq["AcOH"] / c_tot
     assert frac_protonated < 1e-7
