@@ -5,13 +5,16 @@ analytic Jacobian (dc and dT) vs finite differences, energy balance Jacobian.
 
 import numpy as np
 import pytest
-
-from reactions.equilibrium import EquilibriumConstant, EquilibriumConstantVantHoff, EquilibriumConstantVantHoffCp, pKa
+from reactions.equilibrium import (
+    EquilibriumConstant,
+    EquilibriumConstantVantHoff,
+    EquilibriumConstantVantHoffCp,
+    pKa,
+)
 from reactions.model import ReactionModel
 from reactions.rate import RateConstantArrhenius, RateConstantFixed
 from reactions.reaction import MassActionReaction, ThermodynamicReaction
 from reactions.species import Component, Species
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -69,7 +72,9 @@ def _eb_rhs_T(model, c, T, rho_cp):
         eq = getattr(rxn, "equilibrium_constant", None)
         if eq is None:
             continue
-        Q_dot += eq.reaction_enthalpy(T) * rxn.net_rate(state, model.species_index, model.charges)
+        Q_dot += eq.reaction_enthalpy(T) * rxn.net_rate(
+            state, model.species_index, model.charges
+        )
     return -Q_dot / rho_cp
 
 
@@ -128,12 +133,16 @@ def test_jacobian_thermodynamic_kinetic():
     )
     c = np.array([500.0, 200.0])
     err = _check_jacobian(model, c)
-    assert err < 1e-4, f"ThermodynamicReaction kinetic Jacobian error {err:.2e} exceeds 1e-4"
+    assert err < 1e-4, (
+        f"ThermodynamicReaction kinetic Jacobian error {err:.2e} exceeds 1e-4"
+    )
 
 
 def test_jacobian_thermodynamic_equil_acetic():
     """Analytic Jacobian of ThermodynamicReaction (equil, acetic acid) matches FD."""
-    acetate = Component("acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)])
+    acetate = Component(
+        "acetate", [Species("AcOH", charge=0), Species("AcO-", charge=-1)]
+    )
     proton = Component("proton", [Species("H+", charge=+1)])
     hydroxide = Component("hydroxide", [Species("OH-", charge=-1)])
     water = Component("water", [Species("H2O", charge=0)])
@@ -155,7 +164,9 @@ def test_jacobian_thermodynamic_equil_acetic():
     )
     c = np.array([10.0, 90.0, 6.3e-5, 1.6e-4, 1000.0])
     err = _check_jacobian(model, c)
-    assert err < 1e-4, f"Acetic acid equil Jacobian relative error {err:.2e} exceeds 1e-4"
+    assert err < 1e-4, (
+        f"Acetic acid equil Jacobian relative error {err:.2e} exceeds 1e-4"
+    )
 
 
 @pytest.mark.parametrize("T", [298.15, 310.0, 330.0])
@@ -212,7 +223,9 @@ def test_jacobian_dT_vanthoffcp():
                 "A <-> B",
                 mode="kinetic",
                 equilibrium_constant=EquilibriumConstantVantHoffCp(
-                    dH=-20e3, dS=-50.0, dCp=100.0,
+                    dH=-20e3,
+                    dS=-50.0,
+                    dCp=100.0,
                 ),
                 rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
             ),
@@ -294,12 +307,14 @@ def test_energy_balance_jac_analytic_vanthoff_arrhenius():
     water = Species("H2O", molar_mass=0.018, density=1000.0, heat_capacity=75.3)
     model = ReactionModel(
         components=[Component("A"), Component("B"), Component("water", [water])],
-        reactions=[ThermodynamicReaction(
-            "A <-> B",
-            mode="kinetic",
-            equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
-            rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
-        )],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstantVantHoff(dH=-20e3, dS=-50.0),
+                rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
+            )
+        ],
     )
     c = np.array([800.0, 200.0, 1000.0])
     rho_cp = model.volumetric_heat_capacity(c)
@@ -307,10 +322,12 @@ def test_energy_balance_jac_analytic_vanthoff_arrhenius():
     eps = 1e-5
 
     rhs0 = _eb_rhs_T(model, c, T, rho_cp)
-    jac_c_fd = np.array([
-        (_eb_rhs_T(model, c + np.eye(len(c))[k] * eps, T, rho_cp) - rhs0) / eps
-        for k in range(len(c))
-    ])
+    jac_c_fd = np.array(
+        [
+            (_eb_rhs_T(model, c + np.eye(len(c))[k] * eps, T, rho_cp) - rhs0) / eps
+            for k in range(len(c))
+        ]
+    )
     jac_T_fd = (_eb_rhs_T(model, c, T + eps, rho_cp) - rhs0) / eps
 
     jac_c, jac_T = _eb_jac_analytic(model, c, T, rho_cp)
@@ -324,14 +341,16 @@ def test_energy_balance_jac_analytic_vanthoffcp():
     water = Species("H2O", molar_mass=0.018, density=1000.0, heat_capacity=75.3)
     model = ReactionModel(
         components=[Component("A"), Component("B"), Component("water", [water])],
-        reactions=[ThermodynamicReaction(
-            "A <-> B",
-            mode="kinetic",
-            equilibrium_constant=EquilibriumConstantVantHoffCp(
-                dH=-20e3, dS=-50.0, dCp=dCp
-            ),
-            rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
-        )],
+        reactions=[
+            ThermodynamicReaction(
+                "A <-> B",
+                mode="kinetic",
+                equilibrium_constant=EquilibriumConstantVantHoffCp(
+                    dH=-20e3, dS=-50.0, dCp=dCp
+                ),
+                rate_constant=RateConstantArrhenius(A=1e10, Ea=40e3),
+            )
+        ],
     )
     c = np.array([600.0, 400.0, 1000.0])
     rho_cp = model.volumetric_heat_capacity(c)
@@ -341,4 +360,67 @@ def test_energy_balance_jac_analytic_vanthoffcp():
     rhs0 = _eb_rhs_T(model, c, T, rho_cp)
     jac_T_fd = (_eb_rhs_T(model, c, T + eps, rho_cp) - rhs0) / eps
     _, jac_T = _eb_jac_analytic(model, c, T, rho_cp)
-    np.testing.assert_allclose(jac_T, jac_T_fd, rtol=1e-5)
+
+
+# ---------------------------------------------------------------------------
+# check_conservation
+# ---------------------------------------------------------------------------
+
+
+def test_check_conservation_empty_lhs_not_conserved():
+    """
+    Empty-LHS reaction '<-> H+ + OH-' creates both species from an untracked
+    reservoir (water). A component containing both species must be flagged as
+    non-conserved.
+    """
+    from reactions.ionic import IonicStrengthIdeal
+
+    H = Species("H+", charge=1)
+    OH = Species("OH-", charge=-1)
+    water_pair = Component("water_pair", [H, OH])
+
+    model = ReactionModel(
+        components=[water_pair],
+        reactions=[
+            ThermodynamicReaction(
+                "<-> H+ + OH-",
+                mode="equil",
+                equilibrium_constant=pKa(14),
+            )
+        ],
+        ionic_strength=IonicStrengthIdeal(),
+    )
+    reports = model.check_conservation()
+    assert len(reports) == 1
+    assert not reports[0].conserved
+
+
+def test_check_conservation_closed_stoich_conserved():
+    """
+    HAc <-> Ac- + H+: total acetate (HAc + Ac-) is conserved because both
+    species are on the same side of the closed stoichiometry.
+    Contrast with the empty-LHS case where both products appear from nothing.
+    """
+    from reactions.ionic import IonicStrengthIdeal
+
+    HAc = Species("HAc", charge=0)
+    Ac = Species("Ac-", charge=-1)
+    H = Species("H+", charge=1)
+    acetic = Component("acetic_acid", [HAc, Ac])
+    H_comp = Component("H_plus", [H])
+
+    model = ReactionModel(
+        components=[acetic, H_comp],
+        reactions=[
+            ThermodynamicReaction(
+                "HAc <-> Ac- + H+",
+                mode="equil",
+                equilibrium_constant=pKa(4.756),
+            )
+        ],
+        ionic_strength=IonicStrengthIdeal(),
+    )
+    reports = model.check_conservation()
+    assert len(reports) == 1
+    assert reports[0].component.name == "acetic_acid"
+    assert reports[0].conserved

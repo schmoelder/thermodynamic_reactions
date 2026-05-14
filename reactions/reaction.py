@@ -56,14 +56,16 @@ def parse_stoichiometry(stoichiometry_str: str) -> dict[str, float]:
     {'H2O': -1.0, 'H+': 1.0, 'OH-': 1.0}
     >>> parse_stoichiometry("H2PO4- <-> HPO4-2 + H+")
     {'H2PO4-': -1.0, 'HPO4-2': 1.0, 'H+': 1.0}
+    >>> parse_stoichiometry("<-> H+ + OH-")
+    {'H+': 1.0, 'OH-': 1.0}
+    >>> parse_stoichiometry("Ca2+ + CO3-2 <->")
+    {'Ca2+': -1.0, 'CO3-2': -1.0}
     """
     reversible = "<->" in stoichiometry_str
     sep = "<->" if reversible else "->"
     parts = stoichiometry_str.split(sep)
     if len(parts) != 2:
-        raise ValueError(
-            f"Expected exactly one '{sep}' in '{stoichiometry_str}'."
-        )
+        raise ValueError(f"Expected exactly one '{sep}' in '{stoichiometry_str}'.")
 
     def _parse_side(s: str) -> dict[str, float]:
         result: dict[str, float] = {}
@@ -76,9 +78,7 @@ def parse_stoichiometry(stoichiometry_str: str) -> dict[str, float]:
                 term,
             )
             if not m:
-                raise ValueError(
-                    f"Cannot parse stoichiometry term '{term}'."
-                )
+                raise ValueError(f"Cannot parse stoichiometry term '{term}'.")
             coeff = float(m.group(1)) if m.group(1) else 1.0
             name = m.group(2)
             result[name] = result.get(name, 0.0) + coeff
@@ -188,8 +188,8 @@ class ReactionBase(ABC):
     ) -> float:
         """Net mass-action rate: v = kf * prod(c^e_fwd) - kr * prod(c^e_bwd)."""
         c_safe = np.maximum(c, 0.0)
-        vf = kf * float(np.prod(c_safe ** e_fwd))
-        vr = kr * float(np.prod(c_safe ** e_bwd))
+        vf = kf * float(np.prod(c_safe**e_fwd))
+        vr = kr * float(np.prod(c_safe**e_bwd))
         return vf - vr
 
     @staticmethod
@@ -202,14 +202,13 @@ class ReactionBase(ABC):
     ) -> np.ndarray:
         """Analytic dv/dc_k for mass-action rate. Returns shape (n_species,)."""
         c_safe = np.maximum(c, 1e-300)
-        prod_fwd = kf * float(np.prod(c_safe ** e_fwd))
-        prod_bwd = kr * float(np.prod(c_safe ** e_bwd))
+        prod_fwd = kf * float(np.prod(c_safe**e_fwd))
+        prod_bwd = kr * float(np.prod(c_safe**e_bwd))
         dv = np.zeros(len(c))
         for k in range(len(c)):
             if c_safe[k] > 0:
                 dv[k] = (
-                    prod_fwd * e_fwd[k] / c_safe[k]
-                    - prod_bwd * e_bwd[k] / c_safe[k]
+                    prod_fwd * e_fwd[k] / c_safe[k] - prod_bwd * e_bwd[k] / c_safe[k]
                 )
         return dv
 
@@ -340,7 +339,9 @@ class ThermodynamicReaction(ReactionBase):
 
         if dlnkf is None or dlnK is None:
             phi0 = self.net_rate(state, species_index, charges)
-            s_pert = PhysicalState(c=state.c, T=state.T + eps, I=state.I, c_ref=state.c_ref)
+            s_pert = PhysicalState(
+                c=state.c, T=state.T + eps, I=state.I, c_ref=state.c_ref
+            )
             return (self.net_rate(s_pert, species_index, charges) - phi0) / eps
 
         gamma = self.activity_coefficient.activity(state, charges)
@@ -348,8 +349,10 @@ class ThermodynamicReaction(ReactionBase):
         a = gamma * state.c / state.c_ref
         e_fwd, e_bwd = self._build_exponent_arrays(species_index, n)
         a_safe = np.maximum(a, 0.0)
-        P_bwd = float(np.prod(a_safe ** e_bwd))
-        phi = self._mass_action_rate(a, self.kf(state.T), self.kr(state.T), e_fwd, e_bwd)
+        P_bwd = float(np.prod(a_safe**e_bwd))
+        phi = self._mass_action_rate(
+            a, self.kf(state.T), self.kr(state.T), e_fwd, e_bwd
+        )
         return dlnkf * phi + self.kr(state.T) * dlnK * P_bwd
 
     def log_K_residual(
@@ -368,8 +371,7 @@ class ThermodynamicReaction(ReactionBase):
             return float(gamma[i] * state.c[i] / state.c_ref[i])
 
         ln_Q = sum(
-            coeff * np.log(max(_a(name), 1e-300))
-            for name, coeff in self.nu.items()
+            coeff * np.log(max(_a(name), 1e-300)) for name, coeff in self.nu.items()
         )
         return float(ln_Q - np.log(self.equilibrium_constant.K(state.T)))
 
@@ -426,12 +428,10 @@ class MassActionReaction(ReactionBase):
             RateConstantFixed(kr) if isinstance(kr, (int, float)) else kr
         )
         self._exponent_fwd_override = (
-            np.asarray(exponent_fwd, dtype=float)
-            if exponent_fwd is not None else None
+            np.asarray(exponent_fwd, dtype=float) if exponent_fwd is not None else None
         )
         self._exponent_bwd_override = (
-            np.asarray(exponent_bwd, dtype=float)
-            if exponent_bwd is not None else None
+            np.asarray(exponent_bwd, dtype=float) if exponent_bwd is not None else None
         )
 
     def kf(self, T: float) -> float:
@@ -449,7 +449,8 @@ class MassActionReaction(ReactionBase):
         """Net mass-action rate [mol/(m³·s)] using concentrations directly."""
         n = len(state.c)
         e_fwd, e_bwd = self._build_exponent_arrays(
-            species_index, n,
+            species_index,
+            n,
             self._exponent_fwd_override,
             self._exponent_bwd_override,
         )
@@ -470,7 +471,8 @@ class MassActionReaction(ReactionBase):
         """Analytic dv/dc, shape (n_species,)."""
         n = len(state.c)
         e_fwd, e_bwd = self._build_exponent_arrays(
-            species_index, n,
+            species_index,
+            n,
             self._exponent_fwd_override,
             self._exponent_bwd_override,
         )
@@ -560,6 +562,4 @@ class CustomReaction(ReactionBase):
     def residual(
         self, state: PhysicalState, species_index: dict[str, int]
     ) -> np.ndarray:
-        raise NotImplementedError(
-            "CustomReaction.residual() — to be implemented."
-        )
+        raise NotImplementedError("CustomReaction.residual() — to be implemented.")
